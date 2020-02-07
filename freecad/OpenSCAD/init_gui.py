@@ -30,10 +30,15 @@
 
 import FreeCAD
 import FreeCADGui
+import os
 
 param = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 openscadfilename = param.GetString('openscadexecutable')
 
+__dirname__ = os.path.dirname(__file__)
+
+  def __init__(self):
+      self.__class__.Icon = os.path.join(__dirname__, "Resources/icons/OpenSCADWorkbench.svg")
 
 class OpenSCADWorkbench ( FreeCADGui.Workbench ):
     "OpenSCAD workbench object"
