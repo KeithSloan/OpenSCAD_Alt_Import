@@ -46,8 +46,8 @@ import ply.lex as lex
 import ply.yacc as yacc
 import Part
 
-from OpenSCADFeatures import *
-from OpenSCADUtils import *
+from freecad.OpenSCAD import OpenSCADFeatures
+from freecad.OpenSCAD import OpenSCADUtils
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printVerbose',False)
@@ -349,7 +349,7 @@ def p_operation(p):
     p[0] = p[1]
 
 def placeholder(name,children,arguments):
-    from OpenSCADFeatures import OpenSCADPlaceholder
+    from freecad.OpenSCAD.OpenSCADFeatures import OpenSCADPlaceholder
     newobj=doc.addObject("Part::FeaturePython",name)
     OpenSCADPlaceholder(newobj,children,str(arguments))
     if gui:
@@ -370,7 +370,7 @@ def CGALFeatureObj(name,children,arguments=[]):
             subobj.ViewObject.hide()
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from OpenSCADFeatures import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(myobj.ViewObject)
         else:
             myobj.ViewObject.Proxy = 0
@@ -573,7 +573,7 @@ def process_rotate_extrude(obj,angle):
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from OpenSCADFeatures import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -614,7 +614,7 @@ def process_linear_extrude(obj,h) :
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from OpenSCADFeatures import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -636,7 +636,7 @@ def process_linear_extrude_with_twist(base,height,twist) :
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from OpenSCADFeatures import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -732,9 +732,9 @@ def process_mesh_file(fname,ext):
 
 def processTextCmd(t):
     import os
-    from OpenSCADUtils import callopenscadstring
+    from freecad.OpenSCAD.OpenSCADUtils import callopenscadstring
     tmpfilename = callopenscadstring(t,'dxf')
-    from OpenSCAD2Dgeom import importDXFface 
+    from freecad.OpenSCAD.OpenSCAD2Dgeom import importDXFface 
     face = importDXFface(tmpfilename,None,None)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
@@ -747,7 +747,7 @@ def processTextCmd(t):
 def processDXF(fname,layer):
     global doc
     global pathName
-    from OpenSCAD2Dgeom import importDXFface
+    from freecad.OpenSCAD.OpenSCAD2Dgeom import importDXFface
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
     if printverbose: print("Layer : "+layer)
@@ -824,13 +824,13 @@ def p_multmatrix_action(p):
             part.ViewObject.hide()
     elif FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetBool('useMultmatrixFeature'):
-        from OpenSCADFeatures import MatrixTransform
+        from freecad.OpenSCAD.OpenSCADFeatures import MatrixTransform
         new_part=doc.addObject("Part::FeaturePython",'Matrix Deformation')
         MatrixTransform(new_part,transform_matrix,part)
         if gui:
             if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                 GetBool('useViewProviderTree'):
-                from OpenSCADFeatures import ViewProviderTree
+                from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
                 ViewProviderTree(new_part.ViewObject)
             else:
                 new_part.ViewObject.Proxy = 0
@@ -957,7 +957,7 @@ def p_cylinder_action(p):
                 if gui:
                     if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                         GetBool('useViewProviderTree'):
-                        from OpenSCADFeatures import ViewProviderTree
+                        from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
                         ViewProviderTree(mycyl.ViewObject)
                     else:
                         mycyl.ViewObject.Proxy = 0
@@ -979,7 +979,7 @@ def p_cylinder_action(p):
         if gui:
             if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                 GetBool('useViewProviderTree'):
-                from OpenSCADFeatures import ViewProviderTree
+                from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
                 ViewProviderTree(newobj.ViewObject)
             else:
                 newobj.ViewObject.Proxy = 0

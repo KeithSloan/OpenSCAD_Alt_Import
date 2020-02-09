@@ -37,13 +37,10 @@ openscadfilename = param.GetString('openscadexecutable')
 
 __dirname__ = os.path.dirname(__file__)
 
-  def __init__(self):
-      self.__class__.Icon = os.path.join(__dirname__, "Resources/icons/OpenSCADWorkbench.svg")
-
 class OpenSCADWorkbench ( FreeCADGui.Workbench ):
     "OpenSCAD workbench object"
     def __init__(self):
-        self.__class__.Icon = FreeCAD.getResourceDir() + "Mod/OpenSCAD/Resources/icons/OpenSCADWorkbench.svg"
+        self.__class__.Icon = os.path.join(__dirname__, "Resources/icons/OpenSCADWorkbench.svg")
         self.__class__.MenuText = "OpenSCAD"
         self.__class__.ToolTip = (
             "OpenSCAD is an application for creating solid 3D CAD.\n"
@@ -70,7 +67,7 @@ class OpenSCADWorkbench ( FreeCADGui.Workbench ):
         openscadfilename = param.GetString('openscadexecutable')
         if not openscadfilename:
 
-            import OpenSCADUtils
+            from freecad.OpenSCAD import OpenSCADUtils
             openscadfilename = OpenSCADUtils.searchforopenscadexe()
             if openscadfilename: #automatic search was succsessful
                 FreeCAD.addImportType("OpenSCAD Format (*.scad)","importCSG") 
