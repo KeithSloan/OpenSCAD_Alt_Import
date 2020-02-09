@@ -46,17 +46,18 @@ import ply.lex as lex
 import ply.yacc as yacc
 import Part
 
-from freecad.OpenSCAD import OpenSCADFeatures
-from freecad.OpenSCAD import OpenSCADUtils
+import freecad.OpenSCAD.OpenSCADFeatures
+import freecad.OpenSCAD.OpenSCADUtils
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printVerbose',False)
 
 # Get the token map from the lexer.  This is required.
-import tokrules
-from tokrules import tokens
+import freecad.OpenSCAD.tokrules
+from freecad.OpenSCAD.tokrules import tokens
 
 try:
+    from PySide import QtGui
     _encoding = QtGui.QApplication.UnicodeUTF8
     def translate(context, text):
         "convenience function for Qt translator"
@@ -75,6 +76,7 @@ def open(filename):
     docname = os.path.splitext(os.path.basename(filename))[0]
     doc = FreeCAD.newDocument(docname)
     if filename.lower().endswith('.scad'):
+        from freecad.OpenSCAD.OpenSCADUtils import callopenscad, workaroundforissue128needed
         tmpfile=callopenscad(filename)
         if workaroundforissue128needed():
             pathName = '' #https://github.com/openscad/openscad/issues/128
@@ -102,6 +104,7 @@ def insert(filename,docname):
         doc=FreeCAD.newDocument(docname)
     #importgroup = doc.addObject("App::DocumentObjectGroup",groupname)
     if filename.lower().endswith('.scad'):
+        from freecad.OpenSCAD.OpenSCADUtils import callopenscad, workaroundforissue128needed
         tmpfile=callopenscad(filename)
         if workaroundforissue128needed():
             pathName = '' #https://github.com/openscad/openscad/issues/128
@@ -123,7 +126,7 @@ def processcsg(filename):
     if printverbose: print ('ImportCSG Version 0.6a')
     # Build the lexer
     if printverbose: print('Start Lex')
-    lex.lex(module=tokrules)
+    lex.lex(module=freecad.OpenSCAD.tokrules)
     if printverbose: print('End Lex')
 
     # Build the parser   
@@ -364,6 +367,7 @@ def placeholder(name,children,arguments):
 
 def CGALFeatureObj(name,children,arguments=[]):
     myobj=doc.addObject("Part::FeaturePython",name)
+    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
     CGALFeature(myobj,name,children,str(arguments))
     if gui:
         for subobj in children:
@@ -412,13 +416,13 @@ def p_offset_action(p):
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
+    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
     p[0] = [ CGALFeatureObj(p[1],p[5]) ]
 
 def p_minkowski_action(p):
     '''
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
-    print('p')
-    print(p)
+    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
     p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
 def p_not_supported(p):

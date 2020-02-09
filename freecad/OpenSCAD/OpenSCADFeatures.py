@@ -82,7 +82,7 @@ class ViewProviderTree:
         return objs
    
     def getIcon(self):
-        import OpenSCAD_rc
+        import freecad.OpenSCAD.OpenSCAD_rc
         if isinstance(self.Object.Proxy,RefineShape):
             return(":/icons/OpenSCAD_RefineShapeFeature.svg")
         if isinstance(self.Object.Proxy,IncreaseTolerance):
@@ -236,7 +236,7 @@ class RefineShape:
 
     def execute(self, fp):
         if fp.Base and fp.Base.Shape.isValid():
-            import OpenSCADUtils
+            import freecad.OpenSCAD.OpenSCADUtils
             sh=fp.Base.Shape.removeSplitter()
             fp.Shape=OpenSCADUtils.applyPlacement(sh)
 
@@ -462,8 +462,8 @@ class CGALFeature:
     def execute(self,fp):
         #arguments are ignored
         maxmeshpoints = None #TBD: add as property
-        import Part,OpenSCADUtils
-        shape = OpenSCADUtils.process_ObjectsViaOpenSCADShape(fp.Document,fp.Children,\
+        import Part, freecad.OpenSCAD.OpenSCADUtils
+        shape = freecad.OpenSCAD.OpenSCADUtils.process_ObjectsViaOpenSCADShape(fp.Document,fp.Children,\
                 fp.Operation, maxmeshpoints=maxmeshpoints)
         if shape:
             fp.Shape = shape
