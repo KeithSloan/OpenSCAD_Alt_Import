@@ -123,7 +123,7 @@ class Edgestofaces:
         return FreeCADGui.Selection.countObjectsOfType('Part::Feature') > 0
 
     def Activated(self):
-        from OpenSCAD2Dgeom import edgestofaces,Overlappingfaces
+        from freecad.OpenSCAD.OpenSCAD2Dgeom import edgestofaces,Overlappingfaces
         selection=FreeCADGui.Selection.getSelectionEx()
         edges=[]
         for selobj in selection:

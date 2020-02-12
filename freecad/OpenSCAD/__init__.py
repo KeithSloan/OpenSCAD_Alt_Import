@@ -31,7 +31,7 @@ param = FreeCAD.ParamGet(\
 openscadfilename = param.GetString('openscadexecutable')
 openscadbin = openscadfilename and os.path.isfile(openscadfilename)
 if openscadbin:
-    FreeCAD.addImportType("OpenSCAD Format (*.scad)","importCSG")
-FreeCAD.addExportType("OpenSCAD CSG Format (*.csg)","exportCSG")
-FreeCAD.addExportType("OpenSCAD Format (*.scad)","exportCSG")
+    FreeCAD.addImportType("OpenSCAD Format (*.scad)","freecad.OpenSCAD.importCSG")
+FreeCAD.addExportType("OpenSCAD CSG Format (*.csg)","freecad.OpenSCAD.exportCSG")
+FreeCAD.addExportType("OpenSCAD Format (*.scad)","freecad.OpenSCAD.exportCSG")
 
