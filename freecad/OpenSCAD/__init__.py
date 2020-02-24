@@ -25,7 +25,7 @@
 #*   Juergen Riegel 2002                                                   *
 #***************************************************************************/
 import FreeCAD,os
-FreeCAD.addImportType("OpenSCAD CSG Format (*.csg)","importCSG")
+FreeCAD.addImportType("OpenSCAD CSG Format (*.csg)","freecad.OpenSCAD.importCSG")
 param = FreeCAD.ParamGet(\
     "User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 openscadfilename = param.GetString('openscadexecutable')
