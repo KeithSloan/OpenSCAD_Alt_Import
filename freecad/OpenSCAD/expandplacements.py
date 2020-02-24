@@ -30,8 +30,8 @@ feature tree to the most basic objects
 '''
 
 import FreeCAD
-from OpenSCADFeatures import *
-from OpenSCADUtils import isspecialorthogonalpython,isspecialorthogonal
+from freecad.OpenSCAD.OpenSCADFeatures import *
+from freecad.OpenSCAD.OpenSCADUtils import isspecialorthogonalpython,isspecialorthogonal
 import replaceobj
 
 def likeprimitive(obj,extrusion=False):

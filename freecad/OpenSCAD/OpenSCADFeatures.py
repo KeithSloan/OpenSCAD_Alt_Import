@@ -238,7 +238,7 @@ class RefineShape:
         if fp.Base and fp.Base.Shape.isValid():
             import freecad.OpenSCAD.OpenSCADUtils
             sh=fp.Base.Shape.removeSplitter()
-            fp.Shape=OpenSCADUtils.applyPlacement(sh)
+            fp.Shape=freecad.OpenSCAD.OpenSCADUtils.applyPlacement(sh)
 
 class IncreaseTolerance:
     '''increase the tolerance of every vertex
