@@ -1,11 +1,11 @@
 # OpenSCAD
 Inprocess : Installable version of FreeCAD OpenSCAD workbench.
 
-#To install in a version of FreeCAD which comes with the old OpenSCAD workbench
+#Install : To install in a version of FreeCAD which comes with the old OpenSCAD workbench
 
-remove current ../Mod/OpenSCAD directory
-change to ../Mod
-git clone https://github.com/KeithSloan/OpenSCAD.git
+* remove current ../Mod/OpenSCAD directory
+* change to ../Mod
+* git clone https://github.com/KeithSloan/OpenSCAD.git
 
 For linux FreeCAD is installed in /usr/lib/freecad so OpenSCAD directory is /usr/lib/freecad/Mod/OpenSCAD
 and you will have to prefix commands with sudo
