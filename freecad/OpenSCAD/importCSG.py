@@ -440,24 +440,8 @@ def p_minkowski_action(p):
 
     # For minkowski Just indicate first shape needs editing
 
-    if len(p[6]) == 2 :
-       # return just first object     
-       #print(dir(p[6][0]))
-       #print(dir((p[6][1]).ViewObject))
-       #print(p[6][0].TypeId)
-       p[6][0].ViewObject.ShapeColor = (1.,0.,0.)
-       setObjColor(p[6][0],(1.,0.,0.)) 
-       setOutListColor(p[6][0],(1.,0.,0.))
-       #print(p[6][1].TypeId)
-       p[6][1].ViewObject.ShapeColor = (0.,1.,0.)
-       setObjColor(p[6][1],(0.,1.,0.)) 
-       setOutListColor(p[6][1],(1.,0.,0.))
-       #p[6][1].ViewObject.hide()
-       p[0] = [p[6][0]]      
-
-    else :        
-       from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
-       p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
+    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
+    p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
 def p_not_supported(p):
     '''
