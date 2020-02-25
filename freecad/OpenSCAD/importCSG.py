@@ -52,6 +52,7 @@ import freecad.OpenSCAD.OpenSCADUtils
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printVerbose',False)
 
+printverbose = True
 # Get the token map from the lexer.  This is required.
 import freecad.OpenSCAD.tokrules
 from freecad.OpenSCAD.tokrules import tokens
@@ -348,6 +349,7 @@ def p_operation(p):
               | hull_action
               | minkowski_action
               | offset_action
+              | resize_action
               '''
     p[0] = p[1]
 
@@ -443,10 +445,24 @@ def p_minkowski_action(p):
     from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
     p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
+def p_resize_action(p):
+    '''
+    resize_action :  resize LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
+    from freecad.OpenSCAD.OpenSCADFeatures import Resize, ViewProviderTree
+    print("Resize")
+    newsize = p[3]['newsize']
+    print(newsize)
+    auto = p[3]['auto']
+    print(auto)
+    myresize = doc.addObject('Part::FeaturePython','Resize')
+    Resize(myresize,p[6][0],newsize)
+    #Resize(myresize,t,newsize)
+    ViewProviderTree(myresize.ViewObject)
+    return(myresize)
+
 def p_not_supported(p):
     '''
     not_supported : glide LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE
-                  | resize LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE
                   | subdiv LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE
                   '''
     if gui and not FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\

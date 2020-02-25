@@ -179,6 +179,39 @@ class OpenSCADPlaceholder:
         import Part
         fp.Shape = Part.Compound([]) #empty Shape
 
+class Resize :
+    def __init__(self,obj,target,vector) :
+        import FreeCAD
+        #self.Obj = obj
+        self.Target = target
+        self.Vector = vector
+        #obj.addProperty("App::PropertyPythonObject","Object","Resize", \
+        #                "Object to be resized").Object = target
+        obj.addProperty("Part::PropertyPartShape","Shape","Resize", "Shape of the Resize")
+        obj.addProperty("App::PropertyVector","Vector","Resize",
+                        " Resize Vector").Vector = FreeCAD.Vector(vector)
+        obj.Proxy = self
+
+    def onChanged(self, fp, prop):
+        if prop in ['Object','Vector'] :
+           self.createGeometry(fp)
+    
+    def execute(self, fp):
+        self.createGeometry(fp)
+
+    def createGeometry(self, fp) :
+        print("Resize create Geometry")
+        import FreeCAD
+        mat = FreeCAD.Matrix()
+        mat.A11 = self.Vector[0]
+        mat.A22 = self.Vector[1]
+        mat.A33 = self.Vector[2]
+        print(mat)
+        fp.Shape = self.Target.Shape.transformGeometry(mat) 
+        #import Part
+        #fp.Shape = Part.makeBox(20,20,20)
+
+
 class MatrixTransform:
     def __init__(self, obj,matrix=None,child=None):
         obj.addProperty("App::PropertyLink","Base","Base",
