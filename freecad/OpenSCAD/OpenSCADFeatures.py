@@ -208,8 +208,12 @@ class Resize :
         mat.A33 = self.Vector[2]
         print(mat)
         fp.Shape = self.Target.Shape.transformGeometry(mat) 
-        #import Part
-        #fp.Shape = Part.makeBox(20,20,20)
+
+    def __getstate__(self):
+        return None
+    
+    def __setstate__(self,state):    
+        return None
 
 
 class MatrixTransform:

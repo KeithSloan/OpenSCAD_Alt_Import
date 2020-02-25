@@ -456,9 +456,8 @@ def p_resize_action(p):
     print(auto)
     myresize = doc.addObject('Part::FeaturePython','Resize')
     Resize(myresize,p[6][0],newsize)
-    #Resize(myresize,t,newsize)
     ViewProviderTree(myresize.ViewObject)
-    return(myresize)
+    p[0] = [myresize]
 
 def p_not_supported(p):
     '''
@@ -468,7 +467,7 @@ def p_not_supported(p):
     if gui and not FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('usePlaceholderForUnsupported'):
         from PySide import QtGui
-        QtGui.QMessageBox.critical(None, translate('OpenSCAD',"Unsupported Function")+" : "+p[1],translate('OpenSCAD',"Press OK"))
+        QtGui.QMessageBox.critical(None, translate('OpenSCAD',p[1]+" : Unsupported Function"),translate('OpenSCAD',"Press OK"))
     else:
         p[0] = [placeholder(p[1],p[6],p[3])]
 
@@ -649,6 +648,8 @@ def p_rotate_extrude_file(p):
 
 def process_linear_extrude(obj,h) :
     #if gui:
+    from freecad.OpenSCAD.OpenSCADFeatures import RefineShape
+
     newobj=doc.addObject("Part::FeaturePython",'RefineLinearExtrude')
     RefineShape(newobj,obj)#mylinear)
     if gui:
@@ -812,7 +813,8 @@ def processSTL(fname):
 def p_multmatrix_action(p):
     'multmatrix_action : multmatrix LPAREN matrix RPAREN OBRACE block_list EBRACE'
     from freecad.OpenSCAD.OpenSCADUtils import isspecialorthogonalpython, \
-         fcsubmatrix, roundrotation 
+         fcsubmatrix, roundrotation, isrotoinversionpython, \
+         decomposerotoinversion
     from freecad.OpenSCAD.OpenSCADFeatures import RefineShape     
     if printverbose: print("MultMatrix")
     transform_matrix = FreeCAD.Matrix()
@@ -833,6 +835,9 @@ def p_multmatrix_action(p):
     if printverbose: print(transform_matrix)
     if printverbose: print("Apply Multmatrix")
 #   If more than one object on the stack for multmatrix fuse first
+    if p[6] == None :
+       print(p) 
+       print(dir(p))
     if (len(p[6]) == 0) :
         part = placeholder('group',[],'{}')
     elif (len(p[6]) > 1) :
@@ -996,6 +1001,7 @@ def p_cylinder_action(p):
             else:
                 if printverbose: print("Make Frustum")
                 mycyl=doc.addObject("Part::FeaturePython",'frustum')
+                from freecad.OpenSCAD.OpenSCADFeatures import Frustum
                 Frustum(mycyl,r1,r2,n,h)
                 if gui:
                     if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
@@ -1244,9 +1250,10 @@ def p_projection_action(p) :
             subobj[0].ViewObject.hide()
         p[0] = [obj]
     else: # cut == 'false' => true projection
-        if gui and not FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-                GetBool('usePlaceholderForUnsupported'):
-            from PySide import QtGui
-            QtGui.QMessageBox.critical(None, translate('OpenSCAD',"Unsupported Function")+" : "+p[1],translate('OpenSCAD',"Press OK"))
-        else:
-            p[0] = [placeholder(p[1],p[6],p[3])]
+        #if gui and not FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+        #        GetBool('usePlaceholderForUnsupported'):
+        #    from PySide import QtGui
+        #    QtGui.QMessageBox.critical(None, translate('OpenSCAD',p[1]+" : Unsupported Function"),translate('OpenSCAD',"Press OK"))
+        #else:
+        #    p[0] = [placeholder(p[1],p[6],p[3])]
+        p[0] = [placeholder(p[1],p[6],p[3])]
