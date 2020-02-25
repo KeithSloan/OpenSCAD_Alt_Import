@@ -440,7 +440,7 @@ def p_minkowski_action(p):
     '''
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
 
-    # For minkowski Just indicate first shape needs editing
+    # - For minkowski Just indicate first shape needs editing
 
     if len(p[6]) == 2 :
        # return just first object     
@@ -459,10 +459,6 @@ def p_minkowski_action(p):
 
     else :
         p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
-
-
-    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
-    p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
 def p_resize_action(p):
     '''
