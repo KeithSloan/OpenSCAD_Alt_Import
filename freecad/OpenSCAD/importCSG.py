@@ -462,17 +462,22 @@ def p_minkowski_action(p):
 
 def p_resize_action(p):
     '''
-    resize_action :  resize LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
-    from freecad.OpenSCAD.OpenSCADFeatures import Resize, ViewProviderTree
-    print("Resize")
+    resize_action : resize LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE '''
+    import Draft
+    print(p[3])
     newsize = p[3]['newsize']
+    auto    = p[3]['auto']
     print(newsize)
-    auto = p[3]['auto']
     print(auto)
-    myresize = doc.addObject('Part::FeaturePython','Resize')
-    Resize(myresize,p[6][0],newsize)
-    ViewProviderTree(myresize.ViewObject)
-    p[0] = [myresize]
+    for r in range(0,3) :
+        if auto[r] == '1' :
+           newsize[r] = newsize[0]
+        if newsize[r] == '0' :
+           newsize[r] = '1'
+    print(newsize)
+    scale = FreeCAD.Vector(float(newsize[0]), float(newsize[1]), float(newsize[2]))
+    print(scale)
+    p[0] = [Draft.scale(p[6],scale)]
 
 def p_not_supported(p):
     '''
