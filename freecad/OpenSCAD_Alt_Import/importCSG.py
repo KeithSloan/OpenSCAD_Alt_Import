@@ -46,16 +46,16 @@ import ply.lex as lex
 import ply.yacc as yacc
 import Part
 
-import freecad.OpenSCAD_Alt_Import.OpenSCADFeatures
-import freecad.OpenSCAD_Alt_Import.OpenSCADUtils
+import freecad.OpenSCAD.OpenSCADFeatures
+import freecad.OpenSCAD.OpenSCADUtils
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printVerbose',False)
 
 printverbose = True
 # Get the token map from the lexer.  This is required.
-import freecad.OpenSCAD_Alt_Import.tokrules
-from freecad.OpenSCAD_Alt_Import.tokrules import tokens
+import freecad.OpenSCAD.tokrules
+from freecad.OpenSCAD.tokrules import tokens
 
 try:
     from PySide import QtGui
@@ -77,8 +77,7 @@ def open(filename):
     docname = os.path.splitext(os.path.basename(filename))[0]
     doc = FreeCAD.newDocument(docname)
     if filename.lower().endswith('.scad'):
-        from freecad.OpenSCAD_Alt_Import.OpenSCADUtils \
-        import callopenscad, workaroundforissue128needed
+        from freecad.OpenSCAD.OpenSCADUtils import callopenscad, workaroundforissue128needed
         tmpfile=callopenscad(filename)
         if workaroundforissue128needed():
             pathName = '' #https://github.com/openscad/openscad/issues/128
@@ -106,8 +105,7 @@ def insert(filename,docname):
         doc=FreeCAD.newDocument(docname)
     #importgroup = doc.addObject("App::DocumentObjectGroup",groupname)
     if filename.lower().endswith('.scad'):
-        from freecad.OpenSCAD_Alt_Import.OpenSCADUtils \
-        import callopenscad, workaroundforissue128needed
+        from freecad.OpenSCAD.OpenSCADUtils import callopenscad, workaroundforissue128needed
         tmpfile=callopenscad(filename)
         if workaroundforissue128needed():
             pathName = '' #https://github.com/openscad/openscad/issues/128
@@ -126,11 +124,10 @@ def insert(filename,docname):
 def processcsg(filename):
     global doc
 
-    print('Using Alternate OpenSCAD Importer')
     if printverbose: print ('ImportCSG Version 0.6a')
     # Build the lexer
     if printverbose: print('Start Lex')
-    lex.lex(module=freecad.OpenSCAD_Alt_Import.tokrules)
+    lex.lex(module=freecad.OpenSCAD.tokrules)
     if printverbose: print('End Lex')
 
     # Build the parser   
@@ -357,14 +354,13 @@ def p_operation(p):
     p[0] = p[1]
 
 def placeholder(name,children,arguments):
-    from freecad.OpenSCAD.Alt_Import.OpenSCADFeatures import OpenSCADPlaceholder
+    from freecad.OpenSCAD.OpenSCADFeatures import OpenSCADPlaceholder
     newobj=doc.addObject("Part::FeaturePython",name)
     OpenSCADPlaceholder(newobj,children,str(arguments))
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures \
-                 import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -373,15 +369,14 @@ def placeholder(name,children,arguments):
 
 def CGALFeatureObj(name,children,arguments=[]):
     myobj=doc.addObject("Part::FeaturePython",name)
-    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import CGALFeature
+    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
     CGALFeature(myobj,name,children,str(arguments))
     if gui:
         for subobj in children:
             subobj.ViewObject.hide()
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures \
-                 import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(myobj.ViewObject)
         else:
             myobj.ViewObject.Proxy = 0
@@ -423,7 +418,7 @@ def p_offset_action(p):
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
-    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import CGALFeature
+    from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
     p[0] = [ CGALFeatureObj(p[1],p[5]) ]
 
 
@@ -445,7 +440,7 @@ def p_minkowski_action(p):
     '''
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
 
-    # - For minkowski Just indicate first shape needs editing
+    # For minkowski Just indicate first shape needs editing
 
     if len(p[6]) == 2 :
        # return just first object     
@@ -463,26 +458,22 @@ def p_minkowski_action(p):
        p[0] = [p[6][0]]
 
     else :
+        from freecad.OpenSCAD.OpenSCADFeatures import CGALFeature
         p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
 def p_resize_action(p):
     '''
-    resize_action : resize LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE '''
-    import Draft
-    print(p[3])
+    resize_action :  resize LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
+    from freecad.OpenSCAD.OpenSCADFeatures import Resize, ViewProviderTree
+    print("Resize")
     newsize = p[3]['newsize']
-    auto    = p[3]['auto']
     print(newsize)
+    auto = p[3]['auto']
     print(auto)
-    for r in range(0,3) :
-        if auto[r] == '1' :
-           newsize[r] = newsize[0]
-        if newsize[r] == '0' :
-           newsize[r] = '1'
-    print(newsize)
-    scale = FreeCAD.Vector(float(newsize[0]), float(newsize[1]), float(newsize[2]))
-    print(scale)
-    p[0] = [Draft.scale(p[6],scale)]
+    myresize = doc.addObject('Part::FeaturePython','Resize')
+    Resize(myresize,p[6][0],newsize)
+    ViewProviderTree(myresize.ViewObject)
+    p[0] = [myresize]
 
 def p_not_supported(p):
     '''
@@ -631,13 +622,13 @@ def p_intersection_action(p):
 
 def process_rotate_extrude(obj,angle):
     
-    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import RefineShape     
+    from freecad.OpenSCAD.OpenSCADFeatures import RefineShape     
     newobj=doc.addObject("Part::FeaturePython",'RefineRotateExtrude')
     RefineShape(newobj,obj)
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -673,15 +664,14 @@ def p_rotate_extrude_file(p):
 
 def process_linear_extrude(obj,h) :
     #if gui:
-    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import RefineShape
+    from freecad.OpenSCAD.OpenSCADFeatures import RefineShape
 
     newobj=doc.addObject("Part::FeaturePython",'RefineLinearExtrude')
     RefineShape(newobj,obj)#mylinear)
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures \
-                 import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -703,8 +693,7 @@ def process_linear_extrude_with_twist(base,height,twist) :
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
-            from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures \
-                 import ViewProviderTree
+            from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
             ViewProviderTree(newobj.ViewObject)
         else:
             newobj.ViewObject.Proxy = 0
@@ -800,9 +789,9 @@ def process_mesh_file(fname,ext):
 
 def processTextCmd(t):
     import os
-    from freecad.OpenSCAD_Alt_Import.OpenSCADUtils import callopenscadstring
+    from freecad.OpenSCAD.OpenSCADUtils import callopenscadstring
     tmpfilename = callopenscadstring(t,'dxf')
-    from freecad.OpenSCAD_Alt_Import.OpenSCAD2Dgeom import importDXFface 
+    from freecad.OpenSCAD.OpenSCAD2Dgeom import importDXFface 
     face = importDXFface(tmpfilename,None,None)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
@@ -815,7 +804,7 @@ def processTextCmd(t):
 def processDXF(fname,layer):
     global doc
     global pathName
-    from freecad.OpenSCAD_Alt_Import.OpenSCAD2Dgeom import importDXFface
+    from freecad.OpenSCAD.OpenSCAD2Dgeom import importDXFface
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
     if printverbose: print("Layer : "+layer)
@@ -839,11 +828,10 @@ def processSTL(fname):
 
 def p_multmatrix_action(p):
     'multmatrix_action : multmatrix LPAREN matrix RPAREN OBRACE block_list EBRACE'
-    from freecad.OpenSCAD_Alt_Import.OpenSCADUtils \
-         import isspecialorthogonalpython, \
+    from freecad.OpenSCAD.OpenSCADUtils import isspecialorthogonalpython, \
          fcsubmatrix, roundrotation, isrotoinversionpython, \
          decomposerotoinversion
-    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import RefineShape     
+    from freecad.OpenSCAD.OpenSCADFeatures import RefineShape     
     if printverbose: print("MultMatrix")
     transform_matrix = FreeCAD.Matrix()
     if printverbose: print("Multmatrix")
@@ -900,14 +888,13 @@ def p_multmatrix_action(p):
             part.ViewObject.hide()
     elif FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetBool('useMultmatrixFeature'):
-        from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import MatrixTransform
+        from freecad.OpenSCAD.OpenSCADFeatures import MatrixTransform
         new_part=doc.addObject("Part::FeaturePython",'Matrix Deformation')
         MatrixTransform(new_part,transform_matrix,part)
         if gui:
             if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                 GetBool('useViewProviderTree'):
-                from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures \
-                     import ViewProviderTree
+                from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
                 ViewProviderTree(new_part.ViewObject)
             else:
                 new_part.ViewObject.Proxy = 0
@@ -1030,12 +1017,12 @@ def p_cylinder_action(p):
             else:
                 if printverbose: print("Make Frustum")
                 mycyl=doc.addObject("Part::FeaturePython",'frustum')
-                from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import Frustum
+                from freecad.OpenSCAD.OpenSCADFeatures import Frustum
                 Frustum(mycyl,r1,r2,n,h)
                 if gui:
                     if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                         GetBool('useViewProviderTree'):
-                        from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import ViewProviderTree
+                        from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
                         ViewProviderTree(mycyl.ViewObject)
                     else:
                         mycyl.ViewObject.Proxy = 0
@@ -1057,8 +1044,7 @@ def p_cylinder_action(p):
         if gui:
             if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
                 GetBool('useViewProviderTree'):
-                from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures \
-                     import ViewProviderTree
+                from freecad.OpenSCAD.OpenSCADFeatures import ViewProviderTree
                 ViewProviderTree(newobj.ViewObject)
             else:
                 newobj.ViewObject.Proxy = 0
