@@ -421,10 +421,41 @@ def p_offset_action(p):
 #            newobj.ViewObject.Proxy = 0
     p[0] = [newobj]
 
+
+def checkObjType2D(obj) :
+    if obj.TypeId == 'Part::Part2DObjectPython' :
+       print('2D')
+       return True
+
+def checkObjWires(obj, list) :
+    if hasattr(obj,'Shape') :
+       print(obj.Shape.ShapeType)
+       print(dir(obj.Shape))
+       if hasattr(obj.Shape,'Wires') :
+          print(' Wires')
+          print(obj.Shape.Wires)
+          list.append(obj.Shape.Wires)
+
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
-    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import CGALFeature
-    p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+    print('hull function')
+    loftable = False
+    print(p[5])
+    print(len(p[5]))
+    if len(p[5]) == 2 :
+       if checkObjType2D(p[5][0]) and checkObjType2D(p[5][1]) :
+          print('Is 2d check wires')
+          wires = []
+          for i in p[5] :
+              checkObjWires(i,wires)    
+          if len(wires) == 2 :
+             print('Loft Wires') 
+             myloft = doc.addObject('Part::Loft',p[1])
+             print(dir(myloft))
+             loftable = True
+    if loftable == False :
+       from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import CGALFeature
+       p[0] = [ CGALFeatureObj(p[1],p[5]) ]
 
 
 def setObjColor(obj, color):
