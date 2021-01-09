@@ -31,14 +31,12 @@ __title__="FreeCAD OpenSCAD Workbench - CSG importer"
 __author__ = "Keith Sloan <keith@sloan-home.co.uk>"
 __url__ = ["http://www.sloan-home.co.uk/ImportCSG"]
 
-printverbose = False
-
 import FreeCAD, io, os, sys
 if FreeCAD.GuiUp:
     import FreeCADGui
     gui = True
 else:
-    if printverbose: print("FreeCAD Gui not present.")
+    print("FreeCAD Gui not present.")
     gui = False
 
 
@@ -50,9 +48,10 @@ import freecad.OpenSCAD_Alt_Import.OpenSCADFeatures
 import freecad.OpenSCAD_Alt_Import.OpenSCADUtils
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
-printverbose = params.GetBool('printVerbose',False)
-
-printverbose = True
+printverbose = params.GetBool('printverbose',False)
+print(printverbose)
+print(params.GetContents())
+#printverbose = True
 # Get the token map from the lexer.  This is required.
 import freecad.OpenSCAD_Alt_Import.tokrules
 from freecad.OpenSCAD_Alt_Import.tokrules import tokens
@@ -357,7 +356,7 @@ def p_operation(p):
     p[0] = p[1]
 
 def placeholder(name,children,arguments):
-    from freecad.OpenSCAD.Alt_Import.OpenSCADFeatures import OpenSCADPlaceholder
+    from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import OpenSCADPlaceholder
     newobj=doc.addObject("Part::FeaturePython",name)
     OpenSCADPlaceholder(newobj,children,str(arguments))
     if gui:
@@ -421,41 +420,68 @@ def p_offset_action(p):
 #            newobj.ViewObject.Proxy = 0
     p[0] = [newobj]
 
+def checkObjShape(obj) :
+    if printverbose: print('Check Object Shape')
+    if obj.Shape.isNull() == True :
+       if printverbose: print('Shape is Null - recompute')
+       obj.recompute()
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObjectPython' :
-       print('2D')
+       if printverbose: print('2D')
        return True
 
-def checkObjWires(obj, list) :
-    if hasattr(obj,'Shape') :
-       print(obj.Shape.ShapeType)
-       print(dir(obj.Shape))
-       if hasattr(obj.Shape,'Wires') :
-          print(' Wires')
-          print(obj.Shape.Wires)
-          list.append(obj.Shape.Wires)
+def planeFromNormalPoints(a,b) :
+    #dir = FreeCAD.Vector(a[0]-b[0], a[1]-b[1], a[2]-b[2])
+    d3 = FreeCAD.Vector(1/(a[0]-b[0]), 1/(a[1]-b[1]), 1/(a[2]-b[2]))
+    print('a cross b : '+str(a.cross(b)))
+    #d2 = a.cross(b)
+    #d2 = FreeCAD.Vector(0.0, 0.0, 1.0)
+    #d2 = FreeCAD.Vector(1.0,0.0,0.0)
+    d2 = FreeCAD.Vector(0.0,1.0,0.0)
+    print('d2 : '+str(d2))
+    return Part.makePlane(200,50,a,d2) 
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
-    print('hull function')
-    loftable = False
-    print(p[5])
-    print(len(p[5]))
+    if printverbose: print('hull function')
+    lofted = False
+    #print(p[5])
+    #print(len(p[5]))
+    for i in p[5] :
+        checkObjShape(i)
     if len(p[5]) == 2 :
        if checkObjType2D(p[5][0]) and checkObjType2D(p[5][1]) :
-          print('Is 2d check wires')
-          wires = []
-          for i in p[5] :
-              checkObjWires(i,wires)    
-          if len(wires) == 2 :
-             print('Loft Wires') 
-             myloft = doc.addObject('Part::Loft',p[1])
-             print(dir(myloft))
-             loftable = True
-    if loftable == False :
+          myloft = doc.addObject('Part::Loft',p[1])
+          myloft.Sections = [p[5][0], p[5][1]]
+          #print(dir(myloft))
+          lofted = True
+       #else : # Two objects not both 2D
+       #   print(p[5][0].Shape.ShapeType)
+       #   print(dir(p[5][0]))
+       #   print(dir(p[5][0].Shape))
+       #   a = p[5][0].Shape.CenterOfMass
+       #   b = p[5][1].Shape.CenterOfMass
+       #   print('a : '+str(a))          
+       #   print('b : '+str(b))
+       #   plane1 = planeFromNormalPoints(a,b)
+       #   myloft = doc.addObject('Part::Plane',p[1])
+       #   myloft.Length = 100
+       #   myloft.Width = 50
+       #   myloft.Placement.Base = a
+       #   myloft.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,1.0,0.0),90)
+       #   #myloft.Shape = plane1
+       #   print(dir(myloft))
+       #   print(dir(plane1))
+       #   #myloft = doc.addObject('Part::Loft',p[1])
+       #   #myloft.Sections = [p[5][0], p[5][1]]
+       #   #print(dir(myloft))
+       #   lofted = True
+    if lofted == False :
        from freecad.OpenSCAD_Alt_Import.OpenSCADFeatures import CGALFeature
        p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+    else :
+       p[0] =[myloft]
 
 
 def setObjColor(obj, color):
@@ -513,6 +539,8 @@ def p_resize_action(p):
     print(newsize)
     scale = FreeCAD.Vector(float(newsize[0]), float(newsize[1]), float(newsize[2]))
     print(scale)
+    print(len(p[6]))
+    p[6][0].recompute()
     p[0] = [Draft.scale(p[6],scale)]
 
 def p_not_supported(p):
@@ -1139,6 +1167,7 @@ def p_circle_action(p) :
         #mycircle = Draft.makeCircle(r,face=True) # would call doc.recompute
         #mycircle = doc.addObject('Part::Circle',p[1]) #would not create a face
         #mycircle.Radius = r
+        print('Circle Shape : ' +str(mycircle.Shape.isNull()))      
     else :
         #mycircle = Draft.makePolygon(n,r) # would call doc.recompute
         mycircle = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython",'polygon')
