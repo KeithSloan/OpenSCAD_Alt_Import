@@ -501,8 +501,6 @@ class CGALFeature:
         maxmeshpoints = None #TBD: add as property
         import Part
         import OpenSCADUtils
-        #from, .freecad.OpenSCAD import OpenSCADUtils
-        #shape = freecad.OpenSCAD.OpenSCADUtils.process_ObjectsViaOpenSCADShape(fp.Document,fp.Children,\
         shape = OpenSCADUtils.process_ObjectsViaOpenSCADShape(fp.Document,fp.Children,\
                 fp.Operation, maxmeshpoints=maxmeshpoints)
         if shape:
