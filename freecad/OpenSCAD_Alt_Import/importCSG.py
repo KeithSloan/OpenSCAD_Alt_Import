@@ -73,7 +73,7 @@ def open(filename):
     "called when freecad opens a file."
     global doc
     global pathName
-    FreeCAD.Console.PrintMessage('Processing : '+filename)
+    FreeCAD.Console.PrintMessage('Processing : '+filename+'\n')
     docname = os.path.splitext(os.path.basename(filename))[0]
     doc = FreeCAD.newDocument(docname)
     if filename.lower().endswith('.scad'):
