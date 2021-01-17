@@ -816,6 +816,9 @@ def process_import_file(fname,ext,layer):
         obj=process_mesh_file(fname,ext)
     elif ext.lower() == 'dxf' :
         obj=processDXF(fname,layer)
+    elif ext.lower() == 'svg' :
+        #import importSVG ?
+        obj=importSVG.insert(fname,"svg")
     else:
         raise ValueError("Unsupported file extension %s" % ext)
     return(obj)
