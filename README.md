@@ -18,8 +18,9 @@ version to use.
 
 ### Changes from standard Importer
 
-**Minkowski** for two objects are colour coded red & green rather than use the OpenSCAD binary
-          to produce a meshed minkowski. The idea being that a FreeCAD user can then make
-          changes to the indicated objects i.e. Add fillets before deleting other object etc.
+**Minkowski** for two objects are colour coded red & green
+              rather than use the OpenSCAD binary to produce a meshed minkowski.
+              The idea being that a FreeCAD user can then make changes to the indicated objects
+              i.e. Add fillets etc to the Red object before deleting the green object.
 
 **Hull** requests for two 2D objects are dealt with as a **Loft** between rather that handled as Meshes.
