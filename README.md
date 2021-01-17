@@ -1,18 +1,25 @@
-# OpenSCAD
-Inprocess : Installable version of FreeCAD OpenSCAD workbench.
+## Alternate OpenSCAD Importer
 
-#Install : To install in a version of FreeCAD which comes with the old OpenSCAD workbench
+### Installation
 
-* remove current ../Mod/OpenSCAD directory
-* change to ../Mod
-* git clone https://github.com/KeithSloan/OpenSCAD.git
+Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
+     use FreeCAD 0.19 instead.
 
-For linux FreeCAD is installed in /usr/lib/freecad so OpenSCAD directory is /usr/lib/freecad/Mod/OpenSCAD
-and you will have to prefix commands with sudo
+* Invoke the Addon Manager - Tools | Adddon manager
+* Select Configure..
+* Into Custom respositories enter https://github.com/KeithSloan/OpenSCAD_Alt_Import.git
+* Then OK
+* Restart FreeCAD
 
-#branch : IndicatMinkowski
+### Use
 
-A trial version of importer that if minkowski request is for two objects, colour codes then
-rather than use OpenSCAD binary to produce mesh of minkowski.
+With the workbench installed when opening a File the user will be prompted with which
+version to use.
 
-The idea being that a FreeCAD user can then make changes to the indicated objects i.e. Add fillets before deleting other object etc.
+### Changes from standard Importer
+
+**Minkowski** for two objects are colour coded red & green rather than use the OpenSCAD binary
+          to produce a meshed minkowski. The idea being that a FreeCAD user can then make
+          changes to the indicated objects i.e. Add fillets before deleting other object etc.
+
+**Hull** requests for two 2D objects are dealt with as a **Loft** between rather that handled as Meshes.
