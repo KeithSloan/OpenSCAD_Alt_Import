@@ -177,11 +177,17 @@ def p_render_action(p):
 def p_group_action1(p):
     'group_action1 : group LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print("Group")
-# Test if need for implicit fuse
+    # Fuse as initally implement not valid as it is union
+    # Compound is Not Parametric
+    # Try App::GroupObject as should make parametric
     if (len(p[5]) > 1) :
-        p[0] = [fuse(p[5],"Group")]
-    else :
-        p[0] = p[5]
+       #[0] = [fuse(p[5],"Group")]
+       mygrp = doc.addObject("App::DocumentObjectGroup",p[1])
+       mygrp.addObjects(p[5])
+       p[0] = [mygrp]
+ 
+    else : # Group of single item - Just ignore
+       p[0] = p[5]
 
 def p_group_action2(p) :
     'group_action2 : group LPAREN RPAREN SEMICOL'
@@ -437,57 +443,66 @@ def planeFromNormalPoints(a,b,dl) :
     p.Placement = FreeCAD.Placement(a,FreeCAD.Rotation(c,b.sub(a)))
     return(p)
 
+#def checkBlock(blk) :
+#    if len(blk) == 1 and blk[0].TypeId == 
+
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print('hull function')
-    #print(p[5])
-    #print(len(p[5]))
+    print(p[5])
     for i in p[5] :
-        checkObjShape(i)
-    if len(p[5]) == 2 :
-       if checkObjType2D(p[5][0]) and checkObjType2D(p[5][1]) :
-          myloft = doc.addObject('Part::Loft',p[1])
-          myloft.Sections = [p[5][0], p[5][1]]
-          #print(dir(myloft))
-          p[0] = [myloft]
-          return
+        print(i.Label)
+        print(i.TypeId)
+        if i.TypeId == 'App::DocumentObjectGroup' :
+           print(i.InList)
+           print(i.Group)
+           if len(i.Group) == 2 :
+              print(i.Group[0].Label)
+              print(i.Group[1].Label)
+              hullTwoObj(i.Group[0],i.Group[1],p[1])
+           print(dir(i))
+    #print(len(p[5]))
+    p[0] = p[5]
 
-       elif not checkObjType2D(p[5][0]) and not checkObjType2D(p[5][0]) :
-          print('Two 3D')
-          obj1 = p[5][0]
-          print(dir(obj1.Shape))
-          obj2 = p[5][1]
-          a = obj1.Shape.CenterOfMass
-          b = obj2.Shape.CenterOfMass
-          print('a : '+str(a))          
-          print('b : '+str(b))
-          plane1 = planeFromNormalPoints(a,b,obj1.Shape.BoundBox.DiagonalLength)
-          Part.show(plane1)
-          sect1 = obj1.Shape.section(plane1)  # Compund of Edges
-          wire1 = Part.Wire(Part.sortEdges(sect1.Edges)[0])
-          print(dir(sect1))
-          print(sect1.ShapeType)
-          print(sect1.TypeId)
-          Part.show(sect1)
-          plane2 = planeFromNormalPoints(b,a,obj1.Shape.BoundBox.DiagonalLength)
-          Part.show(plane2)
-          sect2 = obj2.Shape.section(plane2)
-          wire2 = Part.Wire(Part.sortEdges(sect2.Edges)[0])
-          Part.show(sect2)
-          loftShape = Part.makeLoft([wire1,wire2])
-          #myloft = doc.addObject('Part::Loft',p[1])
-          # Need to add Wire objs to make parametric
-          myloft = doc.addObject('Part::Feature',p[1])
-          myloft.Shape = loftShape
-          myloft.Solid = False
-          myloft.Ruled = False
-          myloft.Closed = False
-          p[0] = [myloft]
-          #p[0] = p[5]
-          return
+def hullTwoObj(obj1, obj2, name ) :
+
+    #print(obj1.isValid())
+    if checkObjType2D(obj1) and checkObjType2D(obj2) :
+       myloft = doc.addObject('Part::Loft',name)
+       myloft.Sections = [obj1, obj2]
+       return myloft
+
+    elif not checkObjType2D(obj1) and not checkObjType2D(obj2) :
+       print('Two 3D '+obj1.Label+' '+obj2.Label)
+       a = obj1.Shape.CenterOfMass
+       b = obj2.Shape.CenterOfMass
+       print('a : '+str(a))          
+       print('b : '+str(b))
+       plane1 = planeFromNormalPoints(a,b,obj1.Shape.BoundBox.DiagonalLength)
+       #Part.show(plane1)
+       sect1 = obj1.Shape.section(plane1)  # Compund of Edges
+       wire1 = Part.Wire(Part.sortEdges(sect1.Edges)[0])
+       #print(dir(sect1))
+       #print(sect1.ShapeType)
+       #print(sect1.TypeId)
+       #Part.show(sect1)
+       plane2 = planeFromNormalPoints(b,a,obj1.Shape.BoundBox.DiagonalLength)
+       #Part.show(plane2)
+       sect2 = obj2.Shape.section(plane2)
+       wire2 = Part.Wire(Part.sortEdges(sect2.Edges)[0])
+       #Part.show(sect2)
+       loftShape = Part.makeLoft([wire1,wire2])
+       #myloft = doc.addObject('Part::Loft',name)
+       # Need to add Wire objs to make parametric
+       myloft = doc.addObject('Part::Feature',name)
+       myloft.Shape = loftShape
+       #myloft.Solid = False
+       #myloft.Ruled = False
+       #myloft.Closed = False
+       return myloft
 
     from OpenSCADFeatures import CGALFeature
-    p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+    return(CGALFeatureObj(name,[obj1,obj2]))
 
 
 def setObjColor(obj, color):
@@ -1044,21 +1059,24 @@ def p_cylinder_action(p):
     r2 = float(p[3]['r2'])
     #n = int(p[3]['$fn'])
     n = int(round(float(p[3]['$fn'])))
+    print('n : '+str(n))
     fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetInt('useMaxFN')
+    print('fnmax '+str(fnmax))
     if printverbose: print(p[3])
     if h > 0:
         if ( r1 == r2 and r1 > 0):
             if printverbose: print("Make Cylinder")
-            if n < 3 or fnmax != 0 and n > fnmax:
+            if n < 3 or fnmax != 0 and n > fnmax :
+            #if n < 3 or ( fnmax != 0 and n > fnmax ) :
                 mycyl=doc.addObject("Part::Cylinder",p[1])
                 mycyl.Height = h
                 mycyl.Radius = r1
             else :
                 if printverbose: print("Make Prism")
                 if False: #user Draft Polygon
-                    mycyl=doc.addObject("Part::Extrusion","prism")
+                    mycyl=doc.addObject("Part::Extrusion","EPrism")
                     mycyl.Dir = (0,0,h)
                     try :
                         import Draft
@@ -1076,10 +1094,12 @@ def p_cylinder_action(p):
                     if gui:
                         mycyl.Base.ViewObject.hide()
                 else: #Use Part::Prism primitive
-                    mycyl=doc.addObject("Part::Prism","prism")
+                    mycyl=doc.addObject("Part::Prism","Prism")
                     mycyl.Polygon = n
-                    mycyl.Circumradius  = r1
+                    mycyl.Circumradius = r1
                     mycyl.Height  = h
+                    mycyl.recompute()
+                    print(mycyl.Shape)
 
         elif (r1 != r2):
             if n < 3 or fnmax != 0 and n > fnmax:
