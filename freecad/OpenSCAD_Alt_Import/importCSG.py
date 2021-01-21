@@ -434,7 +434,15 @@ def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObjectPython' :
        if printverbose: print('2D')
        return True
-
+    if obj.TypeId == 'Part::Cut' or obj.TypeId == 'Part::Fuse' or \
+             obj.TypeId == 'Part::Common' :
+       print('Check Boolean')
+       print(obj.Base.TypeId)
+       print(obj.Tool.TypeId)
+       if checkObjType2D(obj.Base) == True and checkObjType2D(obj.Tool ) :
+          return True
+    return False
+    
 def planeFromNormalPoints(a,b,dl) :
     c = FreeCAD.Vector(0,0,1)
     print('c : '+str(c))
@@ -449,20 +457,31 @@ def planeFromNormalPoints(a,b,dl) :
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print('hull function')
+    print('hull')
     print(p[5])
+    # Process all groups in Block_list
     for i in p[5] :
         print(i.Label)
         print(i.TypeId)
         if i.TypeId == 'App::DocumentObjectGroup' :
+           print('Group')
            print(i.InList)
            print(i.Group)
            if len(i.Group) == 2 :
               print(i.Group[0].Label)
               print(i.Group[1].Label)
-              hullTwoObj(i.Group[0],i.Group[1],p[1])
+              p[5][i] = hullTwoObj(i.Group[0],i.Group[1],p[1])
            print(dir(i))
-    #print(len(p[5]))
-    p[0] = p[5]
+    ln = len(p[5])
+    print(ln)
+    if ln == 2 :
+       myhull = hullTwoObj(p[5][0], p[5][1], p[1])
+       p[0] = [myhull]
+       return
+    if ln == 1 :
+       p[0] = p[5][0]
+    else :
+       p[0] = p[5]
 
 def hullTwoObj(obj1, obj2, name ) :
 
