@@ -42,7 +42,7 @@ else:
 
 import ply.lex as lex
 import ply.yacc as yacc
-import Part
+import Part, Draft
 
 import OpenSCADFeatures
 import OpenSCADUtils
@@ -429,21 +429,17 @@ def checkObjType2D(obj) :
        if printverbose: print('2D')
        return True
 
-def planeFromNormalPoints(a,b) :
-    #dir = FreeCAD.Vector(a[0]-b[0], a[1]-b[1], a[2]-b[2])
-    d3 = FreeCAD.Vector(1/(a[0]-b[0]), 1/(a[1]-b[1]), 1/(a[2]-b[2]))
-    print('a cross b : '+str(a.cross(b)))
-    #d2 = a.cross(b)
-    #d2 = FreeCAD.Vector(0.0, 0.0, 1.0)
-    #d2 = FreeCAD.Vector(1.0,0.0,0.0)
-    d2 = FreeCAD.Vector(0.0,1.0,0.0)
-    print('d2 : '+str(d2))
-    return Part.makePlane(200,50,a,d2) 
+def planeFromNormalPoints(a,b,dl) :
+    c = FreeCAD.Vector(0,0,1)
+    print('c : '+str(c))
+    s = 2 * dl
+    p = Part.makePlane(s,s,FreeCAD.Vector(-dl,-dl,0),c)
+    p.Placement = FreeCAD.Placement(a,FreeCAD.Rotation(c,b.sub(a)))
+    return(p)
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print('hull function')
-    lofted = False
     #print(p[5])
     #print(len(p[5]))
     for i in p[5] :
@@ -453,33 +449,45 @@ def p_hull_action(p):
           myloft = doc.addObject('Part::Loft',p[1])
           myloft.Sections = [p[5][0], p[5][1]]
           #print(dir(myloft))
-          lofted = True
-       #else : # Two objects not both 2D
-       #   print(p[5][0].Shape.ShapeType)
-       #   print(dir(p[5][0]))
-       #   print(dir(p[5][0].Shape))
-       #   a = p[5][0].Shape.CenterOfMass
-       #   b = p[5][1].Shape.CenterOfMass
-       #   print('a : '+str(a))          
-       #   print('b : '+str(b))
-       #   plane1 = planeFromNormalPoints(a,b)
-       #   myloft = doc.addObject('Part::Plane',p[1])
-       #   myloft.Length = 100
-       #   myloft.Width = 50
-       #   myloft.Placement.Base = a
-       #   myloft.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,1.0,0.0),90)
-       #   #myloft.Shape = plane1
-       #   print(dir(myloft))
-       #   print(dir(plane1))
-       #   #myloft = doc.addObject('Part::Loft',p[1])
-       #   #myloft.Sections = [p[5][0], p[5][1]]
-       #   #print(dir(myloft))
-       #   lofted = True
-    if lofted == False :
-       from OpenSCADFeatures import CGALFeature
-       p[0] = [ CGALFeatureObj(p[1],p[5]) ]
-    else :
-       p[0] =[myloft]
+          p[0] = [myloft]
+          return
+
+       elif not checkObjType2D(p[5][0]) and not checkObjType2D(p[5][0]) :
+          print('Two 3D')
+          obj1 = p[5][0]
+          print(dir(obj1.Shape))
+          obj2 = p[5][1]
+          a = obj1.Shape.CenterOfMass
+          b = obj2.Shape.CenterOfMass
+          print('a : '+str(a))          
+          print('b : '+str(b))
+          plane1 = planeFromNormalPoints(a,b,obj1.Shape.BoundBox.DiagonalLength)
+          Part.show(plane1)
+          sect1 = obj1.Shape.section(plane1)  # Compund of Edges
+          wire1 = Part.Wire(Part.sortEdges(sect1.Edges)[0])
+          print(dir(sect1))
+          print(sect1.ShapeType)
+          print(sect1.TypeId)
+          Part.show(sect1)
+          plane2 = planeFromNormalPoints(b,a,obj1.Shape.BoundBox.DiagonalLength)
+          Part.show(plane2)
+          sect2 = obj2.Shape.section(plane2)
+          wire2 = Part.Wire(Part.sortEdges(sect2.Edges)[0])
+          Part.show(sect2)
+          loftShape = Part.makeLoft([wire1,wire2])
+          #myloft = doc.addObject('Part::Loft',p[1])
+          # Need to add Wire objs to make parametric
+          myloft = doc.addObject('Part::Feature',p[1])
+          myloft.Shape = loftShape
+          myloft.Solid = False
+          myloft.Ruled = False
+          myloft.Closed = False
+          p[0] = [myloft]
+          #p[0] = p[5]
+          return
+
+    from OpenSCADFeatures import CGALFeature
+    p[0] = [ CGALFeatureObj(p[1],p[5]) ]
 
 
 def setObjColor(obj, color):
