@@ -69,6 +69,13 @@ except AttributeError:
         from PySide import QtGui
         return QtGui.QApplication.translate(context, text, None)
 
+def num(string) :
+    try :
+      v = int(string)
+    except :
+      v = float(string)
+    return v
+
 def open(filename):
     "called when freecad opens a file."
     global doc
@@ -1035,7 +1042,8 @@ def p_cylinder_action(p):
     r1 = float(p[3]['r1'])
     r2 = float(p[3]['r2'])
     #n = int(p[3]['$fn'])
-    n = int(round(float(p[3]['$fn'])))
+    #n = int(round(float(p[3]['$fn'])))
+    n = num(p[3]['$fn'])
     fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetInt('useMaxFN')
@@ -1145,7 +1153,8 @@ def p_circle_action(p) :
     r = float(p[3]['r'])
     # Avoid zero radius
     if r == 0 : r = 0.00001
-    n = int(p[3]['$fn'])
+    n = int(num(p[3]['$fn']))
+    #n = int(p[3]['$fn'])
     fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetInt('useMaxFN',50)
