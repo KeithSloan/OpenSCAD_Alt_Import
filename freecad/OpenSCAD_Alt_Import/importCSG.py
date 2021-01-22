@@ -43,6 +43,7 @@ else:
 import ply.lex as lex
 import ply.yacc as yacc
 import Part
+import random
 
 import OpenSCADFeatures
 import OpenSCADUtils
@@ -435,6 +436,11 @@ def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObjectPython' :
        if printverbose: print('2D')
        return True
+    if obj.TypeId == 'Part::Cut' or obj.TypeId == 'Part::Fuse' or \
+       obj.TypeId == 'Part::Common' or obj.TypeId == 'Part::MultiFuse' :
+       if checkObjType2D(obj.Base) and checkObjType2D(obj.Tool) :
+          return True
+    return  False
 
 def planeFromNormalPoints(a,b) :
     #dir = FreeCAD.Vector(a[0]-b[0], a[1]-b[1], a[2]-b[2])
@@ -446,6 +452,17 @@ def planeFromNormalPoints(a,b) :
     d2 = FreeCAD.Vector(0.0,1.0,0.0)
     print('d2 : '+str(d2))
     return Part.makePlane(200,50,a,d2) 
+
+def hullColour() :
+    return(random.random(),random.random(),0.5+random.random()/2)
+
+def setObjectColour(obj, col) :
+    if obj.TypeId == 'Part::Cut' or obj.TypeId == 'Part::Fuse' or \
+       obj.TypeId == 'Part::Common' or obj.TypeId == 'Part::MultiFuse' :
+       setObjectColour(obj.Base, col)
+       setObjectColour(obj.Tool, col)
+    else :
+       obj.ViewObject.ShapeColor = col
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
@@ -460,7 +477,8 @@ def p_hull_action(p):
           myloft = doc.addObject('Part::Loft',p[1])
           myloft.Sections = [p[5][0], p[5][1]]
           #print(dir(myloft))
-          lofted = True
+          p[0] = [myloft]
+          return
        #else : # Two objects not both 2D
        #   print(p[5][0].Shape.ShapeType)
        #   print(dir(p[5][0]))
@@ -482,12 +500,18 @@ def p_hull_action(p):
        #   #myloft.Sections = [p[5][0], p[5][1]]
        #   #print(dir(myloft))
        #   lofted = True
-    if lofted == False :
-       from OpenSCADFeatures import CGALFeature
-       p[0] = [ CGALFeatureObj(p[1],p[5]) ]
-    else :
-       p[0] =[myloft]
-
+    #if lofted == False :
+    #   from OpenSCADFeatures import CGALFeature
+    #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+    #else :
+    #
+    # Just set all to random colour with minimum blue
+    col = hullColour()
+    for i in p[5] :
+        setObjectColour(i,col)
+    myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
+    myloft.addObjects(p[5])
+    p[0] =[myloft]
 
 def setObjColor(obj, color):
     # set color for all faces of selected object

@@ -23,4 +23,5 @@ version to use.
               The idea being that a FreeCAD user can then make changes to the indicated objects
               i.e. Add fillets etc to the Red object before deleting the green object.
 
-* **Hull** requests for two 2D objects are dealt with as a **Loft** between rather that handled as Meshes.
+* **Hull** requests for two 2D objects are dealt with as a **Loft**.
+           For all other hull requests all Objects are colour coded the same colblue based colour i.e. All objects in the hull request will have the same colour
