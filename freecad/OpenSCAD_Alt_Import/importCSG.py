@@ -464,43 +464,74 @@ def setObjectColour(obj, col) :
     else :
        obj.ViewObject.ShapeColor = col
 
+def hullTwoEqCircles(obj1, obj2) :
+    print('hullTwoEqCircles')
+    return obj1
+
+def hullTwoCircles(obj1, obj2) :
+    print('hullTwoCircles')
+    return obj1
+
+def hullTwoEqSpheres(obj1, obj2) :
+    print('hullTwoEqSpheres')
+    return obj1
+
+def hullTwoSpheres(obj1, obj2) :
+    print('hullTwoSpheres')
+    #   print(dir(p[5][0].Shape))
+    #   a = p[5][0].Shape.CenterOfMass
+    #   b = p[5][1].Shape.CenterOfMass
+    #   print('a : '+str(a))          
+    #   print('b : '+str(b))
+    #   plane1 = planeFromNormalPoints(a,b)
+    #   myloft = doc.addObject('Part::Plane',p[1])
+    #   myloft.Length = 100
+    #   myloft.Width = 50
+    #   myloft.Placement.Base = a
+    #   myloft.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,1.0,0.0),90)
+    #   #myloft.Shape = plane1
+    #   print(dir(myloft))
+    #   print(dir(plane1))
+    #   #myloft = doc.addObject('Part::Loft',p[1])
+    #   #myloft.Sections = [p[5][0], p[5][1]]
+    #   #print(dir(myloft))
+    #   lofted = True
+    #if lofted == False :
+    return obj1
+
+def hullTwoEqCylinders(obj1, obj2) :
+    print('hullTwoEqCylinders')
+    return obj1
+
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print('hull function')
-    lofted = False
-    #print(p[5])
-    #print(len(p[5]))
-    for i in p[5] :
-        checkObjShape(i)
     if len(p[5]) == 2 :
-       if checkObjType2D(p[5][0]) and checkObjType2D(p[5][1]) :
-          myloft = doc.addObject('Part::Loft',p[1])
-          myloft.Sections = [p[5][0], p[5][1]]
-          #print(dir(myloft))
-          p[0] = [myloft]
-          return
-       #else : # Two objects not both 2D
-       #   print(p[5][0].Shape.ShapeType)
-       #   print(dir(p[5][0]))
-       #   print(dir(p[5][0].Shape))
-       #   a = p[5][0].Shape.CenterOfMass
-       #   b = p[5][1].Shape.CenterOfMass
-       #   print('a : '+str(a))          
-       #   print('b : '+str(b))
-       #   plane1 = planeFromNormalPoints(a,b)
-       #   myloft = doc.addObject('Part::Plane',p[1])
-       #   myloft.Length = 100
-       #   myloft.Width = 50
-       #   myloft.Placement.Base = a
-       #   myloft.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,1.0,0.0),90)
-       #   #myloft.Shape = plane1
-       #   print(dir(myloft))
-       #   print(dir(plane1))
-       #   #myloft = doc.addObject('Part::Loft',p[1])
-       #   #myloft.Sections = [p[5][0], p[5][1]]
-       #   #print(dir(myloft))
-       #   lofted = True
-    #if lofted == False :
+       obj1 = p[5][0]
+       obj2 = p[5][1]
+       checkObjShape(obj1)
+       checkObjShape(obj2)
+       if hasattr(obj1,'Radius') and hasattr(obj2,'Radius') :
+          if not hasattr(obj1,'Height') and not hasattr(obj2,'Height') :
+             if obj1.Shape.Volume == obj2.Shape.Volume == 0 :
+                if obj1.Radius == obj2.Radius :
+                   p[0] = hullTwoEqCircles(obj1,obj2)
+                   return
+                else :
+                   p[0] = hullTwoCircles(obj1,obj2)
+                   return
+             else :
+                if obj1.Radius == obj2.Radius :
+                   p[0] = hullTwoEqSpheres(obj1,obj2)
+                   return
+                else :
+                   p[0] = hullTwoSpheres(obj1,obj2)
+                   return
+          else :
+             if obj1.placment.Rotation == obj2.Placement.Rotation :
+                p[0] = hullTwoCylinders(obj1,obj2)
+                return
+
     #   from OpenSCADFeatures import CGALFeature
     #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
     #else :
