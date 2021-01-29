@@ -468,9 +468,48 @@ def hullTwoEqCircles(obj1, obj2) :
     print('hullTwoEqCircles')
     return obj1
 
-def hullTwoCircles(obj1, obj2) :
+def hullTwoCircles(obj1, obj2, name) :
     print('hullTwoCircles')
-    return obj1
+    # Thanks to wmayer
+    # swap obj1 and obj2 so that obj1 is the bigger circle
+    if obj2.Radius > obj1.Radius:
+        obj2, obj1 = obj1, obj2
+    
+    # helper circle located at c1
+    c3 = Part.Circle()
+    c3.Center = obj1.Center
+    c3.Radius = obj1.Radius - obj2.Radius
+    
+    # get the mid point of the line from the center of c1 to c2
+    v1 = obj1.Center
+    v2 = obj2.Center
+    v3 = (v1 + v2) / 2
+    
+    # Thales circle that is located in v3 and goes through
+    #  the center points of c1 and c2
+    c4 = Part.Circle()
+    c4.Center = v3
+    c4.Radius = (v1 - v2).Length / 2
+    
+    # Intersections of Thales and helper circle
+    p1, p2 = c4.intersect(c3)
+    t1 = c3.parameter(App.Vector(p1.X,p1.Y,p1.Z))
+    t2 = c3.parameter(App.Vector(p2.X,p2.Y,p2.Z))
+    
+    import math
+    # for the big circle we need the long arc
+    a1 = obj1.trim(t2,math.pi*2+t1)
+    # for the small circle we need the short arc
+    a2 = obj2.trim(t1,t2)
+    # the edges to connect the end points of the arcs
+    l1 = Part.makeLine(obj1.value(t1),obj2.value(t1))
+    l2 = Part.makeLine(obj2.value(t2),obj1.value(t2))
+    myWire = doc.addObject('Part::Feature',name)
+    myWire.Shape = Part.Wire([a1.toShape(), l1, a2.toShape(), l2])
+
+    myHull = doc.addObject("App::DocumentObjectGroup", "Hull")
+    myHull.addObjects([myWire, obj1, obj2 ])
+    return myHull
 
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
@@ -515,34 +554,33 @@ def p_hull_action(p):
           if not hasattr(obj1,'Height') and not hasattr(obj2,'Height') :
              if obj1.Shape.Volume == obj2.Shape.Volume == 0 :
                 if obj1.Radius == obj2.Radius :
-                   p[0] = hullTwoEqCircles(obj1,obj2)
-                   return
+                   hShape = hullTwoEqCircles(obj1,obj2)
                 else :
-                   p[0] = hullTwoCircles(obj1,obj2)
-                   return
+                   hShape = hullTwoCircles(obj1,obj2,p[1])
              else :
                 if obj1.Radius == obj2.Radius :
-                   p[0] = hullTwoEqSpheres(obj1,obj2)
-                   return
+                   hShape = hullTwoEqSpheres(obj1,obj2)
                 else :
-                   p[0] = hullTwoSpheres(obj1,obj2)
-                   return
+                   hShape = hullTwoSpheres(obj1,obj2)
           else :
              if obj1.placment.Rotation == obj2.Placement.Rotation :
-                p[0] = hullTwoCylinders(obj1,obj2)
-                return
+                hShape = hullTwoCylinders(obj1,obj2)
 
-    #   from OpenSCADFeatures import CGALFeature
-    #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
-    #else :
-    #
-    # Just set all to random colour with minimum blue
+       objHull = doc.addObject('Part::Feature',name)
+       objHull.Shape = hShape
+       myHull = doc.addObject("App::DocumentObjectGroup", "Hull")
+       myHull.addObjects([objHull,obj1,obj2])
+       p[0] =[myHull]
+
+    else :
+       #   from OpenSCADFeatures import CGALFeature
+       #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+       p[0] = p[5]
+
+    # Set all to random colour with minimum blue
     col = hullColour()
     for i in p[5] :
         setObjectColour(i,col)
-    myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
-    myloft.addObjects(p[5])
-    p[0] =[myloft]
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
