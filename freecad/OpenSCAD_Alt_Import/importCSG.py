@@ -433,7 +433,7 @@ def checkObjShape(obj) :
        obj.recompute()
 
 def checkObjType2D(obj) :
-    if obj.TypeId == 'Part::Part2DObjectPython' :
+    if obj.TypeId == 'Part::Part2DObject' :
        if printverbose: print('2D')
        return True
     if obj.TypeId == 'Part::Cut' or obj.TypeId == 'Part::Fuse' or \
@@ -474,15 +474,27 @@ def hullTwoCircles(obj1, obj2, name) :
     # swap obj1 and obj2 so that obj1 is the bigger circle
     if obj2.Radius > obj1.Radius:
         obj2, obj1 = obj1, obj2
+
+    print(obj1.Radius)
+    print(dir(obj1.Radius))
+    print(dir(obj1.Placement))
+    print(dir(obj1.Placement.Rotation))
+    c1 = Part.Circle(obj1.Placement.Base, obj1.Placement.Rotation.Axis, \
+         obj1.Radius.getValueAs('mm'))
+    c2 = Part.Circle(obj2.Placement.Base, obj2.Placement.Rotation.Axis, \
+         obj2.Radius.getValueAs('mm'))
     
     # helper circle located at c1
     c3 = Part.Circle()
-    c3.Center = obj1.Center
+    #c3.Center = obj1.Center
+    c3.Center = obj1.Placement.Base
     c3.Radius = obj1.Radius - obj2.Radius
     
     # get the mid point of the line from the center of c1 to c2
-    v1 = obj1.Center
-    v2 = obj2.Center
+    #v1 = obj1.Center
+    #v2 = obj2.Center
+    v1 = obj1.Placement.Base
+    v2 = obj2.Placement.Base
     v3 = (v1 + v2) / 2
     
     # Thales circle that is located in v3 and goes through
@@ -493,23 +505,28 @@ def hullTwoCircles(obj1, obj2, name) :
     
     # Intersections of Thales and helper circle
     p1, p2 = c4.intersect(c3)
-    t1 = c3.parameter(App.Vector(p1.X,p1.Y,p1.Z))
-    t2 = c3.parameter(App.Vector(p2.X,p2.Y,p2.Z))
+    t1 = c3.parameter(FreeCAD.Vector(p1.X,p1.Y,p1.Z))
+    t2 = c3.parameter(FreeCAD.Vector(p2.X,p2.Y,p2.Z))
     
     import math
     # for the big circle we need the long arc
-    a1 = obj1.trim(t2,math.pi*2+t1)
+    #a1 = obj1.Shape.trim(t2,math.pi*2+t1)
+    a1 = c1.trim(t2,math.pi*2+t1)
+    a1s = a1.toShape()
     # for the small circle we need the short arc
-    a2 = obj2.trim(t1,t2)
+    #a2 = obj2.Shape.trim(t1,t2)
+    a2 = c2.trim(t1,t2)
+    a2s = a2.toShape()
     # the edges to connect the end points of the arcs
-    l1 = Part.makeLine(obj1.value(t1),obj2.value(t1))
-    l2 = Part.makeLine(obj2.value(t2),obj1.value(t2))
-    myWire = doc.addObject('Part::Feature',name)
-    myWire.Shape = Part.Wire([a1.toShape(), l1, a2.toShape(), l2])
-
-    myHull = doc.addObject("App::DocumentObjectGroup", "Hull")
-    myHull.addObjects([myWire, obj1, obj2 ])
-    return myHull
+    l1 = Part.makeLine(c1.value(t1),c2.value(t1))
+    l2 = Part.makeLine(c2.value(t2),c1.value(t2))
+    #shape = Part.makeFace([Part.Wire([a1.toShape(), l1, a2.toShape(), l2])])
+    #shape = Part.makeFace([a1.toShape(), l1, a2.toShape(), l2])
+    wList = [a1, l1, a2, l2]
+    print(type(wList))
+    #shape = Part.makeFace([a1, l1, a2, l2])
+    shape = Part.makeFace(wList)
+    return shape
 
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
@@ -544,12 +561,20 @@ def hullTwoEqCylinders(obj1, obj2) :
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
+    printverbose=True
     if printverbose: print('hull function')
     if len(p[5]) == 2 :
        obj1 = p[5][0]
        obj2 = p[5][1]
+       print(obj1.TypeId)
+       print(obj1.Label)
+       print(obj1.Placement)
+       print(obj2.TypeId)
+       print(obj2.Label)
+       print(obj2.Placement)
        checkObjShape(obj1)
        checkObjShape(obj2)
+       print(dir(obj1))
        if hasattr(obj1,'Radius') and hasattr(obj2,'Radius') :
           if not hasattr(obj1,'Height') and not hasattr(obj2,'Height') :
              if obj1.Shape.Volume == obj2.Shape.Volume == 0 :
@@ -566,11 +591,12 @@ def p_hull_action(p):
              if obj1.placment.Rotation == obj2.Placement.Rotation :
                 hShape = hullTwoCylinders(obj1,obj2)
 
-       objHull = doc.addObject('Part::Feature',name)
+       objHull = doc.addObject('Part::Feature',p[1])
        objHull.Shape = hShape
-       myHull = doc.addObject("App::DocumentObjectGroup", "Hull")
-       myHull.addObjects([objHull,obj1,obj2])
-       p[0] =[myHull]
+       #myHull = doc.addObject("App::DocumentObjectGroup", "Hull")
+       #myHull.addObjects([objHull,obj1,obj2])
+       #p[0] =[myHull]
+       p[0] =[objHull]
 
     else :
        #   from OpenSCADFeatures import CGALFeature
@@ -581,6 +607,7 @@ def p_hull_action(p):
     col = hullColour()
     for i in p[5] :
         setObjectColour(i,col)
+    setObjectColour(hShape,col)
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
