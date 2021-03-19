@@ -462,10 +462,25 @@ def setObjectColour(obj, col) :
        setObjectColour(obj.Base, col)
        setObjectColour(obj.Tool, col)
     else :
-       obj.ViewObject.ShapeColor = col
+       if hasattr(obj,'ViewObject') :
+          if hasattr(obj.ViewObject,'ShapeColor') :
+             obj.ViewObject.ShapeColor = col
 
 def hullTwoEqCircles(obj1, obj2) :
     print('hullTwoEqCircles')
+    r = obj1.Radius
+    v1 = obj1.Placement.Base
+    v2 = obj2.Placement.Base
+    v3 = (v1 + v2) / 2
+    l1 = Part.makeLine(v1,v2)
+    n1 = l1.normalAt(v1)
+    n2 = l1.normalAt(v2)
+    t1 = n1.valueAt(r)
+    t2 = n1.valueAt(-r) 
+    s1 = n2.valueAt(r)
+    s2 = n2.valueAt(-r) 
+    l2 = Part.makeLine(t1,t2)
+    l3 = Part.makeLine(s1,s2)
     return obj1
 
 def hullTwoCircles(obj1, obj2, name) :
@@ -476,9 +491,9 @@ def hullTwoCircles(obj1, obj2, name) :
         obj2, obj1 = obj1, obj2
 
     print(obj1.Radius)
-    print(dir(obj1.Radius))
-    print(dir(obj1.Placement))
-    print(dir(obj1.Placement.Rotation))
+    #print(dir(obj1.Radius))
+    #print(dir(obj1.Placement))
+    #print(dir(obj1.Placement.Rotation))
     c1 = Part.Circle(obj1.Placement.Base, obj1.Placement.Rotation.Axis, \
          obj1.Radius.getValueAs('mm'))
     c2 = Part.Circle(obj2.Placement.Base, obj2.Placement.Rotation.Axis, \
@@ -493,9 +508,9 @@ def hullTwoCircles(obj1, obj2, name) :
     # get the mid point of the line from the center of c1 to c2
     #v1 = obj1.Center
     #v2 = obj2.Center
-    v1 = obj1.Placement.Base
-    v2 = obj2.Placement.Base
-    v3 = (v1 + v2) / 2
+    v1  = obj1.Placement.Base
+    v2  = obj2.Placement.Base
+    v3  = (v1 + v2) / 2
     
     # Thales circle that is located in v3 and goes through
     #  the center points of c1 and c2
@@ -520,13 +535,11 @@ def hullTwoCircles(obj1, obj2, name) :
     # the edges to connect the end points of the arcs
     l1 = Part.makeLine(c1.value(t1),c2.value(t1))
     l2 = Part.makeLine(c2.value(t2),c1.value(t2))
-    #shape = Part.makeFace([Part.Wire([a1.toShape(), l1, a2.toShape(), l2])])
-    #shape = Part.makeFace([a1.toShape(), l1, a2.toShape(), l2])
-    wList = [a1, l1, a2, l2]
-    print(type(wList))
-    #shape = Part.makeFace([a1, l1, a2, l2])
-    shape = Part.makeFace(wList)
-    return shape
+    wire = Part.Wire([a1.toShape(), l1, a2.toShape(), l2])
+    print(wire)
+    #face = Part.makeFace(wire)
+    face = Part.Face(wire)
+    return face
 
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
@@ -591,12 +604,15 @@ def p_hull_action(p):
              if obj1.placment.Rotation == obj2.Placement.Rotation :
                 hShape = hullTwoCylinders(obj1,obj2)
 
-       objHull = doc.addObject('Part::Feature',p[1])
-       objHull.Shape = hShape
-       #myHull = doc.addObject("App::DocumentObjectGroup", "Hull")
-       #myHull.addObjects([objHull,obj1,obj2])
-       #p[0] =[myHull]
-       p[0] =[objHull]
+       #objHull = doc.addObject('Part::Feature',p[1])
+       #objHull.Shape = hShape
+       #print(dir(objHull))
+       myHull = doc.addObject("App::DocumentObjectGroup", p[1])
+       myHull.addObjects([obj1,obj2])
+       myHull.addProperty('Part::PropertyPartShape','Shape','Base' \
+              'Shape').Shape = hShape
+       p[0] =[myHull]
+       #p[0] =[objHull]
 
     else :
        #   from OpenSCADFeatures import CGALFeature
