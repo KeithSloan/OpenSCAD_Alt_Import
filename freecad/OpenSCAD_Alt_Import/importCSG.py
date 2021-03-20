@@ -459,8 +459,9 @@ def hullColour() :
 def setObjectColour(obj, col) :
     if obj.TypeId == 'Part::Cut' or obj.TypeId == 'Part::Fuse' or \
        obj.TypeId == 'Part::Common' or obj.TypeId == 'Part::MultiFuse' :
-       setObjectColour(obj.Base, col)
-       setObjectColour(obj.Tool, col)
+       if hasattr(obj,'Tool') :
+          setObjectColour(obj.Base, col)
+          setObjectColour(obj.Tool, col)
     else :
        if hasattr(obj,'ViewObject') :
           if hasattr(obj.ViewObject,'ShapeColor') :
@@ -568,10 +569,18 @@ def hullTwoSpheres(obj1, obj2) :
     #if lofted == False :
     return obj1
 
-def hullTwoEqCylinders(obj1, obj2) :
+def hullTwoEqCylinders(obj1, obj2, name) :
     print('hullTwoEqCylinders')
-    print(dir(obj1))
-    return None
+    #print(dir(obj1))
+    #print(obj1.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1)))
+    cube=doc.addObject('Part::Box','Box')
+    cube.Length=(obj2.Placement.Base-obj1.Placement.Base).Length
+    cube.Width = cube.Height = 2 * obj1.Radius
+    #cube = ePart.Box((obj2.Placement.Base-obj1.Placement.Base).Length, \
+    #                   sideLen,sideLen)
+    cube.Placement.Base = obj1.Placement.Base + FreeCAD.Vector(0,-obj1.Radius,0)
+    cube.Placement.Rotation = obj1.Placement.Rotation
+    return fuse([obj1,cube,obj2],name)
 
 def hullTwoCylinders(obj1, obj2) :
     print('hullTwoCylinders')
@@ -611,20 +620,26 @@ def p_hull_action(p):
              if obj1.Placement.Rotation == obj2.Placement.Rotation :
                 if obj1.Height == obj2.Height :
                    if obj1.Radius == obj2.Radius :
-                      hShape = hullTwoEqCylinders(obj1,obj2)
+                      myHull = hullTwoEqCylinders(obj1,obj2, p[1])
                    else :
-                      hShape = hullTwoCylinders(obj1,obj2)
+                      myHull = hullTwoCylinders(obj1,obj2, p[1])
+                col = hullColour()
+                setObjectColour(myHull,col)
+                p[0] = [myHull]
+                return
 
     if hShape is not None :
+       print(hShape)
+       print(dir(hShape))
        objHull = doc.addObject('Part::Feature',p[1])
        objHull.Shape = hShape
-       print(dir(objHull))
+       p[0] =[objHull]
+       #print(dir(objHull))
        #myHull = doc.addObject("App::DocumentObjectGroup", p[1])
        #myHull.addObjects([obj1,obj2])
        #myHull.addProperty('Part::PropertyPartShape','Shape','Base' \
        #       'Shape').Shape = hShape
        #p[0] =[myHull]
-       p[0] =[objHull]
 
        # Set all to random colour with minimum blue
        col = hullColour()
