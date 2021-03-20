@@ -570,12 +570,19 @@ def hullTwoSpheres(obj1, obj2) :
 
 def hullTwoEqCylinders(obj1, obj2) :
     print('hullTwoEqCylinders')
-    return obj1
+    print(dir(obj1))
+    return None
+
+def hullTwoCylinders(obj1, obj2) :
+    print('hullTwoCylinders')
+    print(dir(obj1))
+    return None
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     printverbose=True
     if printverbose: print('hull function')
+    hShape = None
     if len(p[5]) == 2 :
        obj1 = p[5][0]
        obj2 = p[5][1]
@@ -601,29 +608,35 @@ def p_hull_action(p):
                 else :
                    hShape = hullTwoSpheres(obj1,obj2)
           else :
-             if obj1.placment.Rotation == obj2.Placement.Rotation :
-                hShape = hullTwoCylinders(obj1,obj2)
+             if obj1.Placement.Rotation == obj2.Placement.Rotation :
+                if obj1.Height == obj2.Height :
+                   if obj1.Radius == obj2.Radius :
+                      hShape = hullTwoEqCylinders(obj1,obj2)
+                   else :
+                      hShape = hullTwoCylinders(obj1,obj2)
 
-       #objHull = doc.addObject('Part::Feature',p[1])
-       #objHull.Shape = hShape
-       #print(dir(objHull))
-       myHull = doc.addObject("App::DocumentObjectGroup", p[1])
-       myHull.addObjects([obj1,obj2])
-       myHull.addProperty('Part::PropertyPartShape','Shape','Base' \
-              'Shape').Shape = hShape
-       p[0] =[myHull]
-       #p[0] =[objHull]
+    if hShape is not None :
+       objHull = doc.addObject('Part::Feature',p[1])
+       objHull.Shape = hShape
+       print(dir(objHull))
+       #myHull = doc.addObject("App::DocumentObjectGroup", p[1])
+       #myHull.addObjects([obj1,obj2])
+       #myHull.addProperty('Part::PropertyPartShape','Shape','Base' \
+       #       'Shape').Shape = hShape
+       #p[0] =[myHull]
+       p[0] =[objHull]
+
+       # Set all to random colour with minimum blue
+       col = hullColour()
+       for i in p[5] :
+           setObjectColour(i,col)
+       setObjectColour(hShape,col)
 
     else :
+       print('Not directly handled')
        #   from OpenSCADFeatures import CGALFeature
        #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
        p[0] = p[5]
-
-    # Set all to random colour with minimum blue
-    col = hullColour()
-    for i in p[5] :
-        setObjectColour(i,col)
-    setObjectColour(hShape,col)
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
