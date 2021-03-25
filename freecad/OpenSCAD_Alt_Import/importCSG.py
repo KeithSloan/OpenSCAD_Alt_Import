@@ -623,10 +623,10 @@ def p_hull_action(p):
                       myHull = hullTwoEqCylinders(obj1,obj2, p[1])
                    else :
                       myHull = hullTwoCylinders(obj1,obj2, p[1])
-                col = hullColour()
-                setObjectColour(myHull,col)
-                p[0] = [myHull]
-                return
+                   col = hullColour()
+                   setObjectColour(myHull,col)
+                   p[0] = [myHull]
+                   return
 
     if hShape is not None :
        print(hShape)
@@ -648,10 +648,10 @@ def p_hull_action(p):
        setObjectColour(hShape,col)
 
     else :
-       print('Not directly handled')
-       #   from OpenSCADFeatures import CGALFeature
-       #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
-       p[0] = p[5]
+       #print('Not directly handled')
+       from OpenSCADFeatures import CGALFeature
+       p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+       #p[0] = p[5]
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
@@ -1211,6 +1211,7 @@ def p_cylinder_action(p):
     fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetInt('useMaxFN')
+    if fnmax == 0 : fnmax = 16
     if printverbose: print(p[3])
     if h > 0:
         if ( r1 == r2 and r1 > 0):
