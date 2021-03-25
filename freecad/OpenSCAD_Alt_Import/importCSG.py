@@ -548,6 +548,65 @@ def hullTwoEqSpheres(obj1, obj2) :
 
 def hullTwoSpheres(obj1, obj2) :
     print('hullTwoSpheres')
+    # Same as two circles then revolve
+    # Thanks to wmayer
+    # swap obj1 and obj2 so that obj1 is the bigger circle
+    if obj2.Radius > obj1.Radius:
+        obj2, obj1 = obj1, obj2
+
+    print(obj1.Radius)
+    #print(dir(obj1.Radius))
+    #print(dir(obj1.Placement))
+    #print(dir(obj1.Placement.Rotation))
+    c1 = Part.Circle(obj1.Placement.Base, obj1.Placement.Rotation.Axis, \
+         obj1.Radius.getValueAs('mm'))
+    c2 = Part.Circle(obj2.Placement.Base, obj2.Placement.Rotation.Axis, \
+         obj2.Radius.getValueAs('mm'))
+    
+    # helper circle located at c1
+    c3 = Part.Circle()
+    #c3.Center = obj1.Center
+    c3.Center = obj1.Placement.Base
+    c3.Radius = obj1.Radius - obj2.Radius
+    
+    # get the mid point of the line from the center of c1 to c2
+    #v1 = obj1.Center
+    #v2 = obj2.Center
+    v1  = obj1.Placement.Base
+    v2  = obj2.Placement.Base
+    v3  = (v1 + v2) / 2
+    
+    # Thales circle that is located in v3 and goes through
+    #  the center points of c1 and c2
+    c4 = Part.Circle()
+    c4.Center = v3
+    c4.Radius = (v1 - v2).Length / 2
+    
+    # Intersections of Thales and helper circle
+    p1, p2 = c4.intersect(c3)
+    t1 = c3.parameter(FreeCAD.Vector(p1.X,p1.Y,p1.Z))
+    t2 = c3.parameter(FreeCAD.Vector(p2.X,p2.Y,p2.Z))
+    
+    import math
+    # for the big circle we need the long arc
+    #a1 = obj1.Shape.trim(t2,math.pi*2+t1)
+    a1 = c1.trim(t2,math.pi*2+t1)
+    a1s = a1.toShape()
+    # for the small circle we need the short arc
+    #a2 = obj2.Shape.trim(t1,t2)
+    a2 = c2.trim(t1,t2)
+    a2s = a2.toShape()
+    # the edges to connect the end points of the arcs
+    l1 = Part.makeLine(c1.value(t1),c2.value(t1))
+    l2 = Part.makeLine(c2.value(t2),c1.value(t2))
+    wire = Part.Wire([a1.toShape(), l1, a2.toShape(), l2])
+    print(wire)
+    #face = Part.makeFace(wire)
+    face = Part.Face(wire)
+    return face.revolve(v1,v2,360)
+
+def hullTwoEqSpheres(obj1, obj2) :
+    print('hullTwoEqSpheres')
     #   print(dir(p[5][0].Shape))
     #   a = p[5][0].Shape.CenterOfMass
     #   b = p[5][1].Shape.CenterOfMass
