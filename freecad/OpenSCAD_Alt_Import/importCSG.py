@@ -586,24 +586,36 @@ def hullTwoSpheres(obj1, obj2) :
     p1, p2 = c4.intersect(c3)
     t1 = c3.parameter(FreeCAD.Vector(p1.X,p1.Y,p1.Z))
     t2 = c3.parameter(FreeCAD.Vector(p2.X,p2.Y,p2.Z))
+    t3 = (t1+t2) / 2
     
     import math
     # for the big circle we need the long arc
     #a1 = obj1.Shape.trim(t2,math.pi*2+t1)
-    a1 = c1.trim(t2,math.pi*2+t1)
+    #a1 = c1.trim(t2+math.pi, t1 +2*math.pi)
+    a1 = c1.trim(t3+math.pi,t1+2*math.pi)
     a1s = a1.toShape()
     # for the small circle we need the short arc
     #a2 = obj2.Shape.trim(t1,t2)
-    a2 = c2.trim(t1,t2)
+    a2 = c2.trim(t1,t3)
     a2s = a2.toShape()
     # the edges to connect the end points of the arcs
     l1 = Part.makeLine(c1.value(t1),c2.value(t1))
-    l2 = Part.makeLine(c2.value(t2),c1.value(t2))
+    l2 = Part.makeLine(c2.value(t2),c1.value(t3+math.pi))
     wire = Part.Wire([a1.toShape(), l1, a2.toShape(), l2])
     print(wire)
     #face = Part.makeFace(wire)
-    face = Part.Face(wire)
-    return face.revolve(v1,v2,360)
+    #face = Part.Face(wire)
+    #Part.show(face)
+    #axisLine = v2.sub(v1)
+    base = c1.value(t3 + math.pi)
+    axisLine = c2.value(t3) - base
+    return(wire.revolve(base,axisLine))
+    #return(face.revolve(v3,FreeCAD.Vector(0,0,1),180))
+    
+    #return(face.revolve(v3,axisLine,360))
+    #return(face.revolve(FreeCAD.Vector(0,0,0),axisLine,360))
+    #return(face.revolve(face.CenterOfMass,axisLine,360))
+    #return face.revolve(v1,v2,360)
 
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
