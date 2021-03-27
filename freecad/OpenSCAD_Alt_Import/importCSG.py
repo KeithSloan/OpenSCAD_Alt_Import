@@ -47,6 +47,7 @@ import random
 
 import OpenSCADFeatures
 import OpenSCADUtils
+import OpenSCADHull
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
@@ -509,9 +510,12 @@ def p_hull_action(p):
     col = hullColour()
     for i in p[5] :
         setObjectColour(i,col)
-    myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
-    myloft.addObjects(p[5])
-    p[0] =[myloft]
+    #myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
+    #myloft.addObjects(p[5])
+    #p[0] =[myloft]
+    from OpenSCADHull import makeHull
+    myHull = makeHull(p[5],True)
+    p[0] = [myHull]
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
