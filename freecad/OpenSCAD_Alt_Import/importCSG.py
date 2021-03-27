@@ -500,18 +500,18 @@ def p_hull_action(p):
        #   #myloft.Sections = [p[5][0], p[5][1]]
        #   #print(dir(myloft))
        #   lofted = True
-    #if lofted == False :
-    #   from OpenSCADFeatures import CGALFeature
-    #   p[0] = [ CGALFeatureObj(p[1],p[5]) ]
+    if lofted == False :
+       from OpenSCADFeatures import CGALFeature
+       p[0] = [ CGALFeatureObj(p[1],p[5]) ]
     #else :
     #
     # Just set all to random colour with minimum blue
     col = hullColour()
     for i in p[5] :
         setObjectColour(i,col)
-    myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
-    myloft.addObjects(p[5])
-    p[0] =[myloft]
+    #myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
+    #myloft.addObjects(p[5])
+    #p[0] =[myloft]
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
@@ -1071,6 +1071,7 @@ def p_cylinder_action(p):
     fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
         GetInt('useMaxFN')
+    if fnmax == 0 : fnmax = 16
     if printverbose: print(p[3])
     if h > 0:
         if ( r1 == r2 and r1 > 0):
