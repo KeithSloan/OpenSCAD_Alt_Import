@@ -652,10 +652,61 @@ def hullTwoEqCylinders(obj1, obj2, name) :
     cube.Placement.Rotation = obj1.Placement.Rotation
     return fuse([obj1,cube,obj2],name)
 
-def hullTwoCylinders(obj1, obj2) :
-    print('hullTwoCylinders')
-    print(dir(obj1))
-    return None
+def chkParallel(obj1, obj2):
+    print('check Parallel')
+    m1   = obj1.Placement.Rotation.Matrix
+    print(m1)
+    m1D  = float(1/m1.determinant())
+    m1.scale(FreeCAD.Vector(m1D, m1D, m1D))
+    m1ND = m1.determinant()
+    m2 = obj2.Placement.Rotation.Matrix
+    print(m2)
+    m2D = float(1/m1.determinant())
+    m2.scale(FreeCAD.Vector(m2D, m2D, m2D))
+    m2ND = m2.determinant()
+    return(m1ND == m2ND)
+
+def perpendicular(obj) :
+    m1 = obj1.Placement.Rotation.Matrix
+    return(FreeCAD.Placement(m1.invert))
+
+
+def hullLoft(wire1, wire2, name) :
+    print('Loft')
+    loftShape = Part.makeLoft([wire1,wire2])
+    myLoft = doc.addObject('Part::Loft',name)
+    myLoft.Shape = loftShape
+    myLoft.Solid = False
+    myLoft.Ruled = False
+    myLoft.Closed = False
+    return myLoft
+
+def chk2D(obj) :
+    return  obj.Shape.Volume == 0 
+
+def chkLoftable(obj) :
+    print('chkLoftable : '+obj.TypeId) 
+    if obj.TypeId == 'Part::Cylinder' or \
+       obj.TypeId == 'Part::Cone' :
+       return True
+    else :
+       return False
+
+def chkDisplaced(obj1, obj2) :
+    a = obj1.Placement.Base
+    b = obj2.Placement.Base
+    return obj1.Height < b.sub(a).Length
+
+def getWire(obj) :
+    d = obj.Placement.Base + obj.Placement.Rotation.Axis.multiply(obj.Height)
+    if obj.TypeId == 'Part::Cylinder' :
+       r = obj.Radius
+    elif obj.TypeId == 'Part::Cone' :
+       if d < 0 :
+          r = obj.Radius2
+       else :
+          r = obj.Radius1
+    return d, Part.makeCircle(r)
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
@@ -673,30 +724,43 @@ def p_hull_action(p):
        print(obj2.Placement)
        checkObjShape(obj1)
        checkObjShape(obj2)
-       print(dir(obj1))
-       if hasattr(obj1,'Radius') and hasattr(obj2,'Radius') :
-          if not hasattr(obj1,'Height') and not hasattr(obj2,'Height') :
-             if obj1.Shape.Volume == obj2.Shape.Volume == 0 :
-                if obj1.Radius == obj2.Radius :
-                   hShape = hullTwoEqCircles(obj1,obj2)
-                else :
-                   hShape = hullTwoCircles(obj1,obj2,p[1])
-             else :
-                if obj1.Radius == obj2.Radius :
-                   hShape = hullTwoEqSpheres(obj1,obj2)
-                else :
-                   hShape = hullTwoSpheres(obj1,obj2)
+       #print(dir(obj1))
+       #print(dir(obj2))
+       if chk2D(obj1) and chk2D(obj2) :
+          if obj1.Radius == obj2.Radius :
+             hShape = hullTwoEqCircles(obj1,obj2)
           else :
-             if obj1.Placement.Rotation == obj2.Placement.Rotation :
-                if obj1.Height == obj2.Height :
-                   if obj1.Radius == obj2.Radius :
-                      myHull = hullTwoEqCylinders(obj1,obj2, p[1])
-                   else :
-                      myHull = hullTwoCylinders(obj1,obj2, p[1])
-                   col = hullColour()
-                   setObjectColour(myHull,col)
-                   p[0] = [myHull]
-                   return
+             hShape = hullTwoCircles(obj1,obj2,p[1])
+       if obj1.TypeId == 'Part::Sphere' and obj2.TypeId == 'Part::Sphere' :
+          hShape = hullTwoSpheres(obj1,obj2) 
+       elif chkParallel(obj1,obj2) :
+          #if chkConcentric(obj1,obj2) :
+          #if obj1.Placement.Rotation == obj2.Placement.Rotation :
+          if chkLoftable(obj1) and chkLoftable(obj2) :
+             print('Loftable')
+             if chkDisplaced(obj1,obj2) :
+                print('Loft Displaced')
+                d1, wire1 = getWire(obj1)
+                d2, wire2 = getWire(obj2)
+                wire1.translate(d1)
+                wire2.translate(d2)
+                p[0] = [hullLoft(wire1,wire2,p[1])]
+                return
+             else :
+                print('Loft Overlapped')
+
+       #if hasattr(obj1,'Radius') and hasattr(obj2,'Radius') :
+       #   print('Both have radius')
+       #if obj1.Placement.Rotation == obj2.Placement.Rotation :
+       #   if obj1.Height == obj2.Height :
+       #             if obj1.Radius == obj2.Radius :
+       #               myHull = hullTwoEqCylinders(obj1,obj2, p[1])
+       #            else :
+       #               myHull = hullTwoCylinders(obj1,obj2, p[1])
+       #            col = hullColour()
+       #            setObjectColour(myHull,col)
+       #            p[0] = [myHull]
+       #            return
 
     if hShape is not None :
        print(hShape)
@@ -718,7 +782,7 @@ def p_hull_action(p):
        setObjectColour(hShape,col)
 
     else :
-       #print('Not directly handled')
+       print('Not directly handled')
        from OpenSCADFeatures import CGALFeature
        p[0] = [ CGALFeatureObj(p[1],p[5]) ]
        #p[0] = p[5]
