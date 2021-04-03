@@ -396,34 +396,17 @@ def createHull(obj) :
 
              else :
                 print('Loft Overlapped')
-       #if hasattr(obj1,'Radius') and hasattr(obj2,'Radius') :
-       #   print('Both have radius')
-       #if obj1.Placement.Rotation == obj2.Placement.Rotation :
-       #   if obj1.Height == obj2.Height :
-       #             if obj1.Radius == obj2.Radius :
-       #               myHull = hullTwoEqCylinders(obj1,obj2, obj.Name)
-       #            else :
-       #               myHull = hullTwoCylinders(obj1,obj2, obj.Name)
-       #            col = hullColour()
-       #            setObjectColour(myHull,col)
-       #            p[0] = [myHull]
-       #            return
+          print('Not Loftable')
 
-    if hShape is not None :
-       return hShape
-
-    else :
-       print('Not directly handled')
-       print('Need to fix !!!!')
-       from OpenSCADFeatures import CGALFeature
-       p[0] = [ CGALFeatureObj(p[1],p[5]) ]
-       #p[0] = p[5]
-       if checkObjType2D(p[5][0]) and checkObjType2D(p[5][1]) :
-          myloft = doc.addObject('Part::Loft',p[1])
-          myloft.Sections = [p[5][0], p[5][1]]
-          #print(dir(myloft))
-          p[0] = [myloft]
-          return
+    print('Not directly handled')
+    #from OpenSCADFeatures import CGALFeature
+    #myObj = FreeCAD.ActiveDocument.addObject('Part::FeaturePython','Fred')
+    #CGALFeature(myObj,'hull',obj.Group)
+    # import OpenSCADFeatures
+    #return myObj.Shape
+    import OpenSCADUtils
+    return OpenSCADUtils.process_ObjectsViaOpenSCADShape(FreeCAD.ActiveDocument,\
+    obj.Group,'hull',maxmeshpoints=None)
 
 def makeHull(list, ex=False):
     doc = FreeCAD.ActiveDocument
