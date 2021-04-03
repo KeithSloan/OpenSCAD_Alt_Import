@@ -702,7 +702,7 @@ def getWire(obj) :
     if obj.TypeId == 'Part::Cylinder' :
        r = obj.Radius
     elif obj.TypeId == 'Part::Cone' :
-       if d < 0 :
+       if d.Length < 0 :
           r = obj.Radius2
        else :
           r = obj.Radius1
