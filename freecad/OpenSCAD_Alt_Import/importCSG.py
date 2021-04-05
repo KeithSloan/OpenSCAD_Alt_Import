@@ -737,20 +737,41 @@ def process_rotate_extrude(obj,angle):
 def p_rotate_extrude_action(p): 
     'rotate_extrude_action : rotate_extrude LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
     if printverbose: print("Rotate Extrude")
+    angle = 360.0
+    if 'angle' in p[3]:
+        angle = float(p[3]['angle'])
+    n = int(round(float(p[3]['$fn'])))
+    fnmax = FreeCAD.ParamGet(\
+        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+        GetInt('useMaxFN', 16)
     if (len(p[6]) > 1) :
         part = fuse(p[6],"Rotate Extrude Union")
     else :
         part = p[6][0]
-    angle = float(p[3]['angle'])    
-    p[0] = [process_rotate_extrude(part,angle)]
+
+    if n < 3 or fnmax != 0 and n > fnmax:
+        p[0] = [process_rotate_extrude(part,angle)]
+    else:
+        p[0] = [process_rotate_extrude_prism(part,angle,n)]
     if printverbose: print("End Rotate Extrude")
 
 def p_rotate_extrude_file(p):
     'rotate_extrude_file : rotate_extrude LPAREN keywordargument_list RPAREN SEMICOL'
     if printverbose: print("Rotate Extrude File")
+    angle = 360.0
+    if 'angle' in p[3]:
+        angle = float(p[3]['angle'])
     filen,ext =p[3]['file'] .rsplit('.',1)
     obj = process_import_file(filen,ext,p[3]['layer'])
-    p[0] = [process_rotate_extrude(obj)]
+    n = int(round(float(p[3]['$fn'])))
+    fnmax = FreeCAD.ParamGet(\
+        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+        GetInt('useMaxFN', 16)
+
+    if n < 3 or fnmax != 0 and n > fnmax:
+        p[0] = [process_rotate_extrude(obj,angle)]
+    else:
+        p[0] = [process_rotate_extrude_prism(obj,angle,n)]
     if printverbose: print("End Rotate Extrude File")
 
 def process_linear_extrude(obj,h) :
