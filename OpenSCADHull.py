@@ -234,6 +234,7 @@ def hullTwoCircles(obj1, obj2, name) :
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
     return obj1
+
 def hullTwoSpheres(obj1, obj2) :
     print('hullTwoSpheres')
     # Same as two circles then revolve
@@ -330,17 +331,12 @@ def hullTwoEqSpheres(obj1, obj2) :
 
 def chkParallel(obj1, obj2):
     print('check Parallel')
-    m1   = obj1.Placement.Rotation.Matrix
-    print(m1)
-    m1D  = float(1/m1.determinant())
-    m1.scale(FreeCAD.Vector(m1D, m1D, m1D))
-    m1ND = m1.determinant()
-    m2 = obj2.Placement.Rotation.Matrix
-    print(m2)
-    m2D = float(1/m1.determinant())
-    m2.scale(FreeCAD.Vector(m2D, m2D, m2D))
-    m2ND = m2.determinant()
-    return(m1ND == m2ND)
+    rot1   = obj1.Placement.Rotation
+    print(rot1)
+    rot2 = obj2.Placement.Rotation
+    print(rot2)
+    # true if rot1 = rot2
+    return abs((rot1.multiply(rot2.inverted())).Angle) < 1e-15
 
 def perpendicular(obj) :
     m1 = obj1.Placement.Rotation.Matrix
@@ -382,6 +378,7 @@ def createHull(obj) :
           return hullTwoSpheres(obj1,obj2)
 
        elif chkParallel(obj1,obj2) :
+          print('Parallel')
           #if chkConcentric(obj1,obj2) :
           #if obj1.Placement.Rotation == obj2.Placement.Rotation :
           if chkLoftable(obj1) and chkLoftable(obj2) :
