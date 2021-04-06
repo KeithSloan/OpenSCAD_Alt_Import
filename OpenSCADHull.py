@@ -151,9 +151,9 @@ def getWire(obj) :
        r = obj.Radius
     elif obj.TypeId == 'Part::Cone' :
        if d.Length < 0 :
-          r = obj.Radius2
-       else :
           r = obj.Radius1
+       else :
+          r = obj.Radius2
     return d, Part.makeCircle(r)
 
 def hullTwoEqCircles(obj1, obj2) :
@@ -336,7 +336,8 @@ def chkParallel(obj1, obj2):
     rot2 = obj2.Placement.Rotation
     print(rot2)
     # true if rot1 = rot2
-    return abs((rot1.multiply(rot2.inverted())).Angle) < 1e-15
+    #return abs((rot1.multiply(rot2.inverted())).Angle) < 1e-15
+    return FreeCAD.Rotation.isSame(rot1, rot2, 1e-15)
 
 def perpendicular(obj) :
     m1 = obj1.Placement.Rotation.Matrix
