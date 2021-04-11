@@ -395,6 +395,10 @@ def createHull(obj) :
              else :
                 print('Loft Overlapped')
           print('Not Loftable')
+          print(obj1.Placement.Rotation.RawAxis)
+          v1 = obj2.Placement.Base.sub(obj1.Placement.Base)
+          v2 = obj1.Placement.Rotation.RawAxis
+          print(v2.dot(v1)) 
 
     print('Not directly handled')
     #from OpenSCADFeatures import CGALFeature
