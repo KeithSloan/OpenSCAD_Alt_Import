@@ -351,7 +351,7 @@ def p_operation(p):
               | intersection_action
               | union_action
               | rotate_extrude_action
-              | linear_extrude_with_twist
+              | linear_extrude_with_transform
               | rotate_extrude_file
               | import_file1
               | surface_action
@@ -734,6 +734,21 @@ def process_rotate_extrude(obj,angle):
         newobj.ViewObject.hide()
     return(myrev)
 
+def process_rotate_extrude_prism(obj, angle, n):
+    newobj=doc.addObject("Part::FeaturePython",'PrismaticToroid')
+    PrismaticToroid(newobj, obj, angle, n)
+    newobj.Placement=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(0,0,90))
+    if gui:
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+            GetBool('useViewProviderTree'):
+            from OpenSCADFeatures import ViewProviderTree
+            ViewProviderTree(newobj.ViewObject)
+        else:
+            newobj.ViewObject.Proxy = 0
+        obj.ViewObject.hide()
+    return(newobj)
+
+
 def p_rotate_extrude_action(p): 
     'rotate_extrude_action : rotate_extrude LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
     if printverbose: print("Rotate Extrude")
@@ -799,9 +814,10 @@ def process_linear_extrude(obj,h) :
         newobj.ViewObject.hide()
     return(mylinear)
 
-def process_linear_extrude_with_twist(base,height,twist) :   
+def process_linear_extrude_with_transform(base,height,twist,scale) :   
+    from OpenSCADFeatures import Twist
     newobj=doc.addObject("Part::FeaturePython",'twist_extrude')
-    Twist(newobj,base,height,-twist) #base is an FreeCAD Object, height and twist are floats
+    Twist(newobj,base,height,-twist,scale) #base is an FreeCAD Object, height and twist are floats
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
@@ -813,15 +829,18 @@ def process_linear_extrude_with_twist(base,height,twist) :
     #ViewProviderTree(obj.ViewObject)
     return(newobj)
 
-def p_linear_extrude_with_twist(p):
-    'linear_extrude_with_twist : linear_extrude LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
-    if printverbose: print("Linear Extrude With Twist")
+def p_linear_extrude_with_transform(p):
+    'linear_extrude_with_transform : linear_extrude LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
+    if printverbose: print("Linear Extrude With Trasnform")
     h = float(p[3]['height'])
+    s = 1.0
+    t = 0.0
     if printverbose: print("Twist : ",p[3])
+    if 'scale' in p[3]:
+       s = [float(p[3]['scale'][0]), float(p[3]['scale'][1])]
+       print('Scale: '+str(s))
     if 'twist' in p[3]:
         t = float(p[3]['twist'])
-    else:
-        t = 0
     # Test if null object like from null text
     if (len(p[6]) == 0) :
         p[0] = []
@@ -830,8 +849,8 @@ def p_linear_extrude_with_twist(p):
         obj = fuse(p[6],"Linear Extrude Union")
     else :
         obj = p[6][0]
-    if t:
-        newobj = process_linear_extrude_with_twist(obj,h,t)
+    if t != 0.0 or s != 1.0:
+        newobj = process_linear_extrude_with_transform(obj,h,t,s)
     else:
         newobj = process_linear_extrude(obj,h)
     if p[3]['center']=='true' :

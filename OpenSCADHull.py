@@ -262,14 +262,18 @@ def hullTwoSpheres(obj1, obj2) :
     #v1 = obj1.Center
     #v2 = obj2.Center
     v1  = obj1.Placement.Base
+    print(v1)
     v2  = obj2.Placement.Base
+    print(v2)
     v3  = (v1 + v2) / 2
+    print(v3)
 
     # Thales circle that is located in v3 and goes through
     #  the center points of c1 and c2
     c4 = Part.Circle()
     c4.Center = v3
     c4.Radius = (v1 - v2).Length / 2
+    print(c4.Radius)
 
     # Intersections of Thales and helper circle
     p1, p2 = c4.intersect(c3)
