@@ -140,10 +140,20 @@ def chkLoftable(obj) :
     else :
        return False
 
+def getHeight(obj) :
+    if hasattr(obj,'Height') :
+       return obj.Height
+    if hasattr(obj,'Radius') :
+       return obj,Radius
+    if hasattr(obj,'Radius1') :
+       return obj,Radius1
+
 def chkDisplaced(obj1, obj2) :
     a = obj1.Placement.Base
     b = obj2.Placement.Base
-    return obj1.Height < b.sub(a).Length
+    lenApart = b.sub(a).Length
+    height = getHeight(obj1)
+    return lenApart > height
 
 def getWire(obj) :
     d = obj.Placement.Base + obj.Placement.Rotation.Axis.multiply(obj.Height)
@@ -431,6 +441,7 @@ def createHull(obj) :
     # import OpenSCADFeatures
     #return myObj.Shape
     import OpenSCADUtils
+    print('Process OpenSCAD Shapes via OpenSCAD')
     return OpenSCADUtils.process_ObjectsViaOpenSCADShape(FreeCAD.ActiveDocument,\
     obj.Group,'hull',maxmeshpoints=None)
 
