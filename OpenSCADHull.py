@@ -417,8 +417,8 @@ def createFace(coordList) :
     print(top)
     #poly = Part.makePolygon(top)
     #face = Part.makeFace(poly)
-    face = Part.makeFace(top)
-    return face
+    #face = Part.makeFace(top)
+    #return face
 
 def _isConvex(p, q, r):
     'return True if the vectors pq to qr is a right turn ie convex'
@@ -478,7 +478,7 @@ def createHull(group) :
                  pointLst.append(obj.Placement.Base+FreeCAD.Vector(0,r2,h))
              print(pointLst)
              face = createFace(pointLst)
-             Part.Show(face)
+             #Part.Show(face)
     #if chkConcentric(obj1,obj2) :
     #if obj1.Placement.Rotation == obj2.Placement.Rotation :
     #if chkLoftable(obj1) and chkLoftable(obj2) :
