@@ -30,7 +30,7 @@ class Hull(object):
             print('Update Shape??')
             #obj.Shape = obj.Group[0].Shape.fuse(
             #        [o.Shape for o in obj.Group[1:]]).removeSplitter()
-            obj.Shape = createHull(obj)
+            obj.Shape = createHull(obj.Group)
 
 class ViewProviderMyGroup(object):
     def __init__(self,vobj=None):
@@ -361,19 +361,71 @@ def hullTwoSpheres(obj1, obj2) :
     #return(face.revolve(face.CenterOfMass,axisLine,360))
     #return face.revolve(v1,v2,360)
 
-    
+### Check Placements    
 
-def chkParallel(obj1, obj2):
+def chkParallel(group):
     print('check Parallel')
-    rot1   = obj1.Placement.Rotation
+    rot1   = group[0].Placement.Rotation
     print(rot1)
-    rot2 = obj2.Placement.Rotation
-    print(rot2)
+    for obj in group[1:] :
+        rot2 = obj.Placement.Rotation
+        print(rot2)
+        if FreeCAD.Rotation.isSame(rot1, rot2, 1e-15) == False :
+           return False
+    return True
     # true if rot1 = rot2
     #return abs((rot1.multiply(rot2.inverted())).Angle) < 1e-15
-    return FreeCAD.Rotation.isSame(rot1, rot2, 1e-15)
+    #return FreeCAD.Rotation.isSame(rot1, rot2, 1e-15)
 
-def perpendicular(obj) :
+def chkCollinear(group) :       # Assumes already checked parallel
+    obj1 = group[0]
+    for obj2 in group[1:] :
+       dv = obj1.Placement.Base - obj2.Placement.Base #displacement
+       #symmetry axis direction of cylinder or cone
+       ax1 = obj1.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
+       ax2 = obj2.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
+       # Axis parallel to displacement?
+       align1 = dv.cross(ax1).Length <= 1e-15*dv.Length
+       align2 = dv.cross(ax2).Length <= 1e-15*dv.Length
+       if align1 and align2 ==  False :
+          return False
+    #isAligned = align1 and align2  # both lined up
+    return True
+
+def chkCircular(group) :
+    print('Check Circular')
+    for obj in group :
+       if obj.TypeId not in ['Part::Cylinder','Part::Cone'] :
+          return False
+    return True
+
+def getCircularDetails(obj):
+    print('Get circular Details')
+    if hasattr(obj,'Radius') :
+       return obj.Height,  obj.Radius, obj.Radius
+    if hasattr(obj,'Radius1') :
+       return obj.Height, obj.Radius1, obj.Radius2
+    print('Not circular')
+
+def createFace(coordList) :
+    points = sorted(coordList, key = lambda x: x[2]) # sort by z-coord
+    top = [points[0], points[1]]
+    for p in points[2:]:
+        top.append(p)
+        while len(top) > 2 and not _isConvex(*top[-3:]):
+            del top[-2]
+    print(top)
+    #poly = Part.makePolygon(top)
+    #face = Part.makeFace(poly)
+    face = Part.makeFace(top)
+    return face
+
+def _isConvex(p, q, r):
+    'return True if the vectors pq to qr is a right turn ie convex'
+    return q[0]*r[1] + p[0]*q[1] + r[0]*p[1] - \
+            (q[0]*p[1] + r[0]*q[1] + p[0]*r[1]) < 0
+
+def chkPerpendicular(obj) :
     m1 = obj1.Placement.Rotation.Matrix
     return(FreeCAD.Placement(m1.invert))
 
@@ -388,11 +440,11 @@ def hullLoft(wire1, wire2, name) :
     #return myLoft
     return loftShape
 
-def createHull(obj) :
+def createHull(group) :
     hShape = None
-    if len(obj.Group) == 2 :
-       obj1 = obj.Group[0]
-       obj2 = obj.Group[1]
+    if len(group) == 2 :
+       obj1 = group[0]
+       obj2 = group[1]
        print(obj1.TypeId)
        print(obj1.Label)
        print(obj1.Placement)
@@ -412,27 +464,40 @@ def createHull(obj) :
        if obj1.TypeId == 'Part::Sphere' and obj2.TypeId == 'Part::Sphere' :
           return hullTwoSpheres(obj1,obj2)
 
-       elif chkParallel(obj1,obj2) :
-          print('Parallel')
-          #if chkConcentric(obj1,obj2) :
-          #if obj1.Placement.Rotation == obj2.Placement.Rotation :
-          if chkLoftable(obj1) and chkLoftable(obj2) :
-             print('Loftable')
-             if chkDisplaced(obj1,obj2) :
-                print('Loft Displaced')
-                d1, wire1 = getWire(obj1)
-                d2, wire2 = getWire(obj2)
-                wire1.translate(d1)
-                wire2.translate(d2)
-                return hullLoft(wire1,wire2,obj.Name)
+    if chkParallel(group) :
+       print('Parallel')
+       if chkCollinear(group) :
+          print('Collinear')
+          if chkCircular(group) :
+             print('Circular')
+             pointLst = []
+             for obj in group :
+                 h,r1,r2 = getCircularDetails(obj)
+                 pointLst.append(obj.Placement.Base)
+                 pointLst.append(obj.Placement.Base+FreeCAD.Vector(0,r1,0))
+                 pointLst.append(obj.Placement.Base+FreeCAD.Vector(0,r2,h))
+             print(pointLst)
+             face = createFace(pointLst)
+             Part.Show(face)
+    #if chkConcentric(obj1,obj2) :
+    #if obj1.Placement.Rotation == obj2.Placement.Rotation :
+    #if chkLoftable(obj1) and chkLoftable(obj2) :
+    #   print('Loftable')
+    #   if chkDisplaced(obj1,obj2) :
+    #      print('Loft Displaced')
+    #      d1, wire1 = getWire(obj1)
+    #      d2, wire2 = getWire(obj2)
+    #      wire1.translate(d1)
+    #      wire2.translate(d2)
+    #      return hullLoft(wire1,wire2,obj.Name)
 
-             else :
-                print('Loft Overlapped')
-          print('Not Loftable')
-          print(obj1.Placement.Rotation.RawAxis)
-          v1 = obj2.Placement.Base.sub(obj1.Placement.Base)
-          v2 = obj1.Placement.Rotation.RawAxis
-          print(v2.dot(v1)) 
+    #   else :
+    #      print('Loft Overlapped')
+    #print('Not Loftable')
+    #print(obj1.Placement.Rotation.RawAxis)
+    #v1 = obj2.Placement.Base.sub(obj1.Placement.Base)
+    #v2 = obj1.Placement.Rotation.RawAxis
+    #print(v2.dot(v1)) 
 
     print('Not directly handled')
     #from OpenSCADFeatures import CGALFeature
