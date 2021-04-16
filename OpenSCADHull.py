@@ -1,4 +1,5 @@
 import FreeCAD, FreeCADGui, Part
+from FreeCAD import Units
 from pivy import coin
 
 class Hull(object):
@@ -402,28 +403,29 @@ def chkCircular(group) :
 def getCircularDetails(obj):
     print('Get circular Details')
     if hasattr(obj,'Radius') :
-       return obj.Height,  obj.Radius, obj.Radius
+       return obj.Height.Value, obj.Radius.Value, obj.Radius.Value
     if hasattr(obj,'Radius1') :
-       return obj.Height, obj.Radius1, obj.Radius2
+       return obj.Height.Value, obj.Radius1.Value, obj.Radius2.Value
     print('Not circular')
 
-def createFace(coordList) :
-    points = sorted(coordList, key = lambda x: x[2]) # sort by z-coord
+def createRevolveHull(coordlist) :
+    points = sorted(coordlist, key = lambda x: x[1]) # sort by x-coord
     top = [points[0], points[1]]
     for p in points[2:]:
         top.append(p)
         while len(top) > 2 and not _isConvex(*top[-3:]):
             del top[-2]
-    print(top)
-    #poly = Part.makePolygon(top)
-    #face = Part.makeFace(poly)
-    #face = Part.makeFace(top)
-    #return face
+    #print(top)
+    # close polygon
+    top.append(top[0])
+    poly = Part.makePolygon(top)
+    revHull = poly.revolve(FreeCAD.Vector(0,0,0),FreeCAD.Vector(0,0,1),360)
+    return revHull
 
 def _isConvex(p, q, r):
     'return True if the vectors pq to qr is a right turn ie convex'
-    return q[0]*r[1] + p[0]*q[1] + r[0]*p[1] - \
-            (q[0]*p[1] + r[0]*q[1] + p[0]*r[1]) < 0
+    return q[1]*r[2] + p[1]*q[2] + r[1]*p[2] - \
+            (q[1]*p[2] + r[1]*q[2] + p[1]*r[2]) < 0
 
 def chkPerpendicular(obj) :
     m1 = obj1.Placement.Rotation.Matrix
@@ -473,12 +475,19 @@ def createHull(group) :
              pointLst = []
              for obj in group :
                  h,r1,r2 = getCircularDetails(obj)
-                 pointLst.append(obj.Placement.Base)
-                 pointLst.append(obj.Placement.Base+FreeCAD.Vector(0,r1,0))
-                 pointLst.append(obj.Placement.Base+FreeCAD.Vector(0,r2,h))
+                 #print('h  : '+str(h))
+                 ax1 = obj.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
+                 #print('ax1 : '+str(ax1))
+                 ax = obj.Placement.Base.dot(ax1)
+                 #print('ax  : '+str(ax))
+                 bx = ax + h
+                 pointLst.append(FreeCAD.Vector(0,0,ax))
+                 pointLst.append(FreeCAD.Vector(0,r1,ax))
+                 pointLst.append(FreeCAD.Vector(0,r2,bx))
+                 pointLst.append(FreeCAD.Vector(0,0,bx))
              print(pointLst)
-             face = createFace(pointLst)
-             #Part.Show(face)
+             revHull = createRevolveHull(pointLst)
+             return revHull
     #if chkConcentric(obj1,obj2) :
     #if obj1.Placement.Rotation == obj2.Placement.Rotation :
     #if chkLoftable(obj1) and chkLoftable(obj2) :
@@ -508,7 +517,7 @@ def createHull(group) :
     import OpenSCADUtils
     print('Process OpenSCAD Shapes via OpenSCAD')
     return OpenSCADUtils.process_ObjectsViaOpenSCADShape(FreeCAD.ActiveDocument,\
-    obj.Group,'hull',maxmeshpoints=None)
+    group,'hull',maxmeshpoints=None)
 
 def makeHull(list, ex=False):
     doc = FreeCAD.ActiveDocument
