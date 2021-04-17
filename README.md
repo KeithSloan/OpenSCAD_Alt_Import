@@ -25,3 +25,10 @@ version to use.
 
 * **Hull** requests for two 2D objects are dealt with as a **Loft**.
            For all other hull requests all Objects are colour coded the same colblue based colour i.e. All objects in the hull request will have the same colour
+           
+           
+### Thanks to FreeCAD Users
+
+* wmayer
+* channes
+* edwilliams16
