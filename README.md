@@ -30,5 +30,5 @@ version to use.
 ### Thanks to FreeCAD Users
 
 * wmayer
-* channes
+* chennes
 * edwilliams16
