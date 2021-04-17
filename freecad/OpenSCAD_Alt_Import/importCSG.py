@@ -52,7 +52,7 @@ params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
 print(printverbose)
 print(params.GetContents())
-#printverbose = True
+printverbose = True
 # Get the token map from the lexer.  This is required.
 import tokrules
 from tokrules import tokens

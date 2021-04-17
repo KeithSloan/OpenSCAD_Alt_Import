@@ -184,15 +184,15 @@ def hullTwoEqCircles(obj1, obj2) :
     l3 = Part.makeLine(s1,s2)
     return obj1
 
-def hullTwoCircles(obj1, obj2, name) :
+def hullTwoCircles(obj1, obj2) :
     print('hullTwoCircles')
     # Thanks to wmayer
     # swap obj1 and obj2 so that obj1 is the bigger circle
-    if obj2.Radius > obj1.Radius:
+    if obj2.Radius.Value > obj1.Radius.Value:
         obj2, obj1 = obj1, obj2
 
-    print(obj1.Radius)
-    #print(dir(obj1.Radius))
+    print(obj1.Radius.Value)
+    print(obj2.Radius.Value)
     #print(dir(obj1.Placement))
     #print(dir(obj1.Placement.Rotation))
     c1 = Part.Circle(obj1.Placement.Base, obj1.Placement.Rotation.Axis, \
@@ -379,19 +379,27 @@ def chkParallel(group):
     #return FreeCAD.Rotation.isSame(rot1, rot2, 1e-15)
 
 def chkCollinear(group) :       # Assumes already checked parallel
+    print('Check Colinear')
     obj1 = group[0]
+    ax1 = obj1.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
     for obj2 in group[1:] :
        dv = obj1.Placement.Base - obj2.Placement.Base #displacement
        #symmetry axis direction of cylinder or cone
-       ax1 = obj1.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
        ax2 = obj2.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
        # Axis parallel to displacement?
        align1 = dv.cross(ax1).Length <= 1e-15*dv.Length
+       print(align1)
        align2 = dv.cross(ax2).Length <= 1e-15*dv.Length
-       if align1 and align2 ==  False :
+       print(align2)
+       if align1 == False or align2 ==  False :
           return False
     #isAligned = align1 and align2  # both lined up
     return True
+
+def chkOrthoganal(obj1, obj2) :
+    dv = obj1.Placement.Base - obj2.Placement.Base #displacement
+    ax1 = obj1.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
+    return ax1.dot(dv) <= 1e-15*dv.Length
 
 def chkCircular(group) :
     print('Check Circular')
@@ -457,11 +465,12 @@ def createHull(group) :
        checkObjShape(obj2)
        #print(dir(obj1))
        #print(dir(obj2))
+       print('Check 2D')
        if chk2D(obj1) and chk2D(obj2) :
           if obj1.Radius == obj2.Radius :
              return hullTwoEqCircles(obj1,obj2)
           else :
-             return hullTwoCircles(obj1,obj2,obj.Name)
+             return hullTwoCircles(obj1,obj2)
 
        if obj1.TypeId == 'Part::Sphere' and obj2.TypeId == 'Part::Sphere' :
           return hullTwoSpheres(obj1,obj2)
@@ -488,25 +497,17 @@ def createHull(group) :
              print(pointLst)
              revHull = createRevolveHull(pointLst)
              return revHull
-    #if chkConcentric(obj1,obj2) :
-    #if obj1.Placement.Rotation == obj2.Placement.Rotation :
-    #if chkLoftable(obj1) and chkLoftable(obj2) :
-    #   print('Loftable')
-    #   if chkDisplaced(obj1,obj2) :
-    #      print('Loft Displaced')
-    #      d1, wire1 = getWire(obj1)
-    #      d2, wire2 = getWire(obj2)
-    #      wire1.translate(d1)
-    #      wire2.translate(d2)
-    #      return hullLoft(wire1,wire2,obj.Name)
-
-    #   else :
-    #      print('Loft Overlapped')
-    #print('Not Loftable')
-    #print(obj1.Placement.Rotation.RawAxis)
-    #v1 = obj2.Placement.Base.sub(obj1.Placement.Base)
-    #v2 = obj1.Placement.Rotation.RawAxis
-    #print(v2.dot(v1)) 
+       if len(group) == 2 : 
+          obj0 = group[0]
+          obj1 = group[1]
+          if chkOrthoganal(obj0,obj1) :
+             print('Orthoganal')
+             if obj0.TypeId == 'Part::Cylinder' and \
+                obj1.TypeId == 'Part::Cylinder' :
+                if obj0.Height == obj1.Height :
+                   print('Hull two Cyls')
+                   face = hullTwoCircles(obj0,obj1)
+                   return face.extrude(FreeCAD.Vector(0,0,obj0.Height.Value))
 
     print('Not directly handled')
     #from OpenSCADFeatures import CGALFeature
