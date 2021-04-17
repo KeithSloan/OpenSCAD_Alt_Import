@@ -244,11 +244,11 @@ def hullTwoCircles(obj1, obj2) :
 
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
-    return obj1
+    ### For now treat as not equal
+    return hullTwoSpheres(obj1, obj2)
 
-
-def hullTwoEqSpheres(obj1, obj2) :
-    print('hullTwoEqSpheres')
+    #def hullTwoEqSpheres(obj1, obj2) :
+    #print('hullTwoEqSpheres')
     #   print(dir(p[5][0].Shape))
     #   a = p[5][0].Shape.CenterOfMass
     #   b = p[5][1].Shape.CenterOfMass
@@ -268,7 +268,7 @@ def hullTwoEqSpheres(obj1, obj2) :
     #   #print(dir(myloft))
     #   lofted = True
     #if lofted == False :
-    return obj1
+    #return obj1
 
 def someNormal(v):
     'Return some unit vector normal to v'
