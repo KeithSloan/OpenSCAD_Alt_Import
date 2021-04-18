@@ -23,5 +23,16 @@ version to use.
               The idea being that a FreeCAD user can then make changes to the indicated objects
               i.e. Add fillets etc to the Red object before deleting the green object.
 
-* **Hull** requests for two 2D objects are dealt with as a **Loft**.
-           For all other hull requests all Objects are colour coded the same colblue based colour i.e. All objects in the hull request will have the same colour
+* **Hull** A limited number of hull requests are converted to BREP equivalents
+              
+              - Collinear cylinders & cones
+              - Two Spheres
+              - Two Parallel Cylinders of equal length, orthogonaly displaced.
+               
+           others are dealt with as per standard importer i.e passed to OpenSCAD executable to create a Mesh
+                      
+### Thanks to FreeCAD Users
+
+* wmayer
+* chennes
+* edwilliams16
