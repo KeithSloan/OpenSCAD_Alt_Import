@@ -417,11 +417,11 @@ def getCircularDetails(obj):
     print('Not circular')
 
 def createRevolveHull(coordlist) :
-    points = sorted(coordlist, key = lambda x: x[1]) # sort by x-coord
+    points = sorted(coordlist, key = lambda x: x[2]) # sort by z-coord
     top = [points[0], points[1]]
     for p in points[2:]:
         top.append(p)
-        while len(top) > 2 and not _isConvex(*top[-3:]):
+        while len(top) > 2 and not _isConvex(*top[-3:],2,1):
             del top[-2]
     #print(top)
     # close polygon
@@ -430,10 +430,10 @@ def createRevolveHull(coordlist) :
     revHull = poly.revolve(FreeCAD.Vector(0,0,0),FreeCAD.Vector(0,0,1),360)
     return revHull
 
-def _isConvex(p, q, r):
+def _isConvex(p, q, r, ind1, ind2):
     'return True if the vectors pq to qr is a right turn ie convex'
-    return q[1]*r[2] + p[1]*q[2] + r[1]*p[2] - \
-            (q[1]*p[2] + r[1]*q[2] + p[1]*r[2]) < 0
+    return q[ind1]*r[ind2] + p[ind1]*q[ind2] + r[ind1]*p[ind2] - \
+            (q[ind1]*p[ind2] + r[ind1]*q[ind2] + p[ind1]*r[ind2]) < 0
 
 def chkPerpendicular(obj) :
     m1 = obj1.Placement.Rotation.Matrix
@@ -452,28 +452,20 @@ def hullLoft(wire1, wire2, name) :
 
 def createHull(group) :
     hShape = None
+    obj0 = group[0]
     if len(group) == 2 :
-       obj1 = group[0]
-       obj2 = group[1]
-       print(obj1.TypeId)
-       print(obj1.Label)
-       print(obj1.Placement)
-       print(obj2.TypeId)
-       print(obj2.Label)
-       print(obj2.Placement)
+       obj1 = group[1]
+       checkObjShape(obj0)
        checkObjShape(obj1)
-       checkObjShape(obj2)
-       #print(dir(obj1))
-       #print(dir(obj2))
        print('Check 2D')
-       if chk2D(obj1) and chk2D(obj2) :
-          if obj1.Radius == obj2.Radius :
-             return hullTwoEqCircles(obj1,obj2)
+       if chk2D(obj0) and chk2D(obj1) :
+          if obj0.Radius == obj1.Radius :
+             return hullTwoEqCircles(obj0,obj1)
           else :
-             return hullTwoCircles(obj1,obj2)
+             return hullTwoCircles(obj0,obj1)
 
-       if obj1.TypeId == 'Part::Sphere' and obj2.TypeId == 'Part::Sphere' :
-          return hullTwoSpheres(obj1,obj2)
+       if obj0.TypeId == 'Part::Sphere' and obj1.TypeId == 'Part::Sphere' :
+          return hullTwoSpheres(obj0,obj1)
 
     if chkParallel(group) :
        print('Parallel')
@@ -496,7 +488,12 @@ def createHull(group) :
                  pointLst.append(FreeCAD.Vector(0,0,bx))
              print(pointLst)
              revHull = createRevolveHull(pointLst)
+             # rotate from z-axis to collinear axis
+             revHull.Placement.Rotation = obj0.Placement.Rotation
+             print(obj0.Placement.Rotation)
+             print(revHull.Placement.Rotation)
              return revHull
+
        if len(group) == 2 : 
           obj0 = group[0]
           obj1 = group[1]
