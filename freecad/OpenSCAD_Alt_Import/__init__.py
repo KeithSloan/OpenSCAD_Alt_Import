@@ -1,3 +1,2 @@
-import FreeCAD
-FreeCAD.addImportType("New Importer CSG (*.csg)","freecad.OpenSCAD_Alt_Import.importCSG")
-FreeCAD.addImportType("New Importer SCAD (*.scad)","freecad.OpenSCAD_Alt_Import.importCSG")
+__path__ = __import__('pkgutil').extend_path(__path__, __name__)
+__import__("pkg_resources").declare_namespace(__name__)

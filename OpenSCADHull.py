@@ -528,5 +528,5 @@ def makeHull(list, ex=False):
     else:
         ViewProviderMyGroup(hullObj.ViewObject)
     hullObj.Group = list
-    hullObj.recompute()
+    hullObj.recompute(True)
     return hullObj
