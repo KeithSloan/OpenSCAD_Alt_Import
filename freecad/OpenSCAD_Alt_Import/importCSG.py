@@ -877,10 +877,9 @@ def p_surface_action(p):
 
 
 def process_import_file(fname,ext,layer):
+    from OpenSCADUtils import reverseimporttypes
     if printverbose: print("Importing : "+fname+"."+ext+" Layer : "+layer)
-    # reverseimporttypes MISSING
-    #      if ext.lower() in reverseimporttypes()['Mesh']:
-    if ext.lower() == 'stl' :
+    if ext.lower() in reverseimporttypes()['Mesh']:
         obj=process_mesh_file(fname,ext)
     elif ext.lower() == 'dxf' :
         obj=processDXF(fname,layer)
