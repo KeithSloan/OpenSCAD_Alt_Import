@@ -875,9 +875,12 @@ def p_surface_action(p):
     p[0] = [obj]
     if printverbose: print("End surface")
 
+
 def process_import_file(fname,ext,layer):
     if printverbose: print("Importing : "+fname+"."+ext+" Layer : "+layer)
-    if ext.lower() in reverseimporttypes()['Mesh']:
+    # reverseimporttypes MISSING
+    #      if ext.lower() in reverseimporttypes()['Mesh']:
+    if ext.lower() == 'stl' :
         obj=process_mesh_file(fname,ext)
     elif ext.lower() == 'dxf' :
         obj=processDXF(fname,layer)
