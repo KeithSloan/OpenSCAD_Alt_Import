@@ -187,6 +187,7 @@ def p_group_action1(p):
     if printverbose: print("Group")
 # Test if need for implicit fuse
     if (len(p[5]) > 1) :
+        if printverbose: print('Fuse Group')
         p[0] = [fuse(p[5],"Group")]
     else :
         p[0] = p[5]
@@ -625,8 +626,11 @@ def p_error(p):
 
 def fuse(lst,name):
     global doc
-    if printverbose: print("Fuse")
-    if printverbose: print(lst)
+    if printverbose: 
+       print("Fuse")
+       print(lst)
+       for obj in lst :
+           print(obj.Label)
     if len(lst) == 0:
         myfuse = placeholder('group',[],'{}')
     elif len(lst) == 1:
