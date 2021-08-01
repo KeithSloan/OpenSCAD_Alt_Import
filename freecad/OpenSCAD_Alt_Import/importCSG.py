@@ -1054,7 +1054,7 @@ def performMultMatrix(part, matrixisrounded, transform_matrix) :
         if gui:
             part.ViewObject.hide()
 #   Does not fix problemfile or beltTighener although later is closer       
-        newobj=doc.addObject("Part::FeaturePython",'RefineMultMatrix')
+#        newobj=doc.addObject("Part::FeaturePython",'RefineMultMatrix')
 #    if False :  
 #         RefineShape(newobj,new_part)
 #         if gui:
