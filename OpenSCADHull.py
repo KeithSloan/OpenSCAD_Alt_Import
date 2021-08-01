@@ -30,12 +30,6 @@ class Hull(object):
            if len(obj.Group) > 1 :
               obj.Shape = createHull(obj.Group)
               return
-           else :
-              # Could be Fused multmatrix
-              print(obj.Group)
-              print(obj.Group[0].Name)
-              print(obj.Group[0].TypeId)
-              obj.Shape = createHull([obj.Group[0].Base, obj.Group[0].Tool])
         else :
            print('Error Invalid hull request')
 

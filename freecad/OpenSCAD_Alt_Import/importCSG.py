@@ -967,9 +967,9 @@ def processSTL(fname):
 
 def p_multmatrix_action(p):
     'multmatrix_action : multmatrix LPAREN matrix RPAREN OBRACE block_list EBRACE'
-    from OpenSCADUtils import isspecialorthogonalpython, \
-         fcsubmatrix, roundrotation, isrotoinversionpython, \
-         decomposerotoinversion
+    #from OpenSCADUtils import isspecialorthogonalpython, \
+    #     fcsubmatrix, roundrotation, isrotoinversionpython, \
+    #     decomposerotoinversion
     from OpenSCADFeatures import RefineShape     
     if printverbose: print("MultMatrix")
     transform_matrix = FreeCAD.Matrix()
@@ -995,21 +995,27 @@ def p_multmatrix_action(p):
        print(dir(p))
     if (len(p[6]) == 0) :
         part = placeholder('group',[],'{}')
-    elif (len(p[6]) > 1) :
-        part = fuse(p[6],"Matrix Union")
     else :
-        part = p[6][0]
+        retList = []
+        for part in p[6] :
+           retList.append(performMultMatrix(part,matrixisrounded,transform_matrix))
+        p[0] = retList
+
+def performMultMatrix(part, matrixisrounded, transform_matrix) :
+    from OpenSCADUtils import isspecialorthogonalpython, \
+         fcsubmatrix, roundrotation, isrotoinversionpython, \
+         decomposerotoinversion
     if (isspecialorthogonalpython(fcsubmatrix(transform_matrix))) :
-        if printverbose: print("special orthogonal")
-        if matrixisrounded:
-            if printverbose: print("rotation rounded")
-            plm=FreeCAD.Placement(transform_matrix)
-            plm=FreeCAD.Placement(plm.Base,roundrotation(plm.Rotation))
-            part.Placement=plm.multiply(part.Placement)
-        else:
-            part.Placement=FreeCAD.Placement(transform_matrix).multiply(\
-                    part.Placement)
-        new_part = part
+       if printverbose: print("special orthogonal")
+       if matrixisrounded:
+           if printverbose: print("rotation rounded")
+           plm=FreeCAD.Placement(transform_matrix)
+           plm=FreeCAD.Placement(plm.Base,roundrotation(plm.Rotation))
+           part.Placement=plm.multiply(part.Placement)
+       else:
+           part.Placement=FreeCAD.Placement(transform_matrix).multiply(\
+                   part.Placement)
+       new_part = part
     elif isrotoinversionpython(fcsubmatrix(transform_matrix)):
         if printverbose: print("orthogonal and inversion")
         cmat,axisvec = decomposerotoinversion(transform_matrix)
@@ -1043,22 +1049,23 @@ def p_multmatrix_action(p):
 #       Need to recompute to stop transformGeometry causing a crash        
         doc.recompute()
         new_part = doc.addObject("Part::Feature","Matrix Deformation")
-      #  new_part.Shape = part.Base.Shape.transformGeometry(transform_matrix)
+        #  new_part.Shape = part.Base.Shape.transformGeometry(transform_matrix)
         new_part.Shape = part.Shape.transformGeometry(transform_matrix) 
         if gui:
             part.ViewObject.hide()
-    if False :  
 #   Does not fix problemfile or beltTighener although later is closer       
         newobj=doc.addObject("Part::FeaturePython",'RefineMultMatrix')
-        RefineShape(newobj,new_part)
-        if gui:
-            newobj.ViewObject.Proxy = 0
-            new_part.ViewObject.hide()   
-        p[0] = [newobj]
-    else :
-        p[0] = [new_part]
-    if printverbose: print("Multmatrix applied")
-    
+#    if False :  
+#         RefineShape(newobj,new_part)
+#         if gui:
+#            newobj.ViewObject.Proxy = 0
+#            new_part.ViewObject.hide()   
+#               p[0] = [newobj]
+#           else :
+#               p[0] = [new_part]
+#           if printverbose: print("Multmatrix applied")
+    return new_part
+
 def p_matrix(p):
     'matrix : OSQUARE vector COMMA vector COMMA vector COMMA vector ESQUARE'
     if printverbose: print("Matrix")
