@@ -15,6 +15,7 @@ class Hull(object):
         return
 
     def attach(self,obj):
+        print('attach')
         obj.addExtension('App::GeoFeatureGroupExtensionPython')
         obj.Proxy = self
 
@@ -22,16 +23,21 @@ class Hull(object):
         self.Object = obj
 
     def execute(self, obj):
-        print('Hull Object Group : '+str(obj.Group))
-        if not obj.Group:
-            obj.Shape = Part.Shape()
-        elif len(obj.Group) == 1:
-            obj.Shape = obj.Group[0].Shape
-        else:
-            print('Update Shape??')
-            #obj.Shape = obj.Group[0].Shape.fuse(
-            #        [o.Shape for o in obj.Group[1:]]).removeSplitter()
-            obj.Shape = createHull(obj.Group)
+        print('Hull execute : '+obj.Label)
+        # Group jas been set to items on stack at time of hull request
+        if hasattr(obj,'Group') :
+           print('Has Group')
+           if len(obj.Group) > 1 :
+              obj.Shape = createHull(obj.Group)
+              return
+           else :
+              # Could be Fused multmatrix
+              print(obj.Group)
+              print(obj.Group[0].Name)
+              print(obj.Group[0].TypeId)
+              obj.Shape = createHull([obj.Group[0].Base, obj.Group[0].Tool])
+        else :
+           print('Error Invalid hull request')
 
 class ViewProviderMyGroup(object):
     def __init__(self,vobj=None):
@@ -507,6 +513,7 @@ def createHull(group) :
                    return face.extrude(FreeCAD.Vector(0,0,obj0.Height.Value))
 
     print('Not directly handled')
+    print(group)
     #from OpenSCADFeatures import CGALFeature
     #myObj = FreeCAD.ActiveDocument.addObject('Part::FeaturePython','Fred')
     #CGALFeature(myObj,'hull',obj.Group)
@@ -518,6 +525,8 @@ def createHull(group) :
     group,'hull',maxmeshpoints=None)
 
 def makeHull(list, ex=False):
+    print('makeHull')
+    print(list)
     doc = FreeCAD.ActiveDocument
     if not doc:
         doc = FreeCAD.newDocument()
@@ -527,6 +536,7 @@ def makeHull(list, ex=False):
         ViewProviderMyGroupEx(hullObj.ViewObject)
     else:
         ViewProviderMyGroup(hullObj.ViewObject)
+    # Make Group the objects to be Hulled
     hullObj.Group = list
     hullObj.recompute(True)
     return hullObj
