@@ -29,7 +29,8 @@ version to use.
               - Two Spheres
               - Two Parallel Cylinders of equal length, orthogonaly displaced.
                
-           others are dealt with as per standard importer i.e passed to OpenSCAD executable to create a Mesh
+           others are dealt with as per standard importer i.e passed to OpenSCAD
+           executable to create a Mesh
                       
 ### Thanks to FreeCAD Users
 
