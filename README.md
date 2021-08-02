@@ -13,8 +13,11 @@ Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
 
 ### Use
 
-With the workbench installed when opening a File the user will be prompted with which
-version to use.
+With the workbench installed when opening a CSG or SCAD File with 
+
+        FreeCAD | File | Open 
+
+the user will be prompted with which importer to use.
 
 ### Changes from standard Importer
 
