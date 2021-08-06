@@ -13,8 +13,11 @@ Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
 
 ### Use
 
-With the workbench installed when opening a File the user will be prompted with which
-version to use.
+With the workbench installed when opening a CSG or SCAD File with 
+
+        FreeCAD | File | Open 
+
+the user will be prompted with which importer to use.
 
 ### Changes from standard Importer
 
@@ -29,7 +32,8 @@ version to use.
               - Two Spheres
               - Two Parallel Cylinders of equal length, orthogonaly displaced.
                
-           others are dealt with as per standard importer i.e passed to OpenSCAD executable to create a Mesh
+           others are dealt with as per standard importer i.e passed to OpenSCAD
+           executable to create a Mesh
                       
 ### Thanks to FreeCAD Users
 
