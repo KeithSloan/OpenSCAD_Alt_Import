@@ -125,7 +125,7 @@ class ViewProviderMyGroupEx(ViewProviderMyGroup):
             self.setupShapeGroup()
 
 def checkObjShape(obj) :
-    print('Check Object Shape')
+    #print('Check Object Shape')
     if obj.Shape.isNull() == True :
        print('Shape is Null - recompute')
        obj.recompute()
@@ -244,31 +244,11 @@ def hullTwoCircles(obj1, obj2) :
 
 def hullTwoEqSpheres(obj1, obj2) :
     print('hullTwoEqSpheres')
-    ### For now treat as not equal
-    return hullTwoSpheres(obj1, obj2)
-
-    #def hullTwoEqSpheres(obj1, obj2) :
-    #print('hullTwoEqSpheres')
-    #   print(dir(p[5][0].Shape))
-    #   a = p[5][0].Shape.CenterOfMass
-    #   b = p[5][1].Shape.CenterOfMass
-    #   print('a : '+str(a))
-    #   print('b : '+str(b))
-    #   plane1 = planeFromNormalPoints(a,b)
-    #   myloft = doc.addObject('Part::Plane',p[1])
-    #   myloft.Length = 100
-    #   myloft.Width = 50
-    #   myloft.Placement.Base = a
-    #   myloft.Placement.Rotation = FreeCAD.Rotation(FreeCAD.Vector(0.0,1.0,0.0),90)
-    #   #myloft.Shape = plane1
-    #   print(dir(myloft))
-    #   print(dir(plane1))
-    #   #myloft = doc.addObject('Part::Loft',p[1])
-    #   #myloft.Sections = [p[5][0], p[5][1]]
-    #   #print(dir(myloft))
-    #   lofted = True
-    #if lofted == False :
-    #return obj1
+    vh = obj2.Placement.Base - obj1.Placement.Base
+    #print(vh.Length)
+    #mycyl = Part.makeCylinder(obj1.Radius,vh.Length)
+    mycyl = Part.makeCylinder(obj1.Radius,vh.Length,obj1.Placement.Base,vh,360)
+    return mycyl
 
 def someNormal(v):
     'Return some unit vector normal to v'
@@ -457,15 +437,18 @@ def createHull(group) :
        obj1 = group[1]
        checkObjShape(obj0)
        checkObjShape(obj1)
-       print('Check 2D')
        if chk2D(obj0) and chk2D(obj1) :
+          print('Both 2D')
           if obj0.Radius == obj1.Radius :
              return hullTwoEqCircles(obj0,obj1)
           else :
              return hullTwoCircles(obj0,obj1)
 
        if obj0.TypeId == 'Part::Sphere' and obj1.TypeId == 'Part::Sphere' :
-          return hullTwoSpheres(obj0,obj1)
+          if obj0.Radius == obj1.Radius :
+             return hullTwoEqSpheres(obj0,obj1)
+          else :
+             return hullTwoSpheres(obj0,obj1)
 
     if chkParallel(group) :
        print('Parallel')
