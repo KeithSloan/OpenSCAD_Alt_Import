@@ -1,4 +1,5 @@
 import FreeCAD, FreeCADGui, Part
+
 from FreeCAD import Units
 from pivy import coin
 
@@ -170,22 +171,40 @@ def getWire(obj) :
 def hullTwoEqCircles(obj1, obj2) :
     print('hullTwoEqCircles')
     r = obj1.Radius
+    print(f"(Radius : {r}")
     v1 = obj1.Placement.Base
     v2 = obj2.Placement.Base
-    v3 = (v1 + v2) / 2
-    l1 = Part.makeLine(v1,v2)
-    n1 = l1.normalAt(v1)
-    n2 = l1.normalAt(v2)
-    t1 = n1.valueAt(r)
-    t2 = n1.valueAt(-r)
-    s1 = n2.valueAt(r)
-    s2 = n2.valueAt(-r)
-    l2 = Part.makeLine(t1,t2)
-    l3 = Part.makeLine(s1,s2)
-    return obj1
+    nm = someNormal(v1 - v2)
+    #print(f"Normal {nm}")
+    ln = v1-v2
+    dv = ln.cross(nm)
+    #print(f"dv {dv}")
+    dn = dv.normalize()
+    #print(f"Normalised {dn}")
+    dr = dn.multiply(r)
+    #print(f"dr : {dr}")
+    t11 = v1.sub(dr)
+    #print(t11)
+    t12 = v1.add(dr)
+    t21 = v2.add(dr)
+    t22 = v2.sub(dr)
+    l1 = Part.makeLine(t11,t12)
+    l2 = Part.makeLine(t12,t21)
+    l3 = Part.makeLine(t21,t22)
+    l4 = Part.makeLine(t22,t11)
+    wire = Part.Wire([l1,l2,l3,l4])
+    #print(wire)
+    #face = Part.makeFace(wire)
+    face = Part.Face(wire)
+    #return(face)
+    return obj1.Shape.fuse(face.fuse(obj2.Shape))
+    #return rect
 
 def hullTwoCircles(obj1, obj2) :
     print('hullTwoCircles')
+    if obj1.Radius == obj2.Radius :
+       return(hullTwoEqCircles(obj1,obj2))
+
     # Thanks to wmayer
     # swap obj1 and obj2 so that obj1 is the bigger circle
     if obj2.Radius.Value > obj1.Radius.Value:

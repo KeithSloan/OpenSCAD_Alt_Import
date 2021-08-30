@@ -739,6 +739,8 @@ def process_rotate_extrude(obj,angle):
     return(myrev)
 
 def process_rotate_extrude_prism(obj, angle, n):
+    from OpenSCADFeatures import PrismaticToroid      
+
     newobj=doc.addObject("Part::FeaturePython",'PrismaticToroid')
     PrismaticToroid(newobj, obj, angle, n)
     newobj.Placement=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(0,0,90))
