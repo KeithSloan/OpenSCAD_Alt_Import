@@ -2,7 +2,7 @@
 
 ### NOTICES
 
-Functions such as PrismaticToroid require facilities in FreeCAD version 0.20 of Part
+Functions such as PrismaticToroid require facilities in the FreeCAD version 0.20 of Part
 
 
 ### Installation
