@@ -50,9 +50,9 @@ import OpenSCADHull
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
-print(printverbose)
-print(params.GetContents())
-printverbose = True
+#print(printverbose)
+#print(params.GetContents())
+#printverbose = True
 # Get the token map from the lexer.  This is required.
 import tokrules
 from tokrules import tokens
@@ -86,6 +86,7 @@ def open(filename):
     doc = FreeCAD.newDocument(docname)
     if filename.lower().endswith('.scad'):
         from OpenSCADUtils import callopenscad, workaroundforissue128needed
+        print('Calling OpenSCAD')
         tmpfile=callopenscad(filename)
         if workaroundforissue128needed():
             pathName = '' #https://github.com/openscad/openscad/issues/128
@@ -395,19 +396,25 @@ def CGALFeatureObj(name,children,arguments=[]):
 
 def p_offset_action(p):
     'offset_action : offset LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
+    #print('Offset Action')
+    #print(len(p))
+    #print(f'p6 : {p[6]}')
     if len(p[6]) == 0:
         newobj = placeholder('group',[],'{}')
     elif (len(p[6]) == 1 ): #single object
-        subobj = p[6]
+        subobj = p[6][0]
     else:
         subobj = fuse(p[6],"Offset Union")
     if 'r' in p[3] :
         offset = float(p[3]['r'])
     if 'delta' in p[3] : 
         offset = float(p[3]['delta'])
-    if subobj[0].Shape.Volume == 0 :
+    #print(subobj.Shape)
+    #print(dir(subobj.Shape))
+    #print(subobj.Shape.ShapeType)
+    if subobj.Shape.Volume == 0 :
        newobj=doc.addObject("Part::Offset2D",'Offset2D')
-       newobj.Source = subobj[0] 
+       newobj.Source = subobj 
        newobj.Value = offset
        if 'r' in p[3] :
            newobj.Join = 0 
@@ -418,7 +425,7 @@ def p_offset_action(p):
        newobj.Shape = subobj[0].Shape.makeOffset(offset)
     newobj.Document.recompute()
     if gui:
-        subobj[0].ViewObject.hide()
+        subobj.ViewObject.hide()
 #        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
 #            GetBool('useViewProviderTree'):
 #            from OpenSCADFeatures import ViewProviderTree
@@ -684,7 +691,15 @@ def p_difference_action(p):
         if gui:
             mycut.Base.ViewObject.hide()
             mycut.Tool.ViewObject.hide()
+        #print(f'Base : {dir(mycut.Base)}')
+        #print(f'Tool : {dir(mycut.Tool)}')
+        #print(f'Tool name {mycut.Tool.Name}')
+        #print(f'Base Shape {mycut.Base.Shape.ShapeType}')
+        mycut.Shape = mycut.Base.Shape.cut(mycut.Tool.Shape)
         if printverbose: print("Push Resulting Cut")
+        #print(dir(mycut))
+        #print(mycut)
+        #print(mycut.Name)
         p[0] = [mycut]
     if printverbose: print("End Cut")
 
@@ -712,6 +727,7 @@ def p_intersection_action(p):
         mycommon = p[5][0]
     else : # 1 child
         mycommon = placeholder('group',[],'{}')
+    mycommon.Shape = mycommon.Base.Shape.common(mycommon.Tool.Shape)
     p[0] = [mycommon]
     if printverbose: print("End Intersection")
 
@@ -844,7 +860,7 @@ def p_linear_extrude_with_transform(p):
     if printverbose: print("Twist : ",p[3])
     if 'scale' in p[3]:
        s = [float(p[3]['scale'][0]), float(p[3]['scale'][1])]
-       print('Scale: '+str(s))
+       #print('Scale: '+str(s))
     if 'twist' in p[3]:
         t = float(p[3]['twist'])
     # Test if null object like from null text
@@ -1238,14 +1254,15 @@ def p_circle_action(p) :
     # in the modules preferences
     import Draft
     if n == 0 or fnmax != 0 and n >= fnmax:
-        mycircle = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython",'circle')
-        Draft._Circle(mycircle)
-        mycircle.Radius = r
-        mycircle.MakeFace = True
-        #mycircle = Draft.makeCircle(r,face=True) # would call doc.recompute
+        #mycircle = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython",'circle')
+        #Draft._Circle(mycircle)
+        #mycircle.Radius = r
+        #mycircle.MakeFace = True
+        mycircle = Draft.makeCircle(r,face=True) # would call doc.recompute
+        FreeCAD.ActiveDocument.recompute()
         #mycircle = doc.addObject('Part::Circle',p[1]) #would not create a face
         #mycircle.Radius = r
-        print('Circle Shape : ' +str(mycircle.Shape.isNull()))      
+        #print('Circle Shape : ' +str(mycircle.Shape.isNull()))      
     else :
         #mycircle = Draft.makePolygon(n,r) # would call doc.recompute
         mycircle = FreeCAD.ActiveDocument.addObject("Part::Part2DObjectPython",'polygon')
