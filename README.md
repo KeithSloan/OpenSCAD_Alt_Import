@@ -1,5 +1,10 @@
 ## Alternate OpenSCAD Importer
 
+### NOTICES
+
+Functions such as PrismaticToroid require facilities in the FreeCAD version 0.20 of Part
+
+
 ### Installation
 
 Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
