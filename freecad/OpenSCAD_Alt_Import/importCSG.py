@@ -50,7 +50,7 @@ import OpenSCADHull
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
-#print(printverbose)
+print(f'Verbose = {printverbose}')
 #print(params.GetContents())
 #printverbose = True
 # Get the token map from the lexer.  This is required.
@@ -655,6 +655,7 @@ def fuse(lst,name):
        myfuse = doc.addObject('Part::Fuse',name)
        myfuse.Base = lst[0]
        myfuse.Tool = lst[1]
+       myfuse.Shape = myfuse.Base.Shape.fuse(myfuse.Tool.Shape)
        if gui:
            myfuse.Base.ViewObject.hide()
            myfuse.Tool.ViewObject.hide()
@@ -679,23 +680,22 @@ def p_difference_action(p):
     elif (len(p[5]) == 1 ): #single object
         p[0] = p[5]
     else:
-# Cut using Fuse    
         mycut = doc.addObject('Part::Cut',p[1])
         mycut.Base = p[5][0]
-#       Can only Cut two objects do we need to fuse extras
+        mycut.Tool = p[5][1]
+        #print(mycut.Tool.Name)
+        #print(mycut.Tool.TypeId)
+        #print(mycut.Tool.Shape.isNull())
+      
         if (len(p[5]) > 2 ):
-           if printverbose: print("Need to Fuse Extra First")
-           mycut.Tool = fuse(p[5][1:],'union')
-        else :
-           mycut.Tool = p[5][1]
+           print(len(p[5][1:]))
+           for o in p[5][1:]: 
+               mycut.Tool.Shape = mycut.Tool.cut(o.Shape)
+        mycut.Shape = mycut.Base.Shape.cut(mycut.Tool.Shape)
         if gui:
             mycut.Base.ViewObject.hide()
             mycut.Tool.ViewObject.hide()
-        #print(f'Base : {dir(mycut.Base)}')
-        #print(f'Tool : {dir(mycut.Tool)}')
-        #print(f'Tool name {mycut.Tool.Name}')
-        #print(f'Base Shape {mycut.Base.Shape.ShapeType}')
-        mycut.Shape = mycut.Base.Shape.cut(mycut.Tool.Shape)
+
         if printverbose: print("Push Resulting Cut")
         #print(dir(mycut))
         #print(mycut)

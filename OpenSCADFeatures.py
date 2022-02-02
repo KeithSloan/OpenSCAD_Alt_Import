@@ -455,6 +455,8 @@ class Twist:
                 except Part.OCCError:
                     solids.append(Part.Compound(faces))
                 fp.Shape=Part.Compound(solids)
+                if fp.Shape.isNull() :
+                   print('Null Shape')
 
 class PrismaticToroid:
     def __init__(self, obj,child=None,angle=360.0,n=3):

@@ -510,6 +510,8 @@ def createHull(group) :
 
     print('Not directly handled')
     print(group)
+    for obj in group :
+       print(obj.Name)
     #from OpenSCADFeatures import CGALFeature
     #myObj = FreeCAD.ActiveDocument.addObject('Part::FeaturePython','Fred')
     #CGALFeature(myObj,'hull',obj.Group)
