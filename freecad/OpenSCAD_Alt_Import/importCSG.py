@@ -655,6 +655,8 @@ def fuse(lst,name):
        myfuse = doc.addObject('Part::Fuse',name)
        myfuse.Base = lst[0]
        myfuse.Tool = lst[1]
+       checkObjShape(myfuse.Base)
+       checkObjShape(myfuse.Tool)
        myfuse.Shape = myfuse.Base.Shape.fuse(myfuse.Tool.Shape)
        if gui:
            myfuse.Base.ViewObject.hide()
@@ -683,13 +685,13 @@ def p_difference_action(p):
         mycut = doc.addObject('Part::Cut',p[1])
         mycut.Base = p[5][0]
         mycut.Tool = p[5][1]
-        #print(mycut.Tool.Name)
-        #print(mycut.Tool.TypeId)
-        #print(mycut.Tool.Shape.isNull())
+        checkObjShape(mycut.Base)
+        checkObjShape(mycut.Tool)
       
         if (len(p[5]) > 2 ):
            print(len(p[5][1:]))
            for o in p[5][1:]: 
+               checkObjShape(o)
                mycut.Tool.Shape = mycut.Tool.cut(o.Shape)
         mycut.Shape = mycut.Base.Shape.cut(mycut.Tool.Shape)
         if gui:
@@ -720,6 +722,8 @@ def p_intersection_action(p):
        mycommon = doc.addObject('Part::Common',p[1])
        mycommon.Base = p[5][0]
        mycommon.Tool = p[5][1]
+       checkObjShape(mycommon.Base)
+       checkObjShape(mycommon.Tool)
        if gui:
            mycommon.Base.ViewObject.hide()
            mycommon.Tool.ViewObject.hide()
