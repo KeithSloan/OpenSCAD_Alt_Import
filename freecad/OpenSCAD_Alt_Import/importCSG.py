@@ -436,9 +436,12 @@ def p_offset_action(p):
 
 def checkObjShape(obj) :
     if printverbose: print('Check Object Shape')
+    print(f'Object {obj.Name} Check Object Shape')
     if obj.Shape.isNull() == True :
        if printverbose: print('Shape is Null - recompute')
        obj.recompute()
+    if (obj.Shape.isNull() == True):
+       print('Recompute failed')
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObject' :
@@ -687,12 +690,12 @@ def p_difference_action(p):
         mycut.Tool = p[5][1]
         checkObjShape(mycut.Base)
         checkObjShape(mycut.Tool)
-      
         if (len(p[5]) > 2 ):
            print(len(p[5][1:]))
            for o in p[5][1:]: 
                checkObjShape(o)
                mycut.Tool.Shape = mycut.Tool.cut(o.Shape)
+        checkObjShape(mycut.Tool)
         mycut.Shape = mycut.Base.Shape.cut(mycut.Tool.Shape)
         if gui:
             mycut.Base.ViewObject.hide()
@@ -723,7 +726,6 @@ def p_intersection_action(p):
        mycommon.Base = p[5][0]
        mycommon.Tool = p[5][1]
        checkObjShape(mycommon.Base)
-       checkObjShape(mycommon.Tool)
        if gui:
            mycommon.Base.ViewObject.hide()
            mycommon.Tool.ViewObject.hide()
@@ -731,6 +733,7 @@ def p_intersection_action(p):
         mycommon = p[5][0]
     else : # 1 child
         mycommon = placeholder('group',[],'{}')
+    checkObjShape(mycommon.Tool)
     mycommon.Shape = mycommon.Base.Shape.common(mycommon.Tool.Shape)
     p[0] = [mycommon]
     if printverbose: print("End Intersection")
