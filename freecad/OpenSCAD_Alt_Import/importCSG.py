@@ -436,7 +436,6 @@ def p_offset_action(p):
 
 def checkObjShape(obj) :
     if printverbose: print('Check Object Shape')
-    print(f'Object {obj.Name} Check Object Shape')
     if obj.Shape.isNull() == True :
        if printverbose: print('Shape is Null - recompute')
        obj.recompute()
@@ -860,7 +859,7 @@ def process_linear_extrude_with_transform(base,height,twist,scale) :
 
 def p_linear_extrude_with_transform(p):
     'linear_extrude_with_transform : linear_extrude LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
-    if printverbose: print("Linear Extrude With Trasnform")
+    if printverbose: print("Linear Extrude With Transform")
     h = float(p[3]['height'])
     s = 1.0
     t = 0.0
@@ -878,6 +877,7 @@ def p_linear_extrude_with_transform(p):
         obj = fuse(p[6],"Linear Extrude Union")
     else :
         obj = p[6][0]
+    checkObjShape(obj)
     if t != 0.0 or s != 1.0:
         newobj = process_linear_extrude_with_transform(obj,h,t,s)
     else:
