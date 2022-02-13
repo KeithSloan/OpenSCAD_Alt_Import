@@ -24,6 +24,9 @@ __title__="FreeCAD OpenSCAD Workbench - Parametric Features"
 __author__ = "Sebastian Hoogen"
 __url__ = ["https://www.freecadweb.org"]
 
+import FreeCAD
+import FreeCADGui
+
 try:
     long
 except NameError:
@@ -561,6 +564,21 @@ class OffsetShape:
     def createGeometry(self,fp):
         if fp.Base and fp.Offset:
             fp.Shape=fp.Base.Shape.makeOffsetShape(fp.Offset.Value,1e-6)
+
+def CGALFeatureObject(name,children,arguments=[]):
+    myobj=FreeCAD.ActiveDocument.addObject("Part::FeaturePython",name)
+    from OpenSCADFeatures import CGALFeature
+    CGALFeature(myobj,name,children,str(arguments))
+    if FreeCADGui:
+        for subobj in children:
+            subobj.ViewObject.hide()
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+            GetBool('useViewProviderTree'):
+            from OpenSCADFeatures import ViewProviderTree
+            ViewProviderTree(myobj.ViewObject)
+        else:
+            myobj.ViewObject.Proxy = 0
+    return myobj
 
 class CGALFeature:
     def __init__(self,obj,opname=None,children=None,arguments=None):

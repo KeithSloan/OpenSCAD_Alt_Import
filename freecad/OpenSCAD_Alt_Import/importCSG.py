@@ -44,9 +44,9 @@ import ply.yacc as yacc
 import Part
 import random
 
-import OpenSCADFeatures
 import OpenSCADUtils
 import OpenSCADHull
+import OpenSCADMinkowski
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
@@ -379,20 +379,6 @@ def placeholder(name,children,arguments):
     #don't hide the children
     return newobj
 
-def CGALFeatureObj(name,children,arguments=[]):
-    myobj=doc.addObject("Part::FeaturePython",name)
-    from OpenSCADFeatures import CGALFeature
-    CGALFeature(myobj,name,children,str(arguments))
-    if gui:
-        for subobj in children:
-            subobj.ViewObject.hide()
-        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-            GetBool('useViewProviderTree'):
-            from OpenSCADFeatures import ViewProviderTree
-            ViewProviderTree(myobj.ViewObject)
-        else:
-            myobj.ViewObject.Proxy = 0
-    return myobj
 
 def p_offset_action(p):
     'offset_action : offset LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
@@ -513,26 +499,10 @@ def setOutListColor(obj, color) :
 def p_minkowski_action(p):
     '''
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
+    from OpenSCADMinkowski import minkowski
 
-    # - For minkowski Just indicate first shape needs editing
+    p[0] = [minkowski(p)]
 
-    if len(p[6]) == 2 :
-       # return just first object     
-       #print(dir(p[6][0]))
-       #print(dir((p[6][1]).ViewObject))
-       #print(p[6][0].TypeId)
-       p[6][0].ViewObject.ShapeColor = (1.,0.,0.)
-       setObjColor(p[6][0],(1.,0.,0.))
-       setOutListColor(p[6][0],(1.,0.,0.))
-       #print(p[6][1].TypeId)
-       p[6][1].ViewObject.ShapeColor = (0.,1.,0.)
-       setObjColor(p[6][1],(0.,1.,0.))
-       setOutListColor(p[6][1],(1.,0.,0.))
-       #p[6][1].ViewObject.hide()
-       p[0] = [p[6][0]]
-
-    else :
-        p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
 def p_resize_action(p):
     '''
