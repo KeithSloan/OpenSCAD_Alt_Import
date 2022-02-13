@@ -16,11 +16,12 @@ Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
 * Then OK
 * Restart FreeCAD
 
+
 ## Installation with FreeCAD 0.20
 
 Use FreeCAD preferences to add the Repro to available 'Custom Repositories'
 
-![Image 13-02-2022 at 12 55](https://user-images.githubusercontent.com/2291247/153757512-fedad170-7d27-4c5f-9618-8b68ca2b6b24.jpeg)
+![Image 13-02-2022 at 14 29](https://user-images.githubusercontent.com/2291247/153757810-23001a54-66f9-4ac1-affc-c775d5f22d1e.jpeg)
 
 Invoke the Addon Manager - Tools | Addon manager
 
