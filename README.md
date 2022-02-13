@@ -10,7 +10,7 @@ Functions such as PrismaticToroid require facilities in the FreeCAD version 0.20
 Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
      use FreeCAD 0.19 instead.
 
-* Invoke the Addon Manager - Tools | Adddon manager
+* Invoke the Addon Manager - Tools | Addon manager
 * Select Configure..
 * Into Custom respositories enter https://github.com/KeithSloan/OpenSCAD_Alt_Import.git
 * Then OK
