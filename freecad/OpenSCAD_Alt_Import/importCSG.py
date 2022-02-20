@@ -187,11 +187,14 @@ def p_group_action1(p):
     'group_action1 : group LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print("Group")
 # Test if need for implicit fuse
+    if p[5] is None:
+       p[0] = []
+       return
     if (len(p[5]) > 1) :
-        if printverbose: print('Fuse Group')
-        p[0] = [fuse(p[5],"Group")]
+       if printverbose: print('Fuse Group')
+       p[0] = [fuse(p[5],"Group")]
     else :
-        p[0] = p[5]
+       p[0] = p[5]
 
 def p_group_action2(p) :
     'group_action2 : group LPAREN RPAREN SEMICOL'
