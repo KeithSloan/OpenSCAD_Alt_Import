@@ -144,7 +144,7 @@ def processcsg(filename):
     # Build the parser   
     if printverbose: print('Load Parser')
     # No debug out otherwise Linux has protection exception
-    parser = yacc.yacc(debug=0)
+    parser = yacc.yacc(debug=False, write_tables=False)
     if printverbose: print('Parser Loaded')
     # Give the lexer some input
     #f=open('test.scad', 'r')
@@ -689,20 +689,17 @@ def p_difference_action(p):
     else:
         mycut = doc.addObject('Part::Cut',p[1])
         mycut.Base = p[5][0]
-        mycut.Tool = p[5][1]
         checkObjShape(mycut.Base)
-        checkObjShape(mycut.Tool)
         if (len(p[5]) > 2 ):
+           # Need to fuse extra items first
            print(len(p[5][1:]))
-           for o in p[5][1:]: 
-               checkObjShape(o)
-               mycut.Tool.Shape = mycut.Tool.cut(o.Shape)
-        checkObjShape(mycut.Tool)
-        mycut.Shape = mycut.Base.Shape.cut(mycut.Tool.Shape)
+           mycut.Tool = fuse(p[5][1:],'union')
+        else:
+           mycut.Tool = p[5][1]
+           checkObjShape(mycut.Tool)
         if gui:
             mycut.Base.ViewObject.hide()
             mycut.Tool.ViewObject.hide()
-
         if printverbose: print("Push Resulting Cut")
         #print(dir(mycut))
         #print(mycut)
