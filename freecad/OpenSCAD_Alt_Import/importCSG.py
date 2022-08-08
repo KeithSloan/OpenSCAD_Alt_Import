@@ -443,7 +443,7 @@ def checkObjShape(obj) :
        if printverbose: print('Shape is Null - recompute')
        obj.recompute()
     if (obj.Shape.isNull() == True):
-       print('Recompute failed')
+       print(f'Recompute failed : {obj.Name}')
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObject' :
