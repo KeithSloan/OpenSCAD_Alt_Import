@@ -30,7 +30,7 @@ __title__="FreeCAD OpenSCAD Workbench - CSG importer"
 __author__ = "Keith Sloan <keith@sloan-home.co.uk>"
 __url__ = ["http://www.sloan-home.co.uk/ImportCSG"]
 
-import FreeCAD, io, os, sys
+import FreeCAD, Part, Draft, io, os, sys, xml.sax
 if FreeCAD.GuiUp:
     import FreeCADGui
     gui = True
@@ -38,6 +38,9 @@ else:
     print("FreeCAD Gui not present.")
     gui = False
 
+# Save the native open function to avoid collisions
+if open.__module__ in ['__builtin__', 'io']:
+    pythonopen = open
 
 import ply.lex as lex
 import ply.yacc as yacc
@@ -907,18 +910,52 @@ def p_surface_action(p):
     if printverbose: print("End surface")
 
 
-def process_import_file(fname,ext,layer):
+def process_import_file(fname, ext, layer):
     from OpenSCADUtils import reverseimporttypes
     if printverbose: print("Importing : "+fname+"."+ext+" Layer : "+layer)
     if ext.lower() in reverseimporttypes()['Mesh']:
-        obj=process_mesh_file(fname,ext)
-    elif ext.lower() == 'dxf' :
-        obj=processDXF(fname,layer)
+        obj=process_mesh_file(fname, ext)
+    elif ext.lower() == 'dxf':
+        obj=processDXF(fname, layer)
+    elif ext.lower() == 'svg':
+        obj=processSVG(fname, ext)
     else:
         raise ValueError("Unsupported file extension %s" % ext)
     return(obj)
 
-def process_mesh_file(fname,ext):
+def processSVG(fname, ext):
+    from importSVG import svgHandler
+    print("SVG Handler")
+    doc = FreeCAD.ActiveDocument
+    docSVG = FreeCAD.newDocument(fname+'_tmp')
+    FreeCAD.ActiveDocument = docSVG
+
+    # Set up the parser
+    parser = xml.sax.make_parser()
+    parser.setFeature(xml.sax.handler.feature_external_ges, False)
+    parser.setContentHandler(svgHandler())
+    parser._cont_handler.doc = docSVG
+
+    # pathName is a Global
+    filename = os.path.join(pathName,fname+'.'+ext)
+    # Use the native Python open which was saved as `pythonopen`
+    parser.parse(pythonopen(filename))
+
+    #combine SVG objects into one
+    shapes = []
+    for obj in FreeCAD.ActiveDocument.Objects:
+        print(obj.Name)
+        print(obj.Shape)
+        shapes.append(obj.Shape)
+    #compoundSVG = Part.makeCompound(shapes)
+    #compoundSVG = Draft.join(objects)
+    FreeCAD.closeDocument(docSVG.Name)
+    FreeCAD.ActiveDocument=doc
+    obj=doc.addObject('Part::Feature',fname)
+    obj.Shape=Part.Compound(shapes)
+    return obj
+
+def process_mesh_file(fname, ext):
     import Mesh,Part
     fullname = fname+'.'+ext
     filename = os.path.join(pathName,fullname)
