@@ -1436,11 +1436,11 @@ def p_polyhedron_action(p) :
         pp.append(pp[0])
         print("pp")
         print(pp)
-        w = Part.makePolygon(pp)
-        print("w")
-        print(w)
         try:
-           f = Part.Face(w)
+            w = Part.makePolygon(pp)
+            print("w")
+            print(w)
+            f = Part.Face(w)
         except:
             secWireList = w.Edges[:]
             f = Part.makeFilledFace(Part.__sortEdges__(secWireList))
