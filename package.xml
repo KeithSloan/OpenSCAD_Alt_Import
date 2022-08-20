@@ -5,7 +5,7 @@
   <version>1.0</version>
   <date>2022-08-18</date>
   <maintainer email="keith@sloan-home.co.uk">Keith Sloan</maintainer>
-  <license file="LICENSE">LGPL-2.1</license>
+  <license file="LICENSE">GPL-2</license>
   <url type="repository" branch="Main">https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
   <url type="documentation">https://github.com/KeithSloan/OpenSCAD_Alt_Import/wiki</url>
   <url type="readme">https://github.com/KeithSloan/OpenSCAD_Alt_Import/README.md</url>
