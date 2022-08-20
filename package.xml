@@ -16,6 +16,9 @@
       <subdirectory>./</subdirectory>
       <icon>freecad/OpenSCAD_Alt_Import/Resources/icons/OpenSCAD_Alternate.png</icon>
       <freecadmin>0.20.0</freecadmin>
+      <tag>openscad</tag>
+      <tag>scripting</tag>
+      <tag>programming</tag>
     </workbench>
   </content>
 
