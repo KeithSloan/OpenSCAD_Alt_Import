@@ -402,9 +402,9 @@ def CGALFeatureObj(name,children,arguments=[]):
 
 def p_offset_action(p):
     'offset_action : offset LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
-    #print('Offset Action')
-    #print(len(p))
-    #print(f'p6 : {p[6]}')
+    # print('Offset Action')
+    # print(len(p))
+    # print(f'p6 : {p[6]}')
     if len(p[6]) == 0:
         newobj = placeholder('group',[],'{}')
     elif (len(p[6]) == 1 ): #single object
@@ -418,6 +418,7 @@ def p_offset_action(p):
     #print(subobj.Shape)
     #print(dir(subobj.Shape))
     #print(subobj.Shape.ShapeType)
+    checkObjShape(subobj)
     if subobj.Shape.Volume == 0 :
        newobj=doc.addObject("Part::Offset2D",'Offset2D')
        newobj.Source = subobj 
