@@ -4,31 +4,20 @@
 
 Functions such as PrismaticToroid require facilities in the FreeCAD version 0.20 of Part
 
+## Installation
 
-### Installation
-
-Note Addon manager no longer works in FreeCAD 0.18 due to changes in Github
-     use FreeCAD 0.19 instead.
-
-* Invoke the Addon Manager - Tools | Addon manager
-* Select Configure..
-* Into Custom respositories enter https://github.com/KeithSloan/OpenSCAD_Alt_Import.git
-* Then OK
-* Restart FreeCAD
+It can be installed via the [Addon Manager](https://github.com/FreeCAD/FreeCAD-addons) (from Tools menu)
 
 
-## Installation with FreeCAD 0.20
+## Alternative Installation
 
-Use FreeCAD preferences to add the Repro to available 'Custom Repositories'
+Clone into FreeCAD's Mod directory see https://wiki.freecadweb.org/Installing_more_workbenches
 
-![Image 13-02-2022 at 14 29](https://user-images.githubusercontent.com/2291247/153757810-23001a54-66f9-4ac1-affc-c775d5f22d1e.jpeg)
+   * Change to FreeCAD Mod directory
+   * **git clone https://github.com/KeithSloan/OpenSCAD_Alt_Import.git**
 
-Invoke the Addon Manager - Tools | Addon manager
+* Start/Restart FreeCAD
 
-
-Click on 'Refresh local cache'
-
-Then install
 
 ### Use
 
