@@ -8,7 +8,7 @@
   <license file="LICENSE">GPL-2</license>
   <url type="repository" branch="master">https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
   <url type="documentation">https://github.com/KeithSloan/OpenSCAD_Alt_Import/wiki</url>
-  <url type="readme">https://github.com/KeithSloan/OpenSCAD_Alt_Import/README.md</url>
+  <url type="readme">https://github.com/KeithSloan/OpenSCAD_Alt_Import/blob/master/README.md</url>
 
   <content>
     <workbench>
