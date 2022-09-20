@@ -13,6 +13,7 @@
   <content>
     <workbench>
       <classname>OpenSCAD_Alt_Import</classname>
+      <name>OpenSCAD alternate importer</name>
       <description>An alternate OpenSCAD importer - with some experimental features.</description>
       <version>1.0</version>
       <subdirectory>./</subdirectory>
