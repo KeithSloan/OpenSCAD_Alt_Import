@@ -1,28 +1,24 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<package format="1" xmlns="https://wiki.freecad.org/Package_Metadata">
+<package format="1">
+
   <name>OpenSCAD alternate importer</name>
+
   <description>An alternate OpenSCAD importer - with some experimental features</description>
-  <version>1.0</version>
-  <date>2022-08-18</date>
+
+  <version>1.0.0</version>
+
   <maintainer email="keith@sloan-home.co.uk">Keith Sloan</maintainer>
+
   <license file="LICENSE">GPL-2</license>
-  <url type="repository" branch="master">https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
-  <url type="documentation">https://github.com/KeithSloan/OpenSCAD_Alt_Import/wiki</url>
+
+  <url branch="master" type="repository">https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
+
   <url type="readme">https://github.com/KeithSloan/OpenSCAD_Alt_Import/blob/master/README.md</url>
 
-  <content>
-    <workbench>
-      <classname>OpenSCAD_Alt_Import</classname>
-      <name>OpenSCAD alternate importer</name>
-      <description>An alternate OpenSCAD importer - with some experimental features.</description>
-      <version>1.0</version>
-      <subdirectory>./</subdirectory>
-      <icon>freecad/OpenSCAD_Alt_Import/Resources/icons/OpenSCAD_Alternate.png</icon>
-      <freecadmin>0.20.0</freecadmin>
-      <tag>openscad</tag>
-      <tag>scripting</tag>
-      <tag>programming</tag>
-    </workbench>
-  </content>
+  <url type="documentation">https://github.com/KeithSloan/OpenSCAD_Alt_Import/wiki</url>
+
+  <icon>freecad/OpenSCAD_Alt_Import/Resources/icons/OpenSCAD_Alternate.png</icon>
+
+  <date>2022-08-18</date>
 
 </package>
