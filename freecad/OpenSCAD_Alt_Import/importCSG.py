@@ -667,6 +667,7 @@ def fuse(lst,name):
        checkObjShape(myfuse.Base)
        checkObjShape(myfuse.Tool)
        myfuse.Shape = myfuse.Base.Shape.fuse(myfuse.Tool.Shape)
+       myfuse.Placement = FreeCAD.Placement()
        if gui:
            myfuse.Base.ViewObject.hide()
            myfuse.Tool.ViewObject.hide()
