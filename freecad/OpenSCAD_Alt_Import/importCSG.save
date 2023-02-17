@@ -82,6 +82,8 @@ def num(string) :
 
 def open(filename):
     "called when freecad opens a file."
+    import sys
+    print(f"Path {sys,.path}")
     global doc
     global pathName
     FreeCAD.Console.PrintMessage('Processing : '+filename+'\n')
@@ -96,14 +98,14 @@ def open(filename):
             #pathName = os.getcwd() #https://github.com/openscad/openscad/issues/128
         else:
             pathName = os.path.dirname(os.path.normpath(filename))
-        processcsg(tmpfile)
+        processCSG(doc, tmpfile)
         try:
             os.unlink(tmpfile)
         except OSError:
             pass
     else:
         pathName = os.path.dirname(os.path.normpath(filename))
-        processcsg(filename)
+        processCSG(doc, filename)
     return doc
 
 def insert(filename,docname):
@@ -125,19 +127,33 @@ def insert(filename,docname):
         else:
             pathName = os.path.dirname(os.path.normpath(filename))
         print('Processing : '+filename)
-        processcsg(tmpfile)
+        processCSG(doc, tmpfile)
         try:
             os.unlink(tmpfile)
         except OSError:
             pass
     else:
         pathName = os.path.dirname(os.path.normpath(filename))
-        processcsg(filename)
+        processCSG(doc, filename)
 
-def processcsg(filename):
+def processCSG(docSrc, filename, fnmax_param = None):
     global doc
+    global fnmax
+    if fnmax_param is None:
+        fnmax = FreeCAD.ParamGet(\
+        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+        GetInt('useMaxFN', 16)
+    else:
+        fnmax = fnmax_param
+    doc = docSrc
 
     print('Using Alternate OpenSCAD Importer')
+    print(f"Doc (doc.name} useMaxFn {fnmax}")
+
+    #import tokrules
+    #from tokrules import tokens
+    #print(f"tokens {tokens}")
+
     if printverbose: print ('ImportCSG Version 0.6a')
     # Build the lexer
     if printverbose: print('Start Lex')
@@ -697,7 +713,7 @@ def p_difference_action(p):
         checkObjShape(mycut.Base)
         if (len(p[5]) > 2 ):
            # Need to fuse extra items first
-           print(len(p[5][1:]))
+           #print(len(p[5][1:]))
            mycut.Tool = fuse(p[5][1:],'union')
         else:
            mycut.Tool = p[5][1]
@@ -789,9 +805,10 @@ def p_rotate_extrude_action(p):
     if 'angle' in p[3]:
         angle = float(p[3]['angle'])
     n = int(round(float(p[3]['$fn'])))
-    fnmax = FreeCAD.ParamGet(\
-        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-        GetInt('useMaxFN', 16)
+    # Use  Global as maybe passed
+    #fnmax = FreeCAD.ParamGet(\
+    #    "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+    #    GetInt('useMaxFN', 16)
     if (len(p[6]) > 1) :
         part = fuse(p[6],"Rotate Extrude Union")
     else :
@@ -1054,6 +1071,8 @@ def p_multmatrix_action(p):
     if printverbose: print(transform_matrix)
     if printverbose: print("Apply Multmatrix")
 #   If more than one object on the stack for multmatrix fuse first
+    #for o in p[6]:    
+    #    print(f"{o.Label} {o}")
     if p[6] == None :
        print(p) 
        print(dir(p))
@@ -1061,7 +1080,8 @@ def p_multmatrix_action(p):
         part = placeholder('group',[],'{}')
     else :
         retList = []
-        for part in p[6] :
+        #print(f"Mult Matrix")
+        for part in p[6]:
            retList.append(performMultMatrix(part,matrixisrounded,transform_matrix))
         p[0] = retList
 
@@ -1112,10 +1132,16 @@ def performMultMatrix(part, matrixisrounded, transform_matrix) :
         if printverbose: print("Transform Geometry")
 #       Need to recompute to stop transformGeometry causing a crash        
         doc.recompute()
-        new_part = doc.addObject("Part::Feature","Matrix Deformation")
+        print(f"Matrix Deformation {part.Label}")
+        #new_part = doc.addObject("Part::Feature","Matrix Deformation")
+        new_part = doc.addObject("Part::Feature","Matrix Deformation "+part.Label)
         #  new_part.Shape = part.Base.Shape.transformGeometry(transform_matrix)
         new_part.Shape = part.Shape.transformGeometry(transform_matrix) 
-        if gui:
+        # new_part has replaced part so remove from doc otherwise
+        # part are dangling in doc structure
+        if hasattr(part, 'Name'):
+            doc.removeObject(part.Name)
+        elif gui:
             part.ViewObject.hide()
 #   Does not fix problemfile or beltTighener although later is closer       
 #        newobj=doc.addObject("Part::FeaturePython",'RefineMultMatrix')
@@ -1181,9 +1207,9 @@ def p_cylinder_action(p):
     #n = int(p[3]['$fn'])
     #n = int(round(float(p[3]['$fn'])))
     n = num(p[3]['$fn'])
-    fnmax = FreeCAD.ParamGet(\
-        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-        GetInt('useMaxFN')
+    #fnmax = FreeCAD.ParamGet(\
+    #    "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+    #    GetInt('useMaxFN')
     if fnmax == 0 : fnmax = 16
     if printverbose: print(p[3])
     if h > 0:
@@ -1293,9 +1319,9 @@ def p_circle_action(p) :
     if r == 0 : r = 0.00001
     n = int(num(p[3]['$fn']))
     #n = int(p[3]['$fn'])
-    fnmax = FreeCAD.ParamGet(\
-        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-        GetInt('useMaxFN',50)
+    #fnmax = FreeCAD.ParamGet(\
+    #    "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+    #    GetInt('useMaxFN',50)
     # Alter Max polygon to control if polygons are circles or polygons
     # in the modules preferences
     import Draft

@@ -64,7 +64,7 @@ reserved = (
 
 # List of token names.   This is always required
 tokens = reserved + (
-   'WORD',
+#   'WORD',
    'NUMBER',
    'LPAREN',
    'RPAREN',
@@ -77,7 +77,7 @@ tokens = reserved + (
    'EQ',
    'STRING',
    'ID',
-   'DOT',
+#   'DOT',
    'MODIFIERBACK',
    'MODIFIERDEBUG',
    'MODIFIERROOT',
@@ -85,7 +85,7 @@ tokens = reserved + (
 )
 
 # Regular expression rules for simple tokens
-t_WORD    = r'[$]?[a-zA-Z_]+[0-9]*'
+#t_WORD    = r'[$]?[a-zA-Z_]+[0-9]*'
 t_NUMBER  = r'[-]?[0-9]*[\.]*[0-9]+([eE][-+]?[0-9]+)?'
 t_LPAREN  = r'\('
 t_RPAREN  = r'\)'
@@ -96,7 +96,7 @@ t_ESQUARE = r'\]'
 t_COMMA   = r','
 t_SEMICOL = r';'
 t_EQ      = r'='
-t_DOT     = r'\.'
+#t_DOT     = r'\.'
 t_STRING  = r'"[^"]*"'
 #t_STRING  = r'["]+[a-zA-Z.]+["]+'
 t_MODIFIERBACK    = r'%'
