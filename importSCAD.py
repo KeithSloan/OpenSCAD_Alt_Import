@@ -61,6 +61,7 @@ def open(filename):
     obj = doc.addObject("Part::FeaturePython", objectName)
     scadObj = SCADObject(obj, filename)
     #print(dir(scadObj))
-    scadObj.executeFunction(obj, keepWork = True)
-    FreeCADGui.updateGui()
-    FreeCADGui.Selection.addSelection(obj)
+    #obj.execute = True
+    #scadObj.onChanged(obj, "execute")
+    #FreeCADGui.updateGui()
+    #FreeCADGui.Selection.addSelection(obj)

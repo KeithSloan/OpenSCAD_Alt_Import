@@ -231,30 +231,33 @@ class SCADObject:
             return
 
         if prop in ["Shape"]:
-            print(f"OnChange Shape {obj.Shape}")    
+            print(f"OnChange Shape {obj.Shape}")
+            return
 
         if prop in ["execute"]:
             if obj.execute == True:
                 #self.executeFunction(obj)
                 obj.message = ""
-                shp = shapeFromSourceFile(obj, True, modules = obj.modules)
-
                 print(f"Initial Shape {obj.Shape}")
-                print(f"Returned Shape {shp}")
+                self.newShape = shapeFromSourceFile(obj, True, \
+                                    modules = obj.modules)
+                print(f"Returned Shape {self.newShape}")
                 #newShp = shp.copy()
                 #print(f"New Shape {newShp}")
-                if shp is not None:
+                if self.newShape is not None:
                     #obj.Shape = shp.copy()
-                    obj.Shape = shp
+                    obj.Shape = self.newShape.copy()
                     #obj.Shape = newShp
                 else:
                     obj.Shape = Part.Shape()
                 print(f"execute Object Shape {obj.Shape}")
                 obj.execute = False
-                FreeCADGui.updateGui()
+                #FreeCADGui.updateGui()
                 #FreeCADGui.Selection.addSelection(obj)
+                #return
             else:
                 print(f"Touched execute Shape {obj.Shape}")
+                #obj.Shape = self.newShape
 
 
         if prop in ["edit"]:
