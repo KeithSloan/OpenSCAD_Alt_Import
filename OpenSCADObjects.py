@@ -1,4 +1,4 @@
-#***************************************************************************
+#**************************************************************************
 #*                                                                         *
 #*   Copyright (c) 2023 Keith Sloan <keith@sloan-home.co.uk>               *
 #*                                                                         *
@@ -67,19 +67,19 @@ def createMesh(srcObj, wrkSrc):
         srcObj.execute = False
 
 # Source may be procesed
-def createBrep(srcObj, wrkDoc, wrkSrc):
-    import FreeCAD, Part, OpenSCADUtils
+def createBrep(srcObj, tmpDir, wrkSrc):
+    import FreeCAD, Part, os, OpenSCADUtils
     from importCSG import  processCSG
     print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
+    wrkDoc = FreeCAD.newDocument("work")
     try:
         print(f"Source : {srcObj.source}")
         print(f"SourceFile : {srcObj.sourceFile}")
         print(wrkDoc)
-        import os, tempfile
-        tmpDir = tempfile.gettempdir()
-        tmpOutFile = os.path.join(tmpDir, srcObj.Name+'.csg')
+        csgOutFile = os.path.join(tmpDir, srcObj.Name+'.csg')
+        brepOutFile = os.path.join(tmpDir, srcObj.Name+'.brep')
         tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
-            outputfilename=tmpOutFile, outputext='csg')
+            outputfilename=csgOutFile, outputext='csg')
         print(f"CSG File name {tmpFileName}")
         processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
         shapes = []
@@ -87,15 +87,20 @@ def createBrep(srcObj, wrkDoc, wrkSrc):
             if hasattr(o, "Shape"):
                 shapes.append(o.Shape)
         print(f"Shapes in WrkDoc {len(shapes)}")        
-        #brepOutFile = os.path.join(tmpDir, srcObj.Name+'.BREP')
         if len(shapes) > 1:
-                        retShape = Part.makeCompound(shapes)
+            retShape = Part.makeCompound(shapes)
         else:
             retShape = shapes[0]
         print(f"CreateBrep Shape {retShape}")
-        #retShape.exportBrep(brepOutFile)
-        #return brepOutFile, retShape
-        return retShape
+        if retShape.isValid():
+            retShape.exportBrep(brepOutFile)
+            retShape.exportBrep("/tmp/exportBrep.brep")
+            #if srcObj.keepFile is not True:
+            #    FreeCAD.closeDocument("work")
+        else:
+            print(f"Make Compound Failed")
+            retShape.check()    
+        return brepOutFile
 
     except OpenSCADUtils.OpenSCADError as e:
         #print(f"OpenSCADError {e} {e.value}")
@@ -140,6 +145,7 @@ def scanForModules(appendFp, sourceFp, module):
     source = sourceFp.read()
     appendFp.write(source)
 
+
 def shapeFromSourceFile(srcObj, keepWork=False, module=False, modules=False):
     import os, tempfile
     import FreeCAD, Part, sys
@@ -147,7 +153,6 @@ def shapeFromSourceFile(srcObj, keepWork=False, module=False, modules=False):
     global doc
     print(f"shapeFrom Source File : keepWork {keepWork}")
     tmpDir = tempfile.gettempdir()
-    tmpOutFile = os.path.join(tmpDir, srcObj.Name+'.csg')
     if modules == True:
         wrkSrc = os.path.join(tmpDir, srcObj.Name+'.scad')
         #   wrkSrcFp = fopen(wrkSrc)
@@ -156,17 +161,17 @@ def shapeFromSourceFile(srcObj, keepWork=False, module=False, modules=False):
         wrkSrc = srcObj.sourceFile
 
     if srcObj.mode == "Brep":
-        wrkDoc = FreeCAD.newDocument("work")
-        brepShape = createBrep(srcObj, wrkDoc, wrkSrc)
-        #brepFile, brepShape = createBrep(srcObj, wrkDoc, wrkSrc)
+        brepFile = createBrep(srcObj, tmpDir, wrkSrc)
+        print(f"Brep file {brepFile}")
         print(f"keepWork {keepWork}")
-        if keepWork != True:
-            FreeCAD.closeDocument("work")
-        return brepShape
+        newShape = Part.Shape()
+        newShape.read(brepFile)
+        print(newShape)
+        return newShape
 
     elif srcObj.mode == "Mesh":
         print(f"wrkSrc {wrkSrc}")
-        return createMesh(srcObj, wrkSrc)
+        return createMesh(srcObj, tmpDir, wrkSrc)
 
 # Cannot put in self as SCADlexer is not JSON serializable
 # How to make static ???
@@ -225,9 +230,32 @@ class SCADObject:
         if "Restore" in obj.State:
             return
 
+        if prop in ["Shape"]:
+            print(f"OnChange Shape {obj.Shape}")    
+
         if prop in ["execute"]:
             if obj.execute == True:
-                self.execute(obj)
+                #self.executeFunction(obj)
+                obj.message = ""
+                shp = shapeFromSourceFile(obj, True, modules = obj.modules)
+
+                print(f"Initial Shape {obj.Shape}")
+                print(f"Returned Shape {shp}")
+                #newShp = shp.copy()
+                #print(f"New Shape {newShp}")
+                if shp is not None:
+                    #obj.Shape = shp.copy()
+                    obj.Shape = shp
+                    #obj.Shape = newShp
+                else:
+                    obj.Shape = Part.Shape()
+                print(f"execute Object Shape {obj.Shape}")
+                obj.execute = False
+                FreeCADGui.updateGui()
+                #FreeCADGui.Selection.addSelection(obj)
+            else:
+                print(f"Touched execute Shape {obj.Shape}")
+
 
         if prop in ["edit"]:
             if obj.edit == True:
@@ -247,17 +275,29 @@ class SCADObject:
             FreeCADGui.updateGui()
 
 
+
     def executeFunction(self, obj, keepWork = False):
-        import FreeCADGui
+        import FreeCADGui, Part
+        import os, tempfile
         print(f"Execute {obj.Name} keepWork {keepWork}")
         #print(dir(obj))
         obj.message = ""
         shp = shapeFromSourceFile(obj, keepWork, modules = obj.modules)
         if shp is not None:
-            obj.Shape = shp
+            print(f"Initial Shape {obj.Shape}")
+            print(f"Returned Shape {shp}")
+            shp.check()
+            newShp = shp.copy()
+            print(f"New Shape {newShp}")
+            print(f"Old Shape {shp}")
+            #obj.Shape = shp.copy()
+            obj.Shape = newShp
         else:
+            print(f"Shape is None")
             obj.Shape = Part.Shape()
+        print(f"Function Object Shape {obj.Shape}")
         obj.execute = False
+        #obj.recompute()
         FreeCADGui.updateGui()
         FreeCADGui.Selection.addSelection(obj)
 

@@ -26,7 +26,7 @@ __author__ = "Keith Sloan <keith@sloan-home.co.uk>"
 __url__ = ["http://www.sloan-home.co.uk/ImportSCAD"]
 
 #import FreeCAD, Part, Draft, io, os, sys, xml.sax
-import FreeCAD, os
+import FreeCAD, FreeCADGui, os
 if FreeCAD.GuiUp:
     import FreeCADGui
     gui = True
@@ -62,3 +62,5 @@ def open(filename):
     scadObj = SCADObject(obj, filename)
     #print(dir(scadObj))
     scadObj.executeFunction(obj, keepWork = True)
+    FreeCADGui.updateGui()
+    FreeCADGui.Selection.addSelection(obj)
