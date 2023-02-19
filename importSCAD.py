@@ -63,6 +63,8 @@ def open(filename):
     obj = doc.addObject("Part::FeaturePython", objectName)
     scadObj = SCADObject(obj, filename)
     ViewSCADProvider(obj.ViewObject)
+    if hasattr(obj, 'Proxy'):
+        obj.Proxy.executeFunction(obj)
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.SendMsgToActiveView("ViewFit")
     #print(dir(scadObj))

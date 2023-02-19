@@ -68,7 +68,7 @@ def createMesh(srcObj, wrkSrc):
 
 # Source may be procesed
 def createBrep(srcObj, tmpDir, wrkSrc):
-    import FreeCAD, Part, os, OpenSCADUtils
+    import FreeCAD, FreeCADGui, Part, os, OpenSCADUtils
     from importCSG import  processCSG
     print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
     actDoc = FreeCAD.activeDocument().Name
@@ -84,26 +84,39 @@ def createBrep(srcObj, tmpDir, wrkSrc):
             outputfilename=csgOutFile, outputext='csg')
         print(f"CSG File name {tmpFileName}")
         processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
+        # *** Does not work for earrings.scad
         shapes = []
-        for o in wrkDoc.Objects:
-            if hasattr(o, "Shape"):
-                shapes.append(o.Shape)
-        print(f"Shapes in WrkDoc {len(shapes)}")        
-        if len(shapes) > 1:
+        for cnt, obj in enumerate(wrkDoc.RootObjects, start=1):
+            if hasattr(obj, "Shape"):
+                shapes.append(obj.Shape)
+        print(f"Shapes in WrkDoc {cnt}")        
+        if cnt > 1:
             retShape = Part.makeCompound(shapes)
         else:
             retShape = shapes[0]
         print(f"CreateBrep Shape {retShape}")
-        if retShape.isValid():
-            retShape.exportBrep(brepOutFile)
-            retShape.exportBrep("/tmp/exportBrep.brep")
-            if srcObj.keep_work is not True:
-                FreeCAD.closeDocument("work")
-        else:
-            print(f"Make Compound Failed")
-            retShape.check()
+        #links = []
+        #for cnt, obj in enumerate(wrkDoc.RootObjects):
+        #    if hasattr(obj, "Shape"):
+        #        links.append(obj)
+        #print(f"Number of Objects {len(wrkDoc.RootObjects)} {cnt}")        
+        #if cnt > 1:
+        #    retObj = wrkDoc.addObject("Part::Compound","Compound")
+        #    retObj.Links = links
+        #    #if not retObj.Shape.isValid():
+        #    #    print(f"Make Compound Failed")
+        #    #    retObj.Shape.check()
+        #    #    return
+        #else:
+        #    retObj = wrkDoc.RootObjects[0]    
+        if srcObj.keep_work is not True:
+            FreeCAD.closeDocument("work")
+        FreeCADGui.SendMsgToActiveView("ViewFit")
         FreeCAD.setActiveDocument(actDoc)
-        return brepOutFile
+        #print(f"Ret Obj {retObj.Name} Shape {retObj.Shape}")
+        print(f"Ret Shape {retShape}")
+        return retShape
+        #return retObj
 
     except OpenSCADUtils.OpenSCADError as e:
         #print(f"OpenSCADError {e} {e.value}")
@@ -164,18 +177,15 @@ def shapeFromSourceFile(srcObj, module=False, modules=False):
         wrkSrc = srcObj.sourceFile
 
     if srcObj.mode == "Brep":
-        brepFile = createBrep(srcObj, tmpDir, wrkSrc)
+        brepShape = createBrep(srcObj, tmpDir, wrkSrc)
         print(f"Active Document {FreeCAD.ActiveDocument.Name}")
-        print(f"Brep file {brepFile}")
-        print(f"keepWork {srcObj.keep_work}")
-        newShape = Part.Shape()
-        newShape.read(brepFile)
-        print(newShape)
-        return newShape
+        return brepShape
+        #return brepObj.Shape
 
     elif srcObj.mode == "Mesh":
         print(f"wrkSrc {wrkSrc}")
-        return createMesh(srcObj, tmpDir, wrkSrc)
+        return createMesh(srcObj, wrkSrc)
+        #return createMesh(srcObj, tmpDir, wrkSrc)
 
 # Cannot put in self as SCADlexer is not JSON serializable
 # How to make static ???
@@ -225,8 +235,8 @@ class SCADObject:
         obj.addProperty("App::PropertyBool","mesh_recombine","OpenSCAD","Process SCAD source")
         obj.mesh_recombine = False
         obj.addProperty("App::PropertyBool","keep_work","OpenSCAD","Process SCAD source")
-        obj.keep_work = True
-        #obj.keep_work = False
+        #obj.keep_work = True
+        obj.keep_work = False
         #self.obj = obj
         obj.Proxy = self
         self.createGeometry(obj)
@@ -245,14 +255,7 @@ class SCADObject:
         if prop in ["execute"]:
             if fp.execute == True:
                 self.executeFunction(fp)
-                #fp.message = ""
-                #self.createGeometry(fp)
-                #print(f"execute Object Shape {fp.Shape}")
-                #fp.Shape = Part.makeBox(10,10,10)
                 fp.execute = False
-                #FreeCADGui.updateGui()
-                #FreeCADGui.Selection.addSelection(obj)
-                #return
             else:
                 print(f"Touched execute Shape {fp.Shape}")
                 #obj.Shape = self.newShape
@@ -260,13 +263,6 @@ class SCADObject:
 
         if prop in ["edit"]:
             if fp.edit == True:
-                #obj.message = ""
-                #shp = shapeFromSource(obj, modules = obj.modules)
-                #if shp is not None:
-                #    obj.Shape = shp
-                #else:
-                #    obj.Shape = Part.Shape()
-                #   obj.execute = False
                 self.editFile(fp.sourceFile)
                 fp.edit = False
             FreeCADGui.Selection.addSelection(fp)
@@ -282,7 +278,7 @@ class SCADObject:
 
 
     def executeFunction(self, obj):
-        import FreeCADGui, Part
+        import FreeCAD, FreeCADGui, Part
         import os, tempfile
         print(f"Execute {obj.Name} keepWork {obj.keep_work}")
         #print(dir(obj))
@@ -291,20 +287,33 @@ class SCADObject:
         if shp is not None:
             print(f"Initial Shape {obj.Shape}")
             print(f"Returned Shape {shp}")
-            shp.check()
-            newShp = shp.copy()
-            print(f"New Shape {newShp}")
-            print(f"Old Shape {shp}")
-            #obj.Shape = shp.copy()
-            obj.Shape = newShp
+            #shp.check()
+            #newShp = shp.copy()
+            #print(f"New Shape {newShp}")
+            #print(f"Old Shape {shp}")
+            #obj.Shape = newShp
+            obj.Shape = shp
         else:
             print(f"Shape is None")
             obj.Shape = Part.Shape()
         print(f"Function Object Shape {obj.Shape}")
         obj.execute = False
+        if obj.mode == 'Mesh':
+            obj.ViewObject.DisplayMode = u"Wireframe"
+        if obj.mode == 'Brep':
+            obj.ViewObject.DisplayMode = u"Shaded"
         #obj.recompute()
-        FreeCADGui.updateGui()
+        FreeCAD.ActiveDocument.recompute()
         FreeCADGui.Selection.addSelection(obj)
+        FreeCADGui.SendMsgToActiveView("ViewFit")
+        # Need to update Gui for properties change
+        # try and catch as puts out warning
+        try:
+            obj.execute = False
+            FreeCADGui.updateGui()
+        except err:
+            print(f"Warning {err}")
+        #FreeCADGui.Selection.addSelection(obj)
 
 
     def copyFile(self, src, trg):
