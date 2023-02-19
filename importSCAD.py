@@ -40,7 +40,9 @@ if open.__module__ in ['__builtin__', 'io']:
 
 #import OpenSCADObjects
 #import importCSG
-from OpenSCADObjects import SCADObject
+from OpenSCADObjects import SCADObject, ViewSCADProvider
+
+#from OpenSCADFeatures import ViewProviderTree
 from importCSG import processCSG
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
@@ -60,6 +62,9 @@ def open(filename):
         doc=FreeCAD.newDocument(filename)
     obj = doc.addObject("Part::FeaturePython", objectName)
     scadObj = SCADObject(obj, filename)
+    ViewSCADProvider(obj.ViewObject)
+    FreeCAD.ActiveDocument.recompute()
+    FreeCADGui.SendMsgToActiveView("ViewFit")
     #print(dir(scadObj))
     #obj.execute = True
     #scadObj.onChanged(obj, "execute")

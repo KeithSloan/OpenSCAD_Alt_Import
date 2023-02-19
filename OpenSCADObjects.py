@@ -71,6 +71,8 @@ def createBrep(srcObj, tmpDir, wrkSrc):
     import FreeCAD, Part, os, OpenSCADUtils
     from importCSG import  processCSG
     print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
+    actDoc = FreeCAD.activeDocument().Name
+    print(f"Active Document {actDoc}")
     wrkDoc = FreeCAD.newDocument("work")
     try:
         print(f"Source : {srcObj.source}")
@@ -95,11 +97,12 @@ def createBrep(srcObj, tmpDir, wrkSrc):
         if retShape.isValid():
             retShape.exportBrep(brepOutFile)
             retShape.exportBrep("/tmp/exportBrep.brep")
-            #if srcObj.keepFile is not True:
-            #    FreeCAD.closeDocument("work")
+            if srcObj.keep_work is not True:
+                FreeCAD.closeDocument("work")
         else:
             print(f"Make Compound Failed")
-            retShape.check()    
+            retShape.check()
+        FreeCAD.setActiveDocument(actDoc)
         return brepOutFile
 
     except OpenSCADUtils.OpenSCADError as e:
@@ -146,12 +149,12 @@ def scanForModules(appendFp, sourceFp, module):
     appendFp.write(source)
 
 
-def shapeFromSourceFile(srcObj, keepWork=False, module=False, modules=False):
+def shapeFromSourceFile(srcObj, module=False, modules=False):
     import os, tempfile
     import FreeCAD, Part, sys
     from importCSG import  processCSG
     global doc
-    print(f"shapeFrom Source File : keepWork {keepWork}")
+    print(f"shapeFrom Source File : keepWork {srcObj.keep_work}")
     tmpDir = tempfile.gettempdir()
     if modules == True:
         wrkSrc = os.path.join(tmpDir, srcObj.Name+'.scad')
@@ -162,8 +165,9 @@ def shapeFromSourceFile(srcObj, keepWork=False, module=False, modules=False):
 
     if srcObj.mode == "Brep":
         brepFile = createBrep(srcObj, tmpDir, wrkSrc)
+        print(f"Active Document {FreeCAD.ActiveDocument.Name}")
         print(f"Brep file {brepFile}")
-        print(f"keepWork {keepWork}")
+        print(f"keepWork {srcObj.keep_work}")
         newShape = Part.Shape()
         newShape.read(brepFile)
         print(newShape)
@@ -188,7 +192,7 @@ def parse(obj, src):
 
 class SCADObject:
     def __init__(self, obj, filename):
-        import os, tempfile
+        import FreeCAD, os, tempfile, Part
         super().__init__()
         obj.addProperty("App::PropertyFile","source","OpenSCAD","OpenSCAD source")
         obj.source = obj.Label+".scad"
@@ -220,48 +224,42 @@ class SCADObject:
         obj.fnmax = 16
         obj.addProperty("App::PropertyBool","mesh_recombine","OpenSCAD","Process SCAD source")
         obj.mesh_recombine = False
-        self.obj = obj
+        obj.addProperty("App::PropertyBool","keep_work","OpenSCAD","Process SCAD source")
+        obj.keep_work = True
+        #obj.keep_work = False
+        #self.obj = obj
         obj.Proxy = self
+        self.createGeometry(obj)
 
-    def onChanged(self, obj, prop):
+    def onChanged(self, fp, prop):
         import FreeCAD, FreeCADGui, Part
-        print(f"{obj.Label} State : {obj.State} prop : {prop}")
+        print(f"{fp.Label} State : {fp.State} prop : {prop}")
 
-        if "Restore" in obj.State:
+        if "Restore" in fp.State:
             return
 
         if prop in ["Shape"]:
-            print(f"OnChange Shape {obj.Shape}")
+            print(f"OnChange Shape {fp.Shape}")
             return
 
         if prop in ["execute"]:
-            if obj.execute == True:
-                #self.executeFunction(obj)
-                obj.message = ""
-                print(f"Initial Shape {obj.Shape}")
-                self.newShape = shapeFromSourceFile(obj, True, \
-                                    modules = obj.modules)
-                print(f"Returned Shape {self.newShape}")
-                #newShp = shp.copy()
-                #print(f"New Shape {newShp}")
-                if self.newShape is not None:
-                    #obj.Shape = shp.copy()
-                    obj.Shape = self.newShape.copy()
-                    #obj.Shape = newShp
-                else:
-                    obj.Shape = Part.Shape()
-                print(f"execute Object Shape {obj.Shape}")
-                obj.execute = False
+            if fp.execute == True:
+                self.executeFunction(fp)
+                #fp.message = ""
+                #self.createGeometry(fp)
+                #print(f"execute Object Shape {fp.Shape}")
+                #fp.Shape = Part.makeBox(10,10,10)
+                fp.execute = False
                 #FreeCADGui.updateGui()
                 #FreeCADGui.Selection.addSelection(obj)
                 #return
             else:
-                print(f"Touched execute Shape {obj.Shape}")
+                print(f"Touched execute Shape {fp.Shape}")
                 #obj.Shape = self.newShape
 
 
         if prop in ["edit"]:
-            if obj.edit == True:
+            if fp.edit == True:
                 #obj.message = ""
                 #shp = shapeFromSource(obj, modules = obj.modules)
                 #if shp is not None:
@@ -269,23 +267,27 @@ class SCADObject:
                 #else:
                 #    obj.Shape = Part.Shape()
                 #   obj.execute = False
-                self.editFile(obj.sourceFile)
-                obj.edit = False
-            FreeCADGui.Selection.addSelection(obj)
+                self.editFile(fp.sourceFile)
+                fp.edit = False
+            FreeCADGui.Selection.addSelection(fp)
 
         if prop in ["message"]:
             print("message changed")
             FreeCADGui.updateGui()
 
 
+    def execute(self, fp):
+        '''Do something when doing a recomputation, this method is mandatory'''
+        print(f"execute")
 
-    def executeFunction(self, obj, keepWork = False):
+
+    def executeFunction(self, obj):
         import FreeCADGui, Part
         import os, tempfile
-        print(f"Execute {obj.Name} keepWork {keepWork}")
+        print(f"Execute {obj.Name} keepWork {obj.keep_work}")
         #print(dir(obj))
         obj.message = ""
-        shp = shapeFromSourceFile(obj, keepWork, modules = obj.modules)
+        shp = shapeFromSourceFile(obj, modules = obj.modules)
         if shp is not None:
             print(f"Initial Shape {obj.Shape}")
             print(f"Returned Shape {shp}")
@@ -321,7 +323,6 @@ class SCADObject:
         editorPathName = FreeCAD.ParamGet(\
             "User parameter:BaseApp/Preferences/Mod/OpenSCAD").GetString('externalEditor')
         print(f"Path to external editor {editorPathName}")
-
         # ToDo : Check pathname valid
         if editorPathName != "":
             p1 = subprocess.Popen( \
@@ -335,15 +336,194 @@ class SCADObject:
 
 
     def createGeometry(self, obj):
+        import FreeCAD, Part
         print("create Geometry")    #def getSource(self):
-    #    print(f"SCAD Object : get Source")
-    #    #print(dir(self))
-    #    print(f"Object Source {self.source}")
-    #    return self.source
+        print("Do not process SCAD source on Document recompute")
+        return
 
-    def execute(self, sp):
-        import FreeCADGui
-        #FreeCADGui.updateGui()
+        print(f"Active Document {FreeCAD.ActiveDocument.Name}")
+        #shp = shapeFromSourceFile(obj, keepWork, modules = obj.modules)
+        shp = shapeFromSourceFile(obj, modules = obj.modules)
+        print(f"Active Document {FreeCAD.ActiveDocument.Name}")
+        if shp is not None:
+            print(f"Initial Shape {obj.Shape}")
+            print(f"Returned Shape {shp}")
+            shp.check()
+            newShp = shp.copy()
+            print(f"New Shape {newShp}")
+            print(f"Old Shape {shp}")
+            #obj.Shape = shp.copy()
+            obj.Shape = newShp
+        else:
+            print(f"Shape is None")
+
+class GDMLcommon:
+    def __init__(self, obj):
+        """Init"""
+
+    def __getstate__(self):
+        """When saving the document this object gets stored using Python's
+        json module.
+        Since we have some un-serializable parts here -- the Coin stuff --
+        we must define this method
+        to return a tuple of all serializable objects or None."""
+        if hasattr(self, "Type"):  # If not saved just return
+            return {"type": self.Type}
+        else:
+            pass
+
+    def __setstate__(self, arg):
+        """When restoring the serialized object from document we have the
+        chance to set some internals here.
+        Since no data were serialized nothing needs to be done here."""
+        if arg is not None:
+            self.Type = arg["type"]
+
+# use general ViewProvider if poss
+#class ViewProvider(GDMLcommon):
+class ViewSCADProvider:
+    def __init__(self, obj):
+#        super().__init__(obj)
+        """Set this object to the proxy object of the actual view provider"""
+        obj.Proxy = self
+
+    def updateData(self, fp, prop):
+        """If a property of the handled feature has changed we have the chance to handle this here"""
+        # print("updateData")
+        # fp is the handled feature, prop is the name of the property that has changed
+        # l = fp.getPropertyByName("Length")
+        # w = fp.getPropertyByName("Width")
+        # h = fp.getPropertyByName("Height")
+        # self.scale.scaleFactor.setValue(float(l),float(w),float(h))
+        pass
+
+    def getDisplayModes(self, obj):
+        """Return a list of display modes."""
+        # print("getDisplayModes")
+        modes = []
+        modes.append("Shaded")
+        modes.append("Wireframe")
+        modes.append("Points")
+        return modes
+
+
+    def getDefaultDisplayMode(self):
+        """Return the name of the default display mode. It must be defined in getDisplayModes."""
+        return "Shaded"
+
+    def setDisplayMode(self, mode):
+        """Map the display mode defined in attach with those defined in getDisplayModes.\
+               Since they have the same names nothing needs to be done. This method is optional"""
+        return mode
+
+    def onChanged(self, vp, prop):
+        """Here we can do something when a single property got changed"""
+        import Part
+        print(f"View Provider OnChanged : prop {prop}")
+        #print(dir(vp))
+        #vp.Shape = Part.makeBox(3,3,3)
+        # if hasattr(vp,'Name') :
+        #   print("View Provider : "+vp.Name+" State : "+str(vp.State)+" prop : "+prop)
+        # else :
+        #   print("View Provider : prop : "+prop)
+        # GDMLShared.trace("Change property: " + str(prop) + "\n")
+        # if prop == "Color":
+        #    c = vp.getPropertyByName("Color")
+        #    self.color.rgb.setValue(c[0],c[1],c[2])
+
+
+
+    def getIcon(self):
+        """Return the icon in XPM format which will appear in the tree view. This method is\
+               optional and if not defined a default icon is shown."""
+        return """
+           /* XPM */
+           static const char * ViewProviderBox_xpm[] = {
+           "16 16 6 1",
+           "   c None",
+           ".  c #141010",
+           "+  c #615BD2",
+           "@  c #C39D55",
+           "#  c #000000",
+           "$  c #57C355",
+           "        ........",
+           "   ......++..+..",
+           "   .@@@@.++..++.",
+           "   .@@@@.++..++.",
+           "   .@@  .++++++.",
+           "  ..@@  .++..++.",
+           "###@@@@ .++..++.",
+           "##$.@@$#.++++++.",
+           "#$#$.$$$........",
+           "#$$#######      ",
+           "#$$#$$$$$#      ",
+           "#$$#$$$$$#      ",
+           "#$$#$$$$$#      ",
+           " #$#$$$$$#      ",
+           "  ##$$$$$#      ",
+           "   #######      "};
+           """
+    def __getstate__(self):
+        """When saving the document this object gets stored using Python's json module.\
+               Since we have some un-serializable parts here -- the Coin stuff -- we must define this method\
+               to return a tuple of all serializable objects or None."""
+        return None
+
+    def __setstate__(self, state):
+        """When restoring the serialized object from document we have the chance to set some internals here.\
+               Since no data were serialized nothing needs to be done here."""
+        return None
+
+
+
+class ViewProviderSCADObject:
+    def __init__(self,obj):
+        """Set this object to the proxy object of the actual view provider"""
+        obj.Proxy = self
+        pass
+
+    def getDefaultDisplayMode(self):
+        """Return the name of the default display mode. It must be defined in getDisplayModes."""
+        return "Shaded"
+
+    def setDisplayMode(self, mode):
+        """Map the display mode defined in attach with those defined in getDisplayModes.\
+               Since they have the same names nothing needs to be done. This method is optional"""
+        return mode
+
+    def onChanged(self, vp, prop):
+        """Here we can do something when a single property got changed"""
+        # if hasattr(vp,'Name') :
+        #   print("View Provider : "+vp.Name+" State : "+str(vp.State)+" prop : "+prop)
+        # else :
+        #   print("View Provider : prop : "+prop)
+        # GDMLShared.trace("Change property: " + str(prop) + "\n")
+        # if prop == "Color":
+        #    c = vp.getPropertyByName("Color")
+        #    self.color.rgb.setValue(c[0],c[1],c[2])
+    def attach(self, obj):
+        '''Setup the scene sub-graph of the view provider, this method is mandatory'''
+        pass
+
+    def updateData(self, fp, prop):
+        """If a property of the handled feature has changed we have the chance to handle this here"""
+        print(f"UpdateData")
+        pass
+
+    def getDefaultDisplayMode(self):
+        """Return the name of the default display mode. It must be defined in getDisplayModes."""
+        modes = []
+        return modes
+
+    def setDisplayMode(self, mode):
+        """Map the display mode defined in attach with those defined in getDisplayModes.\
+               Since they have the same names nothing needs to be done. This method is optional"""
+        return mode
+
+    #def onChanged(self, vp, prop):
+    #    print(f"View provider Change Property")
+    #    return
+
 
     def __getstate__(self):
         """When saving the document this object gets stored using Python's json
