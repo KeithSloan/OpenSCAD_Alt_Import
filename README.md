@@ -41,7 +41,7 @@ The idea to allow hybrid development ( FreeCAD and OpenSCAD )
                 OpenSCAD
                     externalEditor
                         Text : <path to editor > 
-                        e.g. Text /usr/loacl/bin/code
+                        e.g. Text /usr/local/bin/code
 
 ### Use
 
