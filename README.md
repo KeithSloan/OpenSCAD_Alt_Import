@@ -123,7 +123,7 @@ the user will be prompted with which importer to use.
   
   ### Using SCADObjects and OpenSCAD external editor.
   
-  Using a combination of an external editor for SCADObjects and having OpenSCAD set up for a external editor allows.
+  Using a combination of an external editor for SCADObjects and having OpenSCAD set up for an external editor allows.
   
   * One to edit the source for FreeCAD OpenSCAD objects
   * Preview any changes in a OpenSCAD Preview window
