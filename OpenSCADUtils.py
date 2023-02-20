@@ -148,25 +148,46 @@ def newtempfilename():
 
 tempfilenamegen=newtempfilename()
 
-def callopenscad(inputfilename,outputfilename=None,outputext='csg',keepname=False):
+from PySide import QtCore, QtGui
+
+def errorDialog(msg):
+    # Create a simple dialog QMessageBox
+    # The first argument indicates the icon used: one of QtGui.QMessageBox.{NoIcon, Information, Warning, Critical, Question}
+    diag = QtGui.QMessageBox(QtGui.QMessageBox.Warning, 'Error in macro MessageBox', msg)
+    diag.setWindowModality(QtCore.Qt.ApplicationModal)
+    diag.exec_()
+
+
+def callopenscad(inputfilename,outputfilename=None,outputext='csg',keepname=False, timeout=None):
     '''call the open scad binary
     returns the filename of the result (or None),
     please delete the file afterwards'''
     import FreeCAD,os,subprocess,tempfile,time
+    from subprocess import TimeoutExpired
+
     def check_output2(*args,**kwargs):
         kwargs.update({'stdout':subprocess.PIPE,'stderr':subprocess.PIPE})
         p=subprocess.Popen(*args,**kwargs)
-        stdoutd,stderrd = p.communicate()
-        stdoutd = stdoutd.decode("utf8")
-        stderrd = stderrd.decode("utf8")
-        if p.returncode != 0:
-            raise OpenSCADError('%s %s\n' % (stdoutd.strip(),stderrd.strip()))
-            #raise Exception,'stdout %s\n stderr%s' %(stdoutd,stderrd)
-        if stderrd.strip():
-            FreeCAD.Console.PrintWarning(stderrd+u'\n')
-        if stdoutd.strip():
-            FreeCAD.Console.PrintMessage(stdoutd+u'\n')
-            return stdoutd
+        try:
+            stdoutd,stderrd = p.communicate(timeout=timeout)
+            stdoutd = stdoutd.decode("utf8")
+            stderrd = stderrd.decode("utf8")
+            if p.returncode != 0:
+                raise OpenSCADError('%s %s\n' % (stdoutd.strip(),stderrd.strip()))
+                #raise Exception,'stdout %s\n stderr%s' %(stdoutd,stderrd)
+            if stderrd.strip():
+                FreeCAD.Console.PrintWarning(stderrd+u'\n')
+            if stdoutd.strip():
+                FreeCAD.Console.PrintMessage(stdoutd+u'\n')
+                return stdoutd
+
+        except TimeoutExpired:
+            msg="Call to OpenSCAD to process timed out after " \
+                +str(timeout)+"secs"
+            errorDialog(msg)
+            p.kill()
+            # Second call no timeout to clean up?
+            stdoutd,stderrd = p.communicate()
 
     osfilename = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\

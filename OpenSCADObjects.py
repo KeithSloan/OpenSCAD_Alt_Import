@@ -38,7 +38,8 @@ def createMesh(srcObj, wrkSrc):
         print(f"Input file {wrkSrc}")
         print(f"Output file {tmpOutFile}")
         tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
-            outputfilename=tmpOutFile, outputext='stl')
+            outputfilename=tmpOutFile, outputext='stl', \
+            timeout=int(srcObj.timeout))
         print(f"STL File name {tmpFileName}")
         mesh = Mesh.Mesh()
         print(f"files {tmpOutFile} {tmpFileName}")
@@ -81,7 +82,8 @@ def createBrep(srcObj, tmpDir, wrkSrc):
         csgOutFile = os.path.join(tmpDir, srcObj.Name+'.csg')
         brepOutFile = os.path.join(tmpDir, srcObj.Name+'.brep')
         tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
-            outputfilename=csgOutFile, outputext='csg')
+            outputfilename=csgOutFile, outputext='csg', \
+            timeout=int(srcObj.timeout))
         print(f"CSG File name {tmpFileName}")
         processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
         # *** Does not work for earrings.scad
@@ -232,11 +234,13 @@ class SCADObject:
         obj.mode = 0
         obj.addProperty("App::PropertyInteger","fnmax","OpenSCAD","Max Poylgon - If circle or cylinder has more than this number of sides, treat as circle or cyliner")
         obj.fnmax = 16
-        obj.addProperty("App::PropertyBool","mesh_recombine","OpenSCAD","Process SCAD source")
+        obj.addProperty("App::PropertyBool","mesh_recombine","OpenSCAD","Mesh Recombine")
         obj.mesh_recombine = False
-        obj.addProperty("App::PropertyBool","keep_work","OpenSCAD","Process SCAD source")
+        obj.addProperty("App::PropertyBool","keep_work","OpenSCAD","Keep FC Work Document")
         #obj.keep_work = True
         obj.keep_work = False
+        obj.addProperty("App::PropertyInteger","timeout","OpenSCAD","OpenSCAD process timeout (secs)")
+        obj.timeout = 30
         #self.obj = obj
         obj.Proxy = self
         self.createGeometry(obj)
