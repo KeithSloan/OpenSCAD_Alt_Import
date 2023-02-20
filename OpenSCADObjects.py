@@ -22,12 +22,11 @@
 #*                                                                         *
 #***************************************************************************
 
+import FreeCAD, FreeCADGui, Part, Mesh, OpenSCADUtils
+import os, sys, tempfile
 
 # Shared between SCADObject and SCADModule
 def createMesh(srcObj, wrkSrc):
-    import Part, Mesh, OpenSCADUtils
-    import os, tempfile
-
     print(f"Create Mesh {srcObj.Name} {wrkSrc}")
     try:
         print(f"Source : {srcObj.source}")
@@ -69,8 +68,8 @@ def createMesh(srcObj, wrkSrc):
 
 # Source may be procesed
 def createBrep(srcObj, tmpDir, wrkSrc):
-    import FreeCAD, FreeCADGui, Part, os, OpenSCADUtils
     from importCSG import  processCSG
+
     print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
     actDoc = FreeCAD.activeDocument().Name
     print(f"Active Document {actDoc}")
@@ -165,9 +164,6 @@ def scanForModules(appendFp, sourceFp, module):
 
 
 def shapeFromSourceFile(srcObj, module=False, modules=False):
-    import os, tempfile
-    import FreeCAD, Part, sys
-    from importCSG import  processCSG
     global doc
     print(f"shapeFrom Source File : keepWork {srcObj.keep_work}")
     tmpDir = tempfile.gettempdir()
@@ -202,28 +198,16 @@ def parse(obj, src):
     #obj.setEditorMode("text",2)
 
 
-class SCADObject:
+class SCADBase:
     def __init__(self, obj, filename):
-        import FreeCAD, os, tempfile, Part
         super().__init__()
         obj.addProperty("App::PropertyFile","source","OpenSCAD","OpenSCAD source")
         obj.source = obj.Label+".scad"
         obj.setEditorMode("source",1)
-        #tmpDir = obj.Document.TransientDir
-        #print(f"Doc temp dir {tmpDir}")
-        tmpDir = tempfile.gettempdir()
-        #tmpDir = obj.Document.getPropertyByName("TransientDir")
-        print(f"Doc temp dir {tmpDir}")
-        tmpPath = os.path.join(tmpDir, obj.source)
-        print(f"Path {tmpPath}")
-        self.copyFile(filename, tmpPath)
-        # After creating 
-        #dir_list = os.listdir(tmpDir)
-        #print("List of directories and files after creation:")
-        #print(dir_list)
         obj.addProperty("App::PropertyFile","sourceFile","OpenSCAD","OpenSCAD source")
-        obj.sourceFile = tmpPath
-        obj.setEditorMode("sourceFile",2)
+        obj.sourceFile = filename
+        # Set in SCADObject
+        #obj.setEditorMode("sourceFile",2)
         obj.addProperty("App::PropertyString","message","OpenSCAD","OpenSCAD message")
         obj.addProperty("App::PropertyBool","modules","OpenSCAD","OpenSCAD Uses Modules")
         obj.addProperty("App::PropertyBool","edit","OpenSCAD","Edit SCAD source")
@@ -246,7 +230,6 @@ class SCADObject:
         self.createGeometry(obj)
 
     def onChanged(self, fp, prop):
-        import FreeCAD, FreeCADGui, Part
         print(f"{fp.Label} State : {fp.State} prop : {prop}")
 
         if "Restore" in fp.State:
@@ -282,9 +265,9 @@ class SCADObject:
 
 
     def executeFunction(self, obj):
-        import FreeCAD, FreeCADGui, Part
-        import os, tempfile
+        from timeit import default_timer as timer
         print(f"Execute {obj.Name} keepWork {obj.keep_work}")
+        start = timer()
         #print(dir(obj))
         obj.message = ""
         shp = shapeFromSourceFile(obj, modules = obj.modules)
@@ -306,6 +289,8 @@ class SCADObject:
             obj.ViewObject.DisplayMode = u"Wireframe"
         if obj.mode == 'Brep':
             obj.ViewObject.DisplayMode = u"Shaded"
+        end = timer()
+        print(f"==== Create Shape took {end-start} secs ====")    
         #obj.recompute()
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.Selection.addSelection(obj)
@@ -369,6 +354,57 @@ class SCADObject:
         else:
             print(f"Shape is None")
 
+class SCADObject(SCADBase):
+    def __init__(self, obj, filename):
+        import FreeCAD, os, tempfile, Part
+        super().__init__(obj, filename)
+        #tmpDir = obj.Document.TransientDir
+        #print(f"Doc temp dir {tmpDir}")
+        tmpDir = tempfile.gettempdir()
+        #tmpDir = obj.Document.getPropertyByName("TransientDir")
+        print(f"Doc temp dir {tmpDir}")
+        tmpPath = os.path.join(tmpDir, obj.source)
+        print(f"Path {tmpPath}")
+        self.copyFile(filename, tmpPath)
+        # After creating 
+        #dir_list = os.listdir(tmpDir)
+        #print("List of directories and files after creation:")
+        #print(dir_list)
+        obj.sourceFile = tmpPath
+        obj.setEditorMode("sourceFile",2)
+
+    def __getstate__(self):
+        """When saving the document this object gets stored using Python's json
+        module.
+        Since we have some un-serializable parts here -- the Coin stuff --
+        we must define this method\
+        to return a tuple of all serializable objects or None."""
+        if hasattr(self, "obj"):
+            if hasattr(self.obj, "sourceFile"):
+                print(f"Save Source File {self.obj.sourceFile}")
+                sf = open(self.obj.sourceFile, 'r')
+                buffer = sf.read()
+                return {"sourceFile": [self.obj.sourceFile, buffer]}
+        else:
+            pass
+
+    def __setstate__(self, arg):
+        import os, tempfile
+        """When restoring the serialized object from document we have the
+        chance to set some internals here. Since no data were serialized
+        nothing needs to be done here."""
+        print(f"Restore {type(arg)} {arg}")
+        tmpDir = tempfile.gettempdir()
+        sourceName = arg.keys()[0]
+        print(f"{arg[sourceName]}")
+        sourcePath = os.path.join(tmpDir, soureName)
+        print(f"Source Path {sourcePath}")
+        fp = open(sourcePath,"w")
+        if fp is not None:
+            fp.write(arg[sourceName])
+        else:
+            print(f"Failed to open {sourcePath}")
+
 
 class ViewSCADProvider:
     def __init__(self, obj):
@@ -408,8 +444,6 @@ class ViewSCADProvider:
     def getIcon(self):
         """Return the icon in XPM format which will appear in the tree view. This method is\
                optional and if not defined a default icon is shown."""
-        return 
-
 
     def __getstate__(self):
         """When saving the document this object gets stored using Python's json
@@ -417,32 +451,10 @@ class ViewSCADProvider:
         Since we have some un-serializable parts here -- the Coin stuff --
         we must define this method\
         to return a tuple of all serializable objects or None."""
-        if hasattr(self, "obj"):
-            if hasattr(self.obj, "sourceFile"):
-                print(f"Save Source File {self.obj.sourceFile}")
-                sf = open(self.obj.sourceFile, 'r')
-                buffer = sf.read()
-                return {"sourceFile": [self.obj.sourceFile, buffer]}
-        else:
-            pass
+        return None
 
     def __setstate__(self, arg):
-        import os, tempfile
         """When restoring the serialized object from document we have the
         chance to set some internals here. Since no data were serialized
         nothing needs to be done here."""
-        print(f"Restore {type(arg)} {arg}")
-        tmpDir = tempfile.gettempdir()
-        sourceName = arg.keys()[0]
-        print(f"{arg[sourceName]}")
-        sourcePath = os.path.join(tmpDir, soureName)
-        print(f"Source Path {sourcePath}")
-        fp = open(sourcePath,"w")
-        if fp is not None:
-            fp.write(arg[sourceName])
-        else:
-            print(f"Failed to open {sourcePath}")
-
-class SCADFileObject:
-        # TO DO
         pass

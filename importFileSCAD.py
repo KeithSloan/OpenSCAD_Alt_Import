@@ -39,7 +39,7 @@ if open.__module__ in ['__builtin__', 'io']:
 
 #import OpenSCADObjects
 #import importCSG
-from OpenSCADObjects import SCADFileObject, ViewSCADProvider
+from OpenSCADObjects import SCADBase, ViewSCADProvider
 
 from importCSG import processCSG
 
@@ -59,7 +59,7 @@ def open(filename):
     if doc is None:
         doc=FreeCAD.newDocument(filename)
     obj = doc.addObject("Part::FeaturePython", objectName)
-    scadObj = SCADiFileObject(obj, filename)
+    scadObj = SCADBase(obj, filename)
     ViewSCADProvider(obj.ViewObject)
     if hasattr(obj, 'Proxy'):
         obj.Proxy.executeFunction(obj)
