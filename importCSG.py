@@ -50,6 +50,7 @@ import random
 import OpenSCADFeatures
 import OpenSCADUtils
 import OpenSCADHull
+import OpenSCADMinkowski
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
@@ -517,43 +518,15 @@ def p_hull_action(p):
     myHull = makeHull(p[5],True)
     p[0] = [myHull]
 
-def setObjColor(obj, color):
-    # set color for all faces of selected object
-    colorlist=[]
-    for i in range(len(obj.Shape.Faces)):
-        colorlist.append(color)
-        #print('[*] Object contains %d faces'%(len(colorlist),))
-        obj.ViewObject.DiffuseColor = colorlist
-
-def setOutListColor(obj, color) :
-    if obj.OutList != None :
-       for i in obj.OutList : 
-           setOutListColor(i,color)
-           setObjColor(i,color)
 
 def p_minkowski_action(p):
     '''
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
 
-    # - For minkowski Just indicate first shape needs editing
+    from OpenSCADMinkowski import minkowski
 
-    if len(p[6]) == 2 :
-       # return just first object     
-       #print(dir(p[6][0]))
-       #print(dir((p[6][1]).ViewObject))
-       #print(p[6][0].TypeId)
-       p[6][0].ViewObject.ShapeColor = (1.,0.,0.)
-       setObjColor(p[6][0],(1.,0.,0.))
-       setOutListColor(p[6][0],(1.,0.,0.))
-       #print(p[6][1].TypeId)
-       p[6][1].ViewObject.ShapeColor = (0.,1.,0.)
-       setObjColor(p[6][1],(0.,1.,0.))
-       setOutListColor(p[6][1],(1.,0.,0.))
-       #p[6][1].ViewObject.hide()
-       p[0] = [p[6][0]]
+    p[0] = [minkowski(p)]
 
-    else :
-        p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
 
 def p_resize_action(p):
     '''
