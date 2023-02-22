@@ -167,12 +167,13 @@ def shapeFromSourceFile(srcObj, module=False, modules=False):
     global doc
     print(f"shapeFrom Source File : keepWork {srcObj.keep_work}")
     tmpDir = tempfile.gettempdir()
-    if modules == True:
-        wrkSrc = os.path.join(tmpDir, srcObj.Name+'.scad')
-        #   wrkSrcFp = fopen(wrkSrc)
-        #   scanForModules(wrkSrcFp, module)
-    else:
-        wrkSrc = srcObj.sourceFile
+    #if modules == True:
+    #    wrkSrc = os.path.join(tmpDir, srcObj.Name+'.scad')
+    #    #   wrkSrcFp = fopen(wrkSrc)
+    #    #   scanForModules(wrkSrcFp, module)
+    #else:
+    #    wrkSrc = srcObj.sourceFile
+    wrkSrc = srcObj.sourceFile
 
     if srcObj.mode == "Brep":
         brepShape = createBrep(srcObj, tmpDir, wrkSrc)
