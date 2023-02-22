@@ -40,26 +40,79 @@ def setOutListColor(obj, color) :
            setObjColor(i,color)        
 
 
+def CGALFeatureObj(name, children,arguments=[]):
+    from OpenSCADFeatures import CGALFeature
+    myobj=FreeCAD.ActiveDocument.addObject("Part::FeaturePython", name)
+    CGALFeature(myobj, name, children, str(arguments))
+    if FreeCAD.GuiUp:
+        for subobj in children:
+            subobj.ViewObject.hide()
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+            GetBool('useViewProviderTree'):
+            from OpenSCADFeatures import ViewProviderTree
+            ViewProviderTree(myobj.ViewObject)
+        else:
+            myobj.ViewObject.Proxy = 0
+    return myobj
+
 def minkowski(p):
     ''' for reference only
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
     print(f"Minkowski")
     if len(p[6]) == 2 :     # Two objects on stack
         print(p[6][1].TypeId)
-        if p[6][1].TypeId == "Part::Sphere" and hasattr(p[6][0],"Shape"):
-            obj = p[6][0]
-            radius = p[6][1].Radius.Value
-            if hasattr(obj.Shape, "Edges"):
+        obj1 = p[6][0]
+        obj2 = p[6][1]
+        if obj2.TypeId == "Part::Sphere" and hasattr(obj1,"Shape"):
+            radius = obj2.Radius.Value
+            if hasattr(obj1.Shape, "Edges"):
                 # Use Offset as minkowski enlarges 
                 newObj = FreeCAD.ActiveDocument.addObject("Part::Offset",\
                             "Offset_" + p[1])
-                newObj.Source = obj
+                newObj.Source = obj1
                 newObj.Value = radius
                 newObj.Mode = 'Skin'
                 newObj.Join = 'Arc'
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
+                FreeCAD.ActiveDocument.removeObject(p[6][1].Name)
+                p[0] = [newObj]
+                return
+        elif obj2.TypeId == "Part::Cylinder" and hasattr(obj1,"Shape"):
+            radius = obj2.Radius.Value
+            if hasattr(obj1.Shape, "Edges"):
+                # Use Offset as minkowski enlarges 
+                newObj = FreeCAD.ActiveDocument.addObject("Part::Offset",\
+                            "Offset_" + p[1])
+                newObj.Source = obj1
+                newObj.Value = radius
+                newObj.Mode = 'Skin'
+                newObj.Join = 'Intersection'
+                newObj.Intersection = False
+                newObj.SelfIntersection = False
+                newObj.Fill = False
+                fEdges = []
+                localAxis = obj2.Placement.Rotation.Axis
+                print(f"Cylinder axis {localAxis}")
+                #for i, e in enumerate(obj1.Shape.Edges,start=1):
+                for i, e in enumerate(obj1.Shape.Edges):
+                    # Only check straight edges
+                    if hasattr(e.Curve, 'Direction'):
+                        direction = e.Curve.Direction
+                        # print(f"Direction {direction}")
+                        if localAxis.isEqual(direction, 1e-7) or \
+                                localAxis.isEqual(-direction, 1e-7):
+                            #print(f"Edge {i} is parallel")
+                            print(f"Edge {i+1} is parallel")
+                            #fEdges.append(i)
+                            fEdges.append(i+1)
+
+                if len(fEdges) > 0:
+                    newObj.recompute()
+                    newShape = newObj.Shape.makeFillet(radius, fEdges)
+                else:
+                    print(f"Warning : No Edges filleted")    
                 FreeCAD.ActiveDocument.removeObject(p[6][1].Name)
                 p[0] = [newObj]
                 return
@@ -77,7 +130,4 @@ def minkowski(p):
         #    setOutListColor(p[6][1],(1.,0.,0.))
         #    #p[6][1].ViewObject.hide()
         #    p[0] = [p[6][0]]
-    newObj=FreeCAD.ActiveDocument.addObject("Part::FeaturePython",p[1])
-    from OpenSCADFeatures import CGALFeature
-    #CGALFeature(myobj,name,children,str(arguments))
-    p[0] = [ CGALFeature(newObj,p[1],p[6],p[3]) ]
+    p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
