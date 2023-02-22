@@ -76,7 +76,7 @@ def minkowski(p):
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
-                FreeCAD.ActiveDocument.removeObject(p[6][1].Name)
+                FreeCAD.ActiveDocument.removeObject(obj2.Name)
                 p[0] = [newObj]
                 return
         elif obj2.TypeId == "Part::Cylinder" and hasattr(obj1,"Shape"):
@@ -106,15 +106,22 @@ def minkowski(p):
                             #print(f"Edge {i} is parallel")
                             print(f"Edge {i+1} is parallel")
                             #fEdges.append(i)
-                            fEdges.append(i+1)
+                            #fEdges.append(e)
+                            fEdges.append((i+1,radius,radius))
 
+                FreeCAD.ActiveDocument.removeObject(obj2.Name)
                 if len(fEdges) > 0:
-                    newObj.recompute()
-                    newShape = newObj.Shape.makeFillet(radius, fEdges)
+                    print(f"Edges {len(fEdges)}")
+                    #newObj.recompute()
+                    #newShape = newObj.Shape.makeFillet(radius, fEdges)
+                    myFillet = FreeCAD.ActiveDocument.addObject("Part::Fillet","Fillet")
+                    myFillet.Base = newObj
+                    myFillet.Edges =fEdges
+                    newObj.ViewObject.hide()
+                    p[0] = [myFillet]
                 else:
                     print(f"Warning : No Edges filleted")    
-                FreeCAD.ActiveDocument.removeObject(p[6][1].Name)
-                p[0] = [newObj]
+                    p[0] = [newObj]
                 return
         #else:    
         #    # - For minkowski Just indicate first shape needs editing
