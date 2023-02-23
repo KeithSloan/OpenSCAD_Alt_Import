@@ -499,7 +499,14 @@ def importDXFface(filename,layer=None,doc=None):
         # we need to remove used objects from the layer group
         #shapeobj.Document.removeObject(shapeobj.Name)
     #groupobj[0].Document.removeObject(groupobj[0].Name)
+    # KS attempt at fix 23/2/23
+    print(f"layers {layers}")
     for layer in layers: #remove everything that has been imported
+        if hasattr(layer,"TypeId"):
+            if layer.TypeId == "App::FeaturePython":
+                doc.removeObject(layer.Name)
+                break
+
         layer.removeObjectsFromDocument()
         #for obj in layer.Group:
         #    obj.Document.removeObject(obj.Name)

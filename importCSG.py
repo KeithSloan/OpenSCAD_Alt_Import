@@ -501,7 +501,7 @@ def setObjectColour(obj, col) :
 
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
-    printverbose=True
+    #printverbose=True
     if printverbose: print('hull function')
     from OpenSCADHull import makeHull
     myHull = makeHull(p[5],True)
@@ -1336,10 +1336,19 @@ def p_square_action(p) :
     p[0] = [mysquare]
 
 def addString(t,s,p):
-    return(t + ', ' +s+' = "'+p[3][s]+'"')
+    print(f"addString {s}")
+    if s in p[3]:
+        print(f" Value {p[3][s]}")
+        return(t + ', ' +s+' = "'+p[3][s]+'"')
+    else:
+        return t
 
 def addValue(t,v,p):
-    return(t + ', ' +v+' = '+p[3][v])
+    print(f"addValue {v}")
+    if v in p[3]:
+        return(t + ', ' +v+' = '+p[3][v])
+    else:
+        return v    
 
 def p_text_action(p) :
     'text_action : text LPAREN keywordargument_list RPAREN SEMICOL'
@@ -1347,6 +1356,7 @@ def p_text_action(p) :
     if p[3]['text'] == "" or p[3]['text'] == " " :
         p[0] = []
         return
+    print(f"keywordargs {p[3]}")
     t = 'text ( text="'+p[3]['text']+'"'
     t = addValue(t,'size',p)
     t = addString(t,'spacing',p)

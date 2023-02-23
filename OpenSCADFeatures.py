@@ -443,7 +443,7 @@ class Twist:
                     pipe_shell.add(wire1)
                     pipe_shell.add(wire2)
                     pipe_shell.setAuxiliarySpine(auxiliary_spine,True,0)
-                    print(pipe_shell.getStatus())
+                    print(f"pipe shell status {pipe_shell.getStatus()}")
                     assert(pipe_shell.isReady())
                     pipe_shell.build()
                     faces.extend(pipe_shell.shape().Faces)
