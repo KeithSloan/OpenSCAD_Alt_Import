@@ -1,4 +1,4 @@
-# -*- coding: utf8 -*-
+# -*- coding: utf8 -*-p
 #***************************************************************************
 #*                                                                         *
 #*   Copyright (c) 2012 Keith Sloan <keith@sloan-home.co.uk>               *
@@ -56,7 +56,7 @@ params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
 print(f'Verbose = {printverbose}')
 #print(params.GetContents())
-#printverbose = True
+printverbose = True
 # Get the token map from the lexer.  This is required.
 import tokrules
 from tokrules import tokens
@@ -203,7 +203,7 @@ def p_render_action(p):
 
 def p_group_action1(p):
     'group_action1 : group LPAREN RPAREN OBRACE block_list EBRACE'
-    if printverbose: print("Group")
+    if printverbose: print(f"Group action1 : {p[5]}")
 # Test if need for implicit fuse
     if p[5] is None:
        p[0] = []
@@ -212,6 +212,7 @@ def p_group_action1(p):
        if printverbose: print('Fuse Group')
        p[0] = [fuse(p[5],"Group")]
     else :
+       if printverbose: print(f"Group is : {p[5]}")
        p[0] = p[5]
 
 def p_group_action2(p) :
@@ -1019,14 +1020,18 @@ def processSTL(fname):
 
 def p_multmatrix_action(p):
     'multmatrix_action : multmatrix LPAREN matrix RPAREN OBRACE block_list EBRACE'
-    #from OpenSCADUtils import isspecialorthogonalpython, \
-    #     fcsubmatrix, roundrotation, isrotoinversionpython, \
-    #     decomposerotoinversion
-    from OpenSCADFeatures import RefineShape     
-    if printverbose: print("MultMatrix")
+    from OpenSCADUtils import isspecialorthogonalpython, \
+        isrotoinversionpython, fcsubmatrix, roundrotation
+    #import OpenSCADUtils 
+    if printverbose: print(f"MultMatrix : Block : {p[6]}")
     transform_matrix = FreeCAD.Matrix()
-    if printverbose: print("Multmatrix")
-    if printverbose: print(p[3])
+    if printverbose: print(f"Multmatrix : matrix : {p[3]}")
+    if gui and p[6]:
+        if hasattr(p[6][0], 'ViewObject'):
+            parentcolor=p[6][0].ViewObject.ShapeColor
+            parenttransparency=p[6][0].ViewObject.Transparency
+        else:
+            print(f"No ViewObject {p[6][0]}")    
     m1l=sum(p[3],[])
     if any('x' in me for me in m1l): #hexfloats
         m1l=[float.fromhex(me) for me in m1l]
@@ -1040,37 +1045,25 @@ def p_multmatrix_action(p):
         matrixisrounded=True
     transform_matrix = FreeCAD.Matrix(*tuple(m1l))
     if printverbose: print(transform_matrix)
-    if printverbose: print("Apply Multmatrix")
+    if printverbose: print(f"Apply Multmatrix {p[6]}")
 #   If more than one object on the stack for multmatrix fuse first
-    #for o in p[6]:    
-    #    print(f"{o.Label} {o}")
-    if p[6] == None :
-       print(p) 
-       print(dir(p))
     if (len(p[6]) == 0) :
         part = placeholder('group',[],'{}')
+    elif (len(p[6]) > 1) :
+        part = fuse(p[6],"Matrix Union")
     else :
-        retList = []
-        #print(f"Mult Matrix")
-        for part in p[6]:
-           retList.append(performMultMatrix(part,matrixisrounded,transform_matrix))
-        p[0] = retList
-
-def performMultMatrix(part, matrixisrounded, transform_matrix) :
-    from OpenSCADUtils import isspecialorthogonalpython, \
-         fcsubmatrix, roundrotation, isrotoinversionpython, \
-         decomposerotoinversion
+        part = p[6][0]
     if (isspecialorthogonalpython(fcsubmatrix(transform_matrix))) :
-       if printverbose: print("special orthogonal")
-       if matrixisrounded:
-           if printverbose: print("rotation rounded")
-           plm=FreeCAD.Placement(transform_matrix)
-           plm=FreeCAD.Placement(plm.Base,roundrotation(plm.Rotation))
-           part.Placement=plm.multiply(part.Placement)
-       else:
-           part.Placement=FreeCAD.Placement(transform_matrix).multiply(\
-                   part.Placement)
-       new_part = part
+        if printverbose: print("special orthogonal")
+        if matrixisrounded:
+            if printverbose: print("rotation rounded")
+            plm=FreeCAD.Placement(transform_matrix)
+            plm=FreeCAD.Placement(plm.Base,roundrotation(plm.Rotation))
+            part.Placement=plm.multiply(part.Placement)
+        else:
+            part.Placement=FreeCAD.Placement(transform_matrix).multiply(\
+                    part.Placement)
+        new_part = part
     elif isrotoinversionpython(fcsubmatrix(transform_matrix)):
         if printverbose: print("orthogonal and inversion")
         cmat,axisvec = decomposerotoinversion(transform_matrix)
@@ -1101,31 +1094,28 @@ def performMultMatrix(part, matrixisrounded, transform_matrix) :
             part.ViewObject.hide()
     else :
         if printverbose: print("Transform Geometry")
-#       Need to recompute to stop transformGeometry causing a crash        
-        doc.recompute()
-        print(f"Matrix Deformation {part.Label}")
-        #new_part = doc.addObject("Part::Feature","Matrix Deformation")
-        new_part = doc.addObject("Part::Feature","Matrix Deformation "+part.Label)
-        #  new_part.Shape = part.Base.Shape.transformGeometry(transform_matrix)
-        new_part.Shape = part.Shape.transformGeometry(transform_matrix) 
-        # new_part has replaced part so remove from doc otherwise
-        # part are dangling in doc structure
-        if hasattr(part, 'Name'):
-            doc.removeObject(part.Name)
-        elif gui:
+        part.recompute()
+        if part.Shape.isNull():
+            doc.recompute()
+        new_part = doc.addObject("Part::Feature","Matrix Deformation")
+        new_part.Shape = part.Shape.transformGeometry(transform_matrix)
+        if gui:
             part.ViewObject.hide()
-#   Does not fix problemfile or beltTighener although later is closer       
-#        newobj=doc.addObject("Part::FeaturePython",'RefineMultMatrix')
-#    if False :  
-#         RefineShape(newobj,new_part)
-#         if gui:
-#            newobj.ViewObject.Proxy = 0
-#            new_part.ViewObject.hide()   
-#               p[0] = [newobj]
-#           else :
-#               p[0] = [new_part]
-#           if printverbose: print("Multmatrix applied")
-    return new_part
+    if False :
+#   Does not fix problemfile or beltTighener although later is closer
+        newobj=doc.addObject("Part::FeaturePython",'RefineMultMatrix')
+        RefineShape(newobj,new_part)
+        if gui:
+            newobj.ViewObject.Proxy = 0
+            new_part.ViewObject.hide()
+        p[0] = [newobj]
+    else :
+        p[0] = [new_part]
+    if gui and p[6]:
+        new_part.ViewObject.ShapeColor=parentcolor
+        new_part.ViewObject.Transparency = parenttransparency
+    if printverbose: print("Multmatrix applied")
+
 
 def p_matrix(p):
     'matrix : OSQUARE vector COMMA vector COMMA vector COMMA vector ESQUARE'

@@ -59,7 +59,7 @@ def CGALFeatureObj(name, children,arguments=[]):
 def minkowski(p):
     ''' for reference only
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
-    print(f"Minkowski")
+    print(f"Minkowski elements {len(p[6])}")
     if len(p[6]) == 2 :     # Two objects on stack
         print(p[6][1].TypeId)
         obj1 = p[6][0]
@@ -120,6 +120,7 @@ def minkowski(p):
                     print(f"Warning : No Edges filleted")    
                     p[0] = [newObj]
                 return
+        print(f"Two Elements : {obj1.Name} : {obj2.Name}")        
         #else:    
         #    # - For minkowski Just indicate first shape needs editing
         #    # return just first object     
@@ -134,4 +135,5 @@ def minkowski(p):
         #    setOutListColor(p[6][1],(1.,0.,0.))
         #    #p[6][1].ViewObject.hide()
         #    p[0] = [p[6][0]]
+    print(f"{p[1]} : keywords : {p[3]} block : {p[6]}")    
     p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
