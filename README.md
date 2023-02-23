@@ -22,7 +22,8 @@ Clone into FreeCAD's Mod directory see https://wiki.freecadweb.org/Installing_mo
 
 * Importing SCAD files as FreeCAD Objects.
 * Edit SCADObjects with an external editor
-* Import of Minkowski with a Sphere as a Part::Offset
+* Import of Minkowski request with a Sphere as a Part::Offset
+* Import of Minkowski request with a Cylinder as Part::Offset & Part::Fillet
 
 The idea to allow hybrid development ( FreeCAD and OpenSCAD )
 
