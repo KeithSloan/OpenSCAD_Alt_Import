@@ -19,6 +19,7 @@
 #*   USA                                                                   *
 #*                                                                         * 
 #*   Acknowledgements :                                                    *
+#*                Thanks Ed Williams, Carlo D                              *
 #*                                                                         *
 #***************************************************************************
 
@@ -76,10 +77,10 @@ def minkowski(p):
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
-                FreeCAD.ActiveDocument.removeObject(p[6][1].Name)
+                FreeCAD.ActiveDocument.removeObject(obj2.Name)
                 p[0] = [newObj]
                 return
-        elif obj2 == "Part::CylinderSphere" and hasattr(obj1,"Shape"):
+        elif obj2.TypeId == "Part::Cylinder" and hasattr(obj1,"Shape"):
             radius = obj2.Radius.Value
             if hasattr(obj1.Shape, "Edges"):
                 # Use Offset as minkowski enlarges 
@@ -92,11 +93,33 @@ def minkowski(p):
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
-                print(f"Cylinder axis {obj2.Placement.Rotation.Axis}")
-                #print(dir(obj.Shape.Edges[0]))
-                for e in obj1.Shape.Edges:
-                    print(f"Axis {e.Placement.Rotation.Axis}")
-                FreeCAD.ActiveDocument.removeObject(p[6][1].Name)
+                newObj.recompute()
+                fEdges = []
+                localAxis = obj2.Placement.Rotation.Axis
+                print(f"Cylinder axis {localAxis}")
+                for i, e in enumerate(newObj.Shape.Edges,start=1):
+                    # Only check straight edges
+                    if hasattr(e.Curve, 'Direction'):
+                        direction = e.Curve.Direction
+                        # print(f"Direction {direction}")
+                        if localAxis.isEqual(direction, 1e-7) or \
+                                localAxis.isEqual(-direction, 1e-7):
+                            print(f"Edge {i} is parallel")
+                            fEdges.append((i,radius,radius))
+
+                FreeCAD.ActiveDocument.removeObject(obj2.Name)
+                if len(fEdges) > 0:
+                    print(f"Edges {len(fEdges)}")
+                    myFillet = FreeCAD.ActiveDocument.addObject("Part::Fillet","Fillet")
+                    myFillet.Base = newObj
+                    myFillet.Edges =fEdges
+                    newObj.ViewObject.hide()
+                    #myFillet.recompute()
+                    p[0] = [myFillet]
+                else:
+                    print(f"Warning : No Edges filleted")    
+                    p[0] = [newObj]
+                return
         #else:    
         #    # - For minkowski Just indicate first shape needs editing
         #    # return just first object     
