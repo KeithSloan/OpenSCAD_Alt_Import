@@ -19,6 +19,7 @@
 #*   USA                                                                   *
 #*                                                                         * 
 #*   Acknowledgements :                                                    *
+#*                Thanks Ed Williams, Carlo D                              *
 #*                                                                         *
 #***************************************************************************
 
@@ -92,32 +93,28 @@ def minkowski(p):
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
+                newObj.recompute()
                 fEdges = []
                 localAxis = obj2.Placement.Rotation.Axis
                 print(f"Cylinder axis {localAxis}")
-                #for i, e in enumerate(obj1.Shape.Edges,start=1):
-                for i, e in enumerate(obj1.Shape.Edges):
+                for i, e in enumerate(newObj.Shape.Edges,start=1):
                     # Only check straight edges
                     if hasattr(e.Curve, 'Direction'):
                         direction = e.Curve.Direction
                         # print(f"Direction {direction}")
                         if localAxis.isEqual(direction, 1e-7) or \
                                 localAxis.isEqual(-direction, 1e-7):
-                            #print(f"Edge {i} is parallel")
-                            print(f"Edge {i+1} is parallel")
-                            #fEdges.append(i)
-                            #fEdges.append(e)
-                            fEdges.append((i+1,radius,radius))
+                            print(f"Edge {i} is parallel")
+                            fEdges.append((i,radius,radius))
 
                 FreeCAD.ActiveDocument.removeObject(obj2.Name)
                 if len(fEdges) > 0:
                     print(f"Edges {len(fEdges)}")
-                    #newObj.recompute()
-                    #newShape = newObj.Shape.makeFillet(radius, fEdges)
                     myFillet = FreeCAD.ActiveDocument.addObject("Part::Fillet","Fillet")
                     myFillet.Base = newObj
                     myFillet.Edges =fEdges
                     newObj.ViewObject.hide()
+                    #myFillet.recompute()
                     p[0] = [myFillet]
                 else:
                     print(f"Warning : No Edges filleted")    
