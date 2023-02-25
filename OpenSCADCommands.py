@@ -586,4 +586,3 @@ FreeCADGui.addCommand('OpenSCAD_AddOpenSCADElement',AddOpenSCADElement())
 FreeCADGui.addCommand('OpenSCAD_MeshBoolean',OpenSCADMeshBoolean())
 FreeCADGui.addCommand('OpenSCAD_Hull',Hull())
 FreeCADGui.addCommand('OpenSCAD_Minkowski',Minkowski())
->>>>>>> master
