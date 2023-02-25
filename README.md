@@ -149,3 +149,4 @@ The performance of OpenSCAD Preview has been significantly improved since Feb 20
 * wmayer
 * chennes
 * edwilliams16
+* onekk
