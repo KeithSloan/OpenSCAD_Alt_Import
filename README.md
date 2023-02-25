@@ -137,6 +137,12 @@ the user will be prompted with which importer to use.
 Example Screenshot.
 ![Image 20-02-2023 at 14 02](https://user-images.githubusercontent.com/2291247/220147105-8689b944-315c-47cc-92f7-c3806b088177.jpg)
 
+### Advantage of using an external editor that is also setup for OpenSCAD
+
+The performance of OpenSCAD Preview has been significantly improved since Feb 2022
+
+[OpenSCAD 3D rendering just got an order of magnitude faster](https://ochafik.com/jekyll/update/2022/02/09/openscad-fast-csg-contibution.html)
+
                       
 ### Thanks to FreeCAD Users
 
