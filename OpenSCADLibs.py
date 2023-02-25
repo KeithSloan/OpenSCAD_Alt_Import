@@ -2,7 +2,6 @@ import FreeCAD as App
 import FreeCADGui as Gui
 import os
 
-import OpenSCADCommands
 
 def joinDir(path):
     import os
@@ -14,8 +13,7 @@ def init():
     Gui.addIconPath(joinDir("Resources/icons"))
 
 def addCommand():
-    import OpenSCADCommands
-    from OpenSCADCommands import SCADLibsFeature
+    from NewSCADCommands import SCADLibsFeature
 
     wb = Gui.getWorkbench("OpenSCADWorkbench")
     if wb is not None:
