@@ -9,20 +9,22 @@ def joinDir(path):
     __dirname__ = os.path.dirname(__file__)
     return os.path.join(__dirname__, path)
 
-def init():
     Gui.addIconPath(joinDir("Resources/icons"))
 
-def addCommand():
+def addTools():
     from NewSCADCommands import SCADLibsFeature
 
+    Gui.addIconPath(joinDir("Resources/icons"))
+    Gui.activateWorkbench("OpenSCADWorkbench")
     wb = Gui.getWorkbench("OpenSCADWorkbench")
     if wb is not None:
-        Gui.addCommand("SCADLibsCommand", SCADLibsFeature())
-        print(dir(wb))
-        # addIconPath
-        # addIcon
-        #sclibs = Gui.addCommand("SCADLibsCommand", SCADLibsCommand)
-        #print(sclibs)
+        print(f"Adding Tools {wb}")
+        #Gui.addCommand("SCADLibsCommand", SCADLibsFeature())
+        wb.appendToolbar("NewSCAD",['SCADLibsCommand'])
+        print(f"Toolbars {wb.listToolbars()}")
+        #Gui.activateWorkbench("OpenSCADWorkbench")
+        wb.reloadActive()
+        Gui.updateGui( )
 
 def listWBs():
     print(Gui.listWorkbenches())
