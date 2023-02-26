@@ -1,5 +1,6 @@
 import FreeCAD, FreeCADGui, Part
 
+
 from FreeCAD import Units
 from pivy import coin
 
@@ -30,6 +31,7 @@ class Hull(object):
            print('Has Group')
            if len(obj.Group) > 1 :
               obj.Shape = createHull(obj.Group)
+              print(f"return from execute")
               return
         else :
            print('Error Invalid hull request')
@@ -168,7 +170,8 @@ def getWire(obj) :
           r = obj.Radius2
     return d, Part.makeCircle(r)
 
-def hullTwoEqCircles(obj1, obj2) :
+def hullTwoEqCircles(obj1, obj2, flag2D) :
+    # Used by 2D and Cylinder
     print('hullTwoEqCircles')
     r = obj1.Radius
     print(f"(Radius : {r}")
@@ -197,21 +200,23 @@ def hullTwoEqCircles(obj1, obj2) :
     #face = Part.makeFace(wire)
     face = Part.Face(wire)
     #return(face)
-    return obj1.Shape.fuse(face.fuse(obj2.Shape))
-    #return rect
+    if flag2D:
+        return obj1.Shape.fuse(face.fuse(obj2.Shape))
+    else:
+        s1 = Part.makeCircle(obj1.Radius,obj1.Placement.Base)
+        s2 = Part.makeCircle(obj2.Radius,obj2.Placement.Base)    
+        return s1.fuse(face.fuse(s2))
 
-def hullTwoCircles(obj1, obj2) :
-    print('hullTwoCircles')
+def hullTwoCircles(obj1, obj2, flag2D) :
+    print(f'hullTwoCircles 2D {flag2D}')
     if obj1.Radius == obj2.Radius :
-       return(hullTwoEqCircles(obj1,obj2))
+       return(hullTwoEqCircles(obj1, obj2, flag2D))
 
     # Thanks to wmayer
     # swap obj1 and obj2 so that obj1 is the bigger circle
     if obj2.Radius.Value > obj1.Radius.Value:
         obj2, obj1 = obj1, obj2
-
-    print(obj1.Radius.Value)
-    print(obj2.Radius.Value)
+    print(f"Hull Two Circles r1 {obj1.Radius.Value} r2 {obj2.Radius.Value}")
     #print(dir(obj1.Placement))
     #print(dir(obj1.Placement.Rotation))
     c1 = Part.Circle(obj1.Placement.Base, obj1.Placement.Rotation.Axis, \
@@ -256,7 +261,7 @@ def hullTwoCircles(obj1, obj2) :
     l1 = Part.makeLine(c1.value(t1),c2.value(t1))
     l2 = Part.makeLine(c2.value(t2),c1.value(t2))
     wire = Part.Wire([a1.toShape(), l1, a2.toShape(), l2])
-    print(wire)
+    print(f"Two Circles Wire {wire}")
     #face = Part.makeFace(wire)
     face = Part.Face(wire)
     return face
@@ -459,9 +464,9 @@ def createHull(group) :
        if chk2D(obj0) and chk2D(obj1) :
           print('Both 2D')
           if obj0.Radius == obj1.Radius :
-             return hullTwoEqCircles(obj0,obj1)
+             return hullTwoEqCircles(obj0, obj1, True)
           else :
-             return hullTwoCircles(obj0,obj1)
+             return hullTwoCircles(obj0, obj1, True)
 
        if obj0.TypeId == 'Part::Sphere' and obj1.TypeId == 'Part::Sphere' :
           if obj0.Radius == obj1.Radius :
@@ -505,7 +510,9 @@ def createHull(group) :
                 obj1.TypeId == 'Part::Cylinder' :
                 if obj0.Height == obj1.Height :
                    print('Hull two Cyls')
-                   face = hullTwoCircles(obj0,obj1)
+                   face = hullTwoCircles(obj0, obj1, False)
+                   print(f"Face created {face}")
+                   #return face
                    return face.extrude(FreeCAD.Vector(0,0,obj0.Height.Value))
 
     print('Not directly handled')
