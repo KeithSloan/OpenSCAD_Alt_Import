@@ -39,18 +39,19 @@ def createMesh(srcObj, wrkSrc):
         tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
             outputfilename=tmpOutFile, outputext='stl', \
             timeout=int(srcObj.timeout))
-        print(f"STL File name {tmpFileName}")
-        mesh = Mesh.Mesh()
-        print(f"files {tmpOutFile} {tmpFileName}")
-        mesh.read(tmpFileName)
-        #print(dir(mesh))
-        print(f"Mesh bound box {mesh.BoundBox}")
-        print(f"Count Facets {mesh.CountFacets}")
-        #print(f"Facets {mesh.Facets}")
-        print(f"Is Solid {mesh.isSolid()}")
-        shape = Part.Shape()
-        shape.makeShapeFromMesh(mesh.Topology, 0.1)
-        return shape
+        if os.path.exists(tmpFileName): # If Timeout no file
+            print(f"STL File name {tmpFileName}")
+            mesh = Mesh.Mesh()
+            print(f"files {tmpOutFile} {tmpFileName}")
+            mesh.read(tmpFileName)
+            #print(dir(mesh))
+            print(f"Mesh bound box {mesh.BoundBox}")
+            print(f"Count Facets {mesh.CountFacets}")
+            #print(f"Facets {mesh.Facets}")
+            print(f"Is Solid {mesh.isSolid()}")
+            shape = Part.Shape()
+            shape.makeShapeFromMesh(mesh.Topology, 0.1)
+            return shape
 
     except OpenSCADUtils.OpenSCADError as e:
         #print(f"OpenSCADError {e} {e.value}")
