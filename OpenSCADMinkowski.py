@@ -25,6 +25,9 @@
 
 import FreeCAD
 #from OpenSCADFeatures import CGALFeature
+from OpenSCADHull import checkObjShape
+
+printverbose = False
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
@@ -43,6 +46,7 @@ def setOutListColor(obj, color) :
 
 def CGALFeatureObj(name, children,arguments=[]):
     from OpenSCADFeatures import CGALFeature
+    if printverbose: print(f"CGALFeatureObj name {name} children {children}")
     myobj=FreeCAD.ActiveDocument.addObject("Part::FeaturePython", name)
     CGALFeature(myobj, name, children, str(arguments))
     if FreeCAD.GuiUp:
@@ -54,16 +58,21 @@ def CGALFeatureObj(name, children,arguments=[]):
             ViewProviderTree(myobj.ViewObject)
         else:
             myobj.ViewObject.Proxy = 0
+    myobj.recompute()        
     return myobj
 
 def minkowski(p):
     ''' for reference only
     minkowski_action : minkowski LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'''
-    print(f"Minkowski")
+    if printverbose: print(f"Minkowski")
     if len(p[6]) == 2 :     # Two objects on stack
-        print(p[6][1].TypeId)
+        if printverbose:
+            print(f"Obj1 {p[6][0].Name} {p[6][0].TypeId}")
+            print(f"Obj2 {p[6][1].Name} {p[6][1].TypeId}")
         obj1 = p[6][0]
         obj2 = p[6][1]
+        checkObjShape(obj1)
+        checkObjShape(obj2)
         if obj2.TypeId == "Part::Sphere" and hasattr(obj1,"Shape"):
             radius = obj2.Radius.Value
             if hasattr(obj1.Shape, "Edges"):
@@ -134,4 +143,7 @@ def minkowski(p):
         #    setOutListColor(p[6][1],(1.,0.,0.))
         #    #p[6][1].ViewObject.hide()
         #    p[0] = [p[6][0]]
-    p[0] = [ CGALFeatureObj(p[1],p[6],p[3]) ]
+    print(f"OpenSCAD to perform : Minkowski")
+    cgal = CGALFeatureObj(p[1],p[6],p[3])
+    # Just return Minkowski object let importCSG put on Stack
+    return cgal

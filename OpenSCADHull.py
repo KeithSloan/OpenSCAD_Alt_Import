@@ -4,6 +4,8 @@ import FreeCAD, FreeCADGui, Part
 from FreeCAD import Units
 from pivy import coin
 
+printverbose = False
+
 class Hull(object):
     def __init__(self, obj=None):
         self.Object = obj
@@ -130,7 +132,7 @@ class ViewProviderMyGroupEx(ViewProviderMyGroup):
 def checkObjShape(obj) :
     #print('Check Object Shape')
     if obj.Shape.isNull() == True :
-       print('Shape is Null - recompute')
+       if printverbose: print(f'{obj.Name} Shape is Null - recompute')
        obj.recompute()
 
 def chk2D(obj) :
@@ -529,19 +531,21 @@ def createHull(group) :
     return OpenSCADUtils.process_ObjectsViaOpenSCADShape(FreeCAD.ActiveDocument,\
     group,'hull',maxmeshpoints=None)
 
-def makeHull(list, ex=False):
+def makeHull(hullList, ex=False):
     print('makeHull')
     print(list)
     doc = FreeCAD.ActiveDocument
     if not doc:
         doc = FreeCAD.newDocument()
     hullObj = doc.addObject('Part::FeaturePython', 'hull')
-    Hull(hullObj)
+    hullObj.Shape = createHull(hullLlist)
+    #Hull(hullObj)
     if ex:
         ViewProviderMyGroupEx(hullObj.ViewObject)
     else:
         ViewProviderMyGroup(hullObj.ViewObject)
     # Make Group the objects to be Hulled
-    hullObj.Group = list
+    #hullObj.Group = list
     hullObj.recompute(True)
+    # Just return Hull Object let importCSG put on Stack
     return hullObj

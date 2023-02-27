@@ -57,6 +57,7 @@ printverbose = params.GetBool('printverbose',False)
 print(f'Verbose = {printverbose}')
 #print(params.GetContents())
 #printverbose = True
+
 # Get the token map from the lexer.  This is required.
 import tokrules
 from tokrules import tokens
@@ -203,7 +204,7 @@ def p_render_action(p):
 
 def p_group_action1(p):
     'group_action1 : group LPAREN RPAREN OBRACE block_list EBRACE'
-    if printverbose: print("Group")
+    if printverbose: print(f"Group : {p[5]}")
 # Test if need for implicit fuse
     if p[5] is None:
        p[0] = []
@@ -212,11 +213,12 @@ def p_group_action1(p):
        if printverbose: print('Fuse Group')
        p[0] = [fuse(p[5],"Group")]
     else :
+       if printverbose: print(f"Group {p[5]} type {type(p[5])}")
        p[0] = p[5]
 
 def p_group_action2(p) :
     'group_action2 : group LPAREN RPAREN SEMICOL'
-    if printverbose: print("Group2")
+    if printverbose: print("Group2 Empty")
     p[0] = []
    
 def p_boolean(p) :
@@ -1023,10 +1025,8 @@ def p_multmatrix_action(p):
     #     fcsubmatrix, roundrotation, isrotoinversionpython, \
     #     decomposerotoinversion
     from OpenSCADFeatures import RefineShape     
-    if printverbose: print("MultMatrix")
+    if printverbose: print(f"MultMatrix matrix {p[3]} objects {p[6]}")
     transform_matrix = FreeCAD.Matrix()
-    if printverbose: print("Multmatrix")
-    if printverbose: print(p[3])
     m1l=sum(p[3],[])
     if any('x' in me for me in m1l): #hexfloats
         m1l=[float.fromhex(me) for me in m1l]
@@ -1040,7 +1040,7 @@ def p_multmatrix_action(p):
         matrixisrounded=True
     transform_matrix = FreeCAD.Matrix(*tuple(m1l))
     if printverbose: print(transform_matrix)
-    if printverbose: print("Apply Multmatrix")
+    if printverbose: print(f"Apply Multmatrix : {p[6]}")
 #   If more than one object on the stack for multmatrix fuse first
     #for o in p[6]:    
     #    print(f"{o.Label} {o}")
@@ -1060,6 +1060,7 @@ def performMultMatrix(part, matrixisrounded, transform_matrix) :
     from OpenSCADUtils import isspecialorthogonalpython, \
          fcsubmatrix, roundrotation, isrotoinversionpython, \
          decomposerotoinversion
+    print(f"performMultMatrix {part.Name}")     
     if (isspecialorthogonalpython(fcsubmatrix(transform_matrix))) :
        if printverbose: print("special orthogonal")
        if matrixisrounded:
