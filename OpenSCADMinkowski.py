@@ -27,7 +27,8 @@ import FreeCAD
 #from OpenSCADFeatures import CGALFeature
 from OpenSCADHull import checkObjShape
 
-printverbose = False
+#printverbose = False
+printverbose = True
 
 def setObjColor(obj, color):
     # set color for all faces of selected object
@@ -86,9 +87,12 @@ def minkowski(p):
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
+                if hasattr(obj1, 'ViewObject'):
+                    obj1.ViewObject.hide()
                 FreeCAD.ActiveDocument.removeObject(obj2.Name)
-                p[0] = [newObj]
-                return
+                #p[0] = [newObj]
+                return newObj
+
         elif obj2.TypeId == "Part::Cylinder" and hasattr(obj1,"Shape"):
             radius = obj2.Radius.Value
             if hasattr(obj1.Shape, "Edges"):
@@ -124,10 +128,12 @@ def minkowski(p):
                     myFillet.Edges =fEdges
                     newObj.ViewObject.hide()
                     #myFillet.recompute()
-                    p[0] = [myFillet]
+                    #p[0] = [myFillet]
+                    return myFillet
                 else:
                     print(f"Warning : No Edges filleted")    
-                    p[0] = [newObj]
+                    #p[0] = [newObj]
+                    return newObj
                 return
         #else:    
         #    # - For minkowski Just indicate first shape needs editing
