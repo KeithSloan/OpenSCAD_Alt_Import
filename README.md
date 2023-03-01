@@ -64,10 +64,40 @@ the user will be prompted with which importer to use.
   
   ### Changes from standard Importer
 
-* **Minkowski** for two objects are colour coded red & green
-              rather than use the OpenSCAD binary to produce a meshed minkowski.
-              The idea being that a FreeCAD user can then make changes to the indicated objects
-              i.e. Add fillets etc to the Red object before deleting the green object.
+* **Minkowski**
+
+Minkowski requests where the second object is a Sphere or Cyclinder is handled as follows
+
+  **Sphere**
+  
+    $fn=50;
+    minkowski()
+      {
+        cube([10,10,1]);
+        sphere(1);
+      }
+    
+Produces a suitable Part::Offset of the first Object i.e with rounded edges.
+
+  ![Image 01-03-2023 at 09 04](https://user-images.githubusercontent.com/2291247/222143274-c61341f5-09ff-4485-8d94-7bdbba79f34d.jpg)
+
+  **Cylinder**
+  
+    $fn=50;
+    minkowski()
+      {
+        cube([10,10,1]);
+        cylinder(r=2,h=1);
+      }
+      
+Produces an Part::Fillet of a suitable Part::Offset of the first Object, fillet radius that of the cylinder.
+
+![Image 01-03-2023 at 09 08](https://user-images.githubusercontent.com/2291247/222143356-2da246cf-095b-4257-af55-a2f05e0b55a6.jpg)
+
+Where the FreeCAD has an editable Fillet
+
+![Image 01-03-2023 at 09 09](https://user-images.githubusercontent.com/2291247/222143386-8ac5e8c4-a505-4f35-9fd6-e12202afd7ed.jpg)
+
 
 * **Hull** A limited number of hull requests are converted to BREP equivalents
               
