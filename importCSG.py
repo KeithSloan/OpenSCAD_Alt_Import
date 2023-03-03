@@ -211,9 +211,12 @@ def p_group_action1(p):
        return
     if (len(p[5]) > 1) :
        if printverbose: print('Fuse Group')
+       for obj in p[5]:
+           checkObjShape(obj)
        p[0] = [fuse(p[5],"Group")]
     else :
        if printverbose: print(f"Group {p[5]} type {type(p[5])}")
+       checkObjShape(p[5])
        p[0] = p[5]
 
 def p_group_action2(p) :
@@ -460,11 +463,17 @@ def p_offset_action(p):
 
 def checkObjShape(obj) :
     if printverbose: print('Check Object Shape')
-    if obj.Shape.isNull() == True :
-       if printverbose: print('Shape is Null - recompute')
-       obj.recompute()
-    if (obj.Shape.isNull() == True):
-       print(f'Recompute failed : {obj.Name}')
+    if hasattr(obj, 'Shape'):    
+        if obj.Shape.isNull() == True :
+            if printverbose: print('Shape is Null - recompute')
+            obj.recompute()
+        if (obj.Shape.isNull() == True):
+            print(f'Recompute failed : {obj.Name}')
+    else:
+        if hasattr(obj, 'Name'):
+            print(f"obj {obj.Name} has no Shape")
+        else:
+            print(f"obj {obj} has no Name & Shape")            
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObject' :
