@@ -538,7 +538,7 @@ def makeHull(hullList, ex=False):
     if not doc:
         doc = FreeCAD.newDocument()
     hullObj = doc.addObject('Part::FeaturePython', 'hull')
-    hullObj.Shape = createHull(hullLlist)
+    hullObj.Shape = createHull(hullList)
     #Hull(hullObj)
     if ex:
         ViewProviderMyGroupEx(hullObj.ViewObject)
