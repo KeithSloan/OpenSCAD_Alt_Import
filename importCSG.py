@@ -1409,23 +1409,22 @@ def p_polygon_action_nopath(p) :
 
 def p_polygon_action_plus_path(p) :
     'polygon_action_plus_path : polygon LPAREN points EQ OSQUARE points_list_2d ESQUARE COMMA paths EQ OSQUARE path_set ESQUARE COMMA keywordargument_list RPAREN SEMICOL'
-    if printverbose: print("Polygon with Path")
-    if printverbose: print(p[6])
+    if printverbose: print(f"Polygon with Path : len {len(p[6])} {p[6]}")
     v = convert_points_list_to_vector(p[6])
-    if printverbose: print("Path Set List")
-    if printverbose: print(p[12])
+    # Make sure a closed list
+    v.append(v[0])
+    if printverbose: print(f"Path Set List {p[12]}")
     for i in p[12] :
-         if printverbose: print(i)
+         if printverbose: print(f"Set entry {i}")
          mypolygon = doc.addObject('Part::Feature','wire')
          path_list = []
          for j in i :
              j = int(j)
-             if printverbose: print(j)
+             if printverbose: print(f"index {j}")
              path_list.append(v[j])
 #        Close path
          path_list.append(v[int(i[0])])
-         if printverbose: print('Path List')
-         if printverbose: print(path_list)
+         if printverbose: print(f"Path List {path_list}")
          wire = Part.makePolygon(path_list)
          mypolygon.Shape = Part.Face(wire)
          p[0] = [mypolygon]
