@@ -897,7 +897,15 @@ def p_import_file1(p):
     'import_file1 : import LPAREN keywordargument_list RPAREN SEMICOL'
     if printverbose: print("Import File")
     filen,ext =p[3]['file'].rsplit('.',1)
-    p[0] = [process_import_file(filen,ext,p[3]['layer'])]
+    if 'layer' in p[3]:
+        layerName = p[3]['layer']    
+        if layerName == '':
+            layerName =  None
+    # Should not occur if layer is not set in OpenSCAD csg will have layer =''
+    else: 
+        layerName = None    
+    #p[0] = [process_import_file(filen,ext,p[3]['layer'])]
+    p[0] = [process_import_file(filen, ext, layerName)]
     if printverbose: print("End Import File")
 
 def p_surface_action(p):
@@ -1006,7 +1014,8 @@ def processTextCmd(t):
 def processDXF(fname,layer):
     global doc
     global pathName
-    from OpenSCAD2Dgeom import importDXFface
+    #from OpenSCAD2Dgeom import importDXFface
+    from OpenSCADdxf import importEZDXFface
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
     if printverbose: print("Layer : "+layer)
@@ -1015,7 +1024,8 @@ def processDXF(fname,layer):
     filename = os.path.join(pathName,dxfname)
     shortname = os.path.split(fname)[1]
     if printverbose: print("DXF Full path : "+filename)
-    face = importDXFface(filename,layer,doc)
+    #face = importDXFface(filename,layer,doc)
+    face = importEZDXFface(filename,layer,doc)
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
     obj.Shape=face
     if printverbose: print("DXF Diagnostics")
@@ -1291,7 +1301,7 @@ def p_cube_action(p):
         mycube=doc.addObject("Part::Feature","emptycube")
         mycube.Shape = Part.Compound([])
     if p[3]['center']=='true' :
-       center(mycube,l,w,h);
+       center(mycube,l,w,h)
     p[0] = [mycube]
     if printverbose: print("End Cube")
 

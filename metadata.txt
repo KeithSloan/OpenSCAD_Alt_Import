@@ -1,1 +1,2 @@
 workbenches=OpenSCAD
+pylibs=ezdxf
