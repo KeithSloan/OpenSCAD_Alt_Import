@@ -1,6 +1,7 @@
 def importEZDXFface(filename,layer=None,doc=None):
     import ezdxf
     import Part
+    print(f"import EZDXFface layer = {layer}")
     fdoc = doc or FreeCAD.activeDocument()
     ddoc = ezdxf.readfile(filename)
     msp = ddoc.modelspace()    
