@@ -1026,6 +1026,7 @@ def processDXF(fname,layer):
     if printverbose: print("DXF Full path : "+filename)
     #face = importDXFface(filename,layer,doc)
     face = importEZDXFface(filename,layer,doc)
+    print(f"face {face}")
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
     obj.Shape=face
     if printverbose: print("DXF Diagnostics")

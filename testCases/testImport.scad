@@ -1,1 +1,1 @@
-import("testbend.dxf");
+import("testbend_R12.dxf");
