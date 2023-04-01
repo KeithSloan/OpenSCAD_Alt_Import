@@ -84,8 +84,14 @@ def createBrep(srcObj, tmpDir, wrkSrc):
         tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
             outputfilename=csgOutFile, outputext='csg', \
             timeout=int(srcObj.timeout))
-        print(f"CSG File name {tmpFileName}")
-        processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
+        if hasattr(srcObj, "source"):
+            source = srcObj.source
+        if hasattr(srcObj, "sourceFile"):
+            source = srcObj.sourceFile
+        global pathName    
+        pathName = os.path.dirname(os.path.normpath(source))
+        print(f"CSG File name path {pathName} file {tmpFileName}")
+        processCSG(wrkDoc, pathName, tmpFileName, srcObj.fnmax)
         # *** Does not work for earrings.scad
         shapes = []
         for cnt, obj in enumerate(wrkDoc.RootObjects, start=1):
