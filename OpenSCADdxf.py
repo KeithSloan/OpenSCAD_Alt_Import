@@ -113,4 +113,4 @@ def importEZDXFface(filename,layer=None,doc=None):
     else:
       print("No layers available")
 
-
+    return faces
