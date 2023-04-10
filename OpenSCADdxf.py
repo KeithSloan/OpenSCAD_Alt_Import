@@ -6,28 +6,19 @@ import Part
 import numpy as np #for unique function
 
 def importOpenSCADdxf_LINE(an_entity):
-    print("LINE")
+    #print("LINE")
     start = Vector(an_entity.dxf.start)
     end = Vector(an_entity.dxf.end)
     if an_entity.dxf.start != an_entity.dxf.end:  #ensure it isn't effectively a point
         aline = Part.makeLine( tuple([an_entity.dxf.start[0],an_entity.dxf.start[1],0.0]),
                              tuple([an_entity.dxf.end[0],an_entity.dxf.end[1],0.0])) #makes Edge object
-
-        #if len(edges)>0:
-        #    if aline != edges[-1]:
-        #        return [aline] #need to append it as a list because its an Edge
-        #    else:
-        #        print("DUPLICATE ELEMENT?")
-        #        return []
-        #else:
-        #    return [aline] #need to append it as a list because its an Edge
         return [aline]
     else: #else we found a point???
         print("START==END?") #TODO: trap this??
         return []
 
 def importOpenSCADdxf_POLYGON(an_entity):
-    print("POLYGON")
+    #print("POLYGON")
     # Get the points of the POLYGON
     points = [(vertex[0], vertex[1]) for vertex in an_entity.vertices()]
     if len(points)>0:
@@ -47,14 +38,13 @@ def importOpenSCADdxf_POLYGON(an_entity):
 def importOpenSCADdxf_LWPOLYLINE(an_entity):
     #TODO : this probably needs a lot of cleanup
     if an_entity.is_closed == True:
-        print("CLOSED LWPOLYLINE")
+        #print("CLOSED LWPOLYLINE")
         # Convert the lwpolyline to a list of vertices; TODO CHECK THIS
         with an_entity.points("xy") as points:
             vertices = [tuple([p[0], p[1], 0]) for p in points] #Vector?
 
         if len(vertices)>1:
             if vertices[0] != vertices[1]:
-                print(vertices)
                 vertices += [vertices[0]] #because it should be closed
                 apolygon = Part.makePolygon(vertices).Edges #returns a List
                 wire = apolygon
@@ -62,25 +52,19 @@ def importOpenSCADdxf_LWPOLYLINE(an_entity):
 
             else:
                 print("CLOSED LWPOLYLINE is a POINT??")
-                print(vertices)
                 return []
 
         else:
             print("LESS THAN 2 VERTICES FOUND FOR CLOSED LWPOLYLINE",len(vertices))
-            if 1:
-                print("CURRENT VERTEX")
-                print(vertices)
-                print("HOW HANDLE IF AT ALL?")
-                return []
+            return []
 
     else:
-        print("OPEN LWPOLYLINE")
-        print(an_entity.dxfattribs())
+        #print("OPEN LWPOLYLINE")
+        #print(an_entity.dxfattribs())
         lwpentity=an_entity
         if lwpentity[0] != lwpentity[-1]:
             lwpentity.append(lwpentity[0]) #close polygon
         lwpentity.close()
-        print(lwpentity.closed)
         # Convert the lwpolyline to a list of vertices; TODO CHECK THIS
         with lwpentity.points("xy") as points:
             vertices = [tuple([p[0], p[1], 0]) for p in points] #Vector?
@@ -88,9 +72,6 @@ def importOpenSCADdxf_LWPOLYLINE(an_entity):
         if len(vertices)>1:
             apolygon = Part.makePolygon(vertices).Edges #returns 
             wire = apolygon
-            #edges.append(wire)
-            #print("NOW HERE >>")
-            #print(edges)
             return wire #already a list
 
         else:
@@ -98,91 +79,73 @@ def importOpenSCADdxf_LWPOLYLINE(an_entity):
             return []
 
 def importOpenSCADdxf_SPLINE(an_entity):
-    print("SPLINE")
-    #https://forum.freecad.org/viewtopic.php?style=10&t=9894
-    #https://forum.freecad.org/viewtopic.php?t=35644
-    #fits=list()
-    #if entity.fit_point_count()>0:
-    #  fits = entity.fit_points
-    #knots=list()
-    #if entity.knot_count()>0:
-    #  knots = entity.knots
+    #print("SPLINE")
     control_points=()
     if an_entity.control_point_count()>0:                    
         control_points = an_entity.control_points
-    #weights=()
-    #weights = entity.weights
-    #n = len(control_points)-1
     control_points=tuple(control_points)
     aspline = Part.BSplineCurve()
     aspline.buildFromPoles(control_points, False, 3)
-                    
     thespline = aspline.toShape() #TODO CHECK THIS; this is an Edge object
-    #edges.append(thespline)
     return [thespline] #it needs to be a list; TODO: how check to ensure valid return object?
 
 def importOpenSCADdxf_CIRCLE(an_entity):
-    print("CIRCLE")
+    #print("CIRCLE")
     # Get the center and radius of the circle
     center = an_entity.dxf.center
     radius = an_entity.dxf.radius
     if radius != 0.0:
         # Create a circle wire
         circle = Part.Circle(Vector(center), Vector(0, 0, 1), radius).toShape() #returns Edge list
-
-        #wire = Part.Wire(circle)
-        #wires.append(wire)
         return [circle] #bc its not a list yet
     else:
         return []
 
 def importOpenSCADdxf_ELLIPSE(an_entity):
-    print("ELLIPSE")   
-    # Get the center point, major axis, minor axis, and rotation angle of the ellipse
-    center = an_entity.dxf.center
-    major_axis = an_entity.dxf.major_axis
-    #entity.dxfattribs()
+    #print("ELLIPSE")  
+    #print(an_entity.dxfattribs())    
+    center = Vector(an_entity.dxf.center)
+    ratio = an_entity.dxf.ratio
+    major_axis = Vector(an_entity.dxf.major_axis)
+    normalv=Vector(0,0,1)
     if an_entity.dxf_attrib_exists('ratio') == True:
-        minor_axis = an_entity.dxf.ratio*an_entity.dxf.major_axis #scale axis
-        r=FreeCAD.Rotation(Vector(0,0,1),90) #rot 90 deg in X-Y plane, ie around Z axis
-        minor_axis=r.multVec(Vector(minor_axis)) #calc minor axis as scaled axis at 90 deg to major axis
+        minor_axis = major_axis.cross(normalv).normalize()*major_axis.Length*ratio
     elif an_entity.dxf_attrib_exists('minor_axis') == True:
         minor_axis = an_entity.dxf.minor_axis
     else:  #trap
         minor_axis = major_axis  #probably not a good trap
-    #print(center)
-    #print(major_axis)
-    #print(minor_axis)
+
+    if ratio>1:
+        tempaxis=major_axis    
+        major_axis=minor_axis
+        minor_axis=tempaxis
+    elif ratio==1:
+        radius = np.sqrt(major_axis[0]**2+major_axis[1]**2+major_axis[2]**2)
+        ellipse=Part.Circle(center, normalv, radius).toShape()
+        return [ellipse]
+                
     if Vector(minor_axis) != Vector(0,0,0):
         # Create an ellipse wire
-        ellipse = Part.Ellipse(Vector(major_axis), Vector(minor_axis),Vector(center) ).toShape() #returns Edges
+        ellipse=Part.Ellipse(major_axis,minor_axis,Vector(0,0,0))
+        if an_entity.dxf.start_param != 0.0 or an_entity.dxf.end_param != 2*np.pi:
+            ellipse=Part.ArcOfEllipse(ellipse, an_entity.dxf.start_param-np.pi/2, an_entity.dxf.end_param-np.pi/2)
+        ellipse=ellipse.toShape()
+        ellipse=ellipse.translate(center)
         return [ellipse] #bc not yet a List
     else:
         return []
 
 def importOpenSCADdxf_ARC(an_entity):
-    print("ARC")
+    #print("ARC")
     center = an_entity.dxf.center
-    #print(center)
     radius = an_entity.dxf.radius
-    #print(radius)
     start_angle = np.deg2rad(an_entity.dxf.start_angle) #radians
-    #print(start_angle)
     end_angle = np.deg2rad(an_entity.dxf.end_angle)  #radians
-    #print(end_angle)
     if radius>0:
         if start_angle != end_angle:
-            #p1 = App.Vector(10, 0, 0)
-            #p2 = App.Vector(0, 10, 0)
-            #p3 = App.Vector(-10, 0, 0)
             # Create the arc wire
             circle = Part.Circle(Vector(center), Vector(0, 0, 1), radius) #returns cirlce; Edge with .toShape, fwiw
             anarc = Part.ArcOfCircle(circle, start_angle, end_angle).toShape() #an Edge object
-
-            # Close the wire to create a polygon??
-            #leg1 = Part.makeLine(Vector(center),Vector(anarc.Vertexes[0].X,anarc.Vertexes[0].Y,0.0)) #an Edge object
-            #leg2 = Part.makeLine(Vector(center),Vector(anarc.Vertexes[1].X,anarc.Vertexes[1].Y,0.0)) #an Edge object
-            #pieslice = Part.Wire([leg1,anarc,leg2]) #Wire object from list of Edges
             return [anarc]  #bc its not already a List
         else:
             return []
@@ -191,7 +154,7 @@ def importOpenSCADdxf_ARC(an_entity):
 
 def importOpenSCADdxf_HATCH(an_entity):
     #absolutely no idea if this will work ...
-    print("HATCH")
+    #print("HATCH")
     # Get the boundary path of the hatch
     paths = an_entity.paths
 
@@ -239,17 +202,9 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
             print("Layer name provided not found")
 
         if len(layer_names) == 0:  #if we havent found a specified layer, look for defaults
-            #if "0" in layernames:
-            #    layer_names=['0']
-            #elif "Image" in layernames:
-            #    layer_names=['Image']
-            #elif "Layer1" in layernames:
-            #    layer_names=['Layer1']
-            #else:
-            if 1:
-                print("No common layer name found; Selecting all")
-                #TODO select one with most entities? 1st one? None?
-                layer_names=layernames
+            print("No common layer name found; Selecting all")
+            #TODO select one with most entities? 1st one? None?
+            layer_names=layernames
 
         layerentitylist=[] #list of list of processed entities per layer
         layertypelist=[] #list of lists of entity types as they appear per layer
@@ -299,23 +254,23 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                         edges=[item for sublist in edges for item in sublist] #flatten
 
                     if len(edges)>1:
-                        print("CHECKING IF LINE,SPLINE,LWPOLYLINE NEEDS CLOSING")
+                        #print("CHECKING IF LINE,SPLINE,LWPOLYLINE NEEDS CLOSING")
                         if entity.dxftype() in ['LINE','SPLINE','LWPOLYLINE']:
                             if edges[0].Vertexes[0].X == edges[-1].Vertexes[1].X and edges[0].Vertexes[0].Y == edges[-1].Vertexes[1].Y:
-                                print("THIS IS CLOSED")
-                                print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
-                                print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
-                                print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
-                                print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)                
+                                #print("THIS IS CLOSED")
+                                #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
+                                #print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
+                                #print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
+                                #print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)                
                                 entitylist.append(edges)
                                 entitytypelist.append(entity.dxftype())                                
                             else:
                                 print("THIS IS NOT CLOSED")
                                 print("**** IGNORING ENTITY ****")
-                                print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
-                                print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
-                                print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
-                                print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)
+                                #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
+                                #print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
+                                #print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
+                                #print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)
                                 edges=[]
                         else:
                             entitylist.append(edges)
@@ -346,53 +301,45 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                 if len(entitylist)==1 and isinstance(entitylist[0],list)==True:
                     entitylist=[entitylist[0]]
                 for el in entitylist:
-                    el2=el                
-                    if 1:
-                        print(el2)
-                        print("YUP")
-                        if isinstance(el2,list) == True:
-                            e = Part.sortEdges(el2)
-                        else:
-                            e=[el2]
-
-                        try:
-                            face=Part.Face(Part.Wire(e))
-                            faces.append(face)                
-                        except:
-                            wires=None
-                            for i, e2 in enumerate(e): #only make a face from non-lines
-                                try:  #TODO: figure out why this sometimes is needed
-                                    newwires = Part.Wire(e2)
-                                    # Create a face from the wire
-                                    face = Part.Face(newwires)   
-                                    if face != None:
-                                        faces.append(face)
-                                except:
-                                    # Create a face from the wire
-                                    try:
-                                        face = Part.Face(e2)
-                                        # Append the face to the list of faces
-                                        if face != None:
-                                            faces.append(face)
-                                    except:
-                                        face = None
-
-                        # Create a compound of faces? faces list collects everything though ...
-                        ##if len(faces)>0:
-                        ##    for f in faces:
-                        ##        Part.show(f)
-                        ###    compound = Part.makeCompound(faces)
-                        ###    Part.show(compound)
-
-                        #Return compound, face; TODO: return layer name, color, labels?
-                        return faces[0]
+                    if isinstance(el,list) == True:
+                        e = Part.sortEdges(el)
                     else:
-                        print("No wires created")
-                        return None
+                        e=[el2]
+
+                    #wires=None
+                    for i, e2 in enumerate(e): #only make a face from non-lines
+                        try:  #TODO: figure out why this sometimes is needed
+                            newwires = Part.Wire(e2)
+                            # Create a face from the wire
+                            face = Part.Face(newwires)   
+                            if face != None:
+                                faces.append(face)
+                        except:
+                            # Create a face from the wire
+                            try:
+                                face = Part.Face(e2)
+                                # Append the face to the list of faces
+                                if face != None:
+                                    faces.append(face)
+                            except:
+                                face = None
+                                
             #end of for layers loop
+            # Create a compound of faces? faces list collects everything though ...
+            if len(faces)>0:
+            ##    for f in faces:
+            ##        Part.show(f)
+            #    compound = Part.makeCompound(faces)
+            ##    Part.show(compound)
+
+                #Return compound, face; TODO: return layer name, color, labels?
+                return faces[0]
+            else:
+                print("No wires created")
+                return None
         else:
             print("No layers extracted")
             return None
     else:
         print("No layers found")
-    return None
+        return None
