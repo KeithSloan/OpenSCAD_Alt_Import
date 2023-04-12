@@ -17,22 +17,20 @@ def importOpenSCADdxf_LINE(an_entity):
         print("START==END?") #TODO: trap this??
         return []
 
-def importOpenSCADdxf_POLYGON(an_entity):
-    #print("POLYGON")
-    # Get the points of the POLYGON
-    points = [(vertex[0], vertex[1]) for vertex in an_entity.vertices()]
-    if len(points)>0:
-        # Convert the points to vertices
-        vertices = [Vector(p[0], p[1], 0) for p in points]
-        if len(vertices)>2:
-            #TODO: should also trap to ensure at least 3 are different?
-            # Create a wire from the vertices(?)
-            apolygon = Part.makePolygon(vertices).Edges[0] #returns a list of Edges
-            return apolygon  #its already a list
-        else:
-            print("VERTICES <2 in POLYGON??")
-            return []
+def importOpenSCADdxf_POLYLINE(an_entity):
+    #print("POLYLINE")
+    # Get the points of the POLYLINE
+    verts = an_entity.vertices
+        
+    verts = [tuple(v.dxf.location) for v in verts]
+    if an_entity.is_closed:
+        verts += [verts[0]]
+        
+    if len(verts)>0:
+        apolygon = Part.makePolygon(verts).Edges #returns a list of Edges
+        return [apolygon] 
     else:
+        print("NO LENGTH")
         return []
 
 def importOpenSCADdxf_LWPOLYLINE(an_entity):
@@ -175,7 +173,7 @@ def importOpenSCADdxf_HATCH(an_entity):
 
     return [wire] #Edges???
 
-def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
+def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None, flattenlayers=False):
 
     #using exlayer as placeholder for perhaps later specifying 'all layers except ...'
     #explore returning a compound instead of a face????
@@ -222,8 +220,8 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                 if entity.dxftype() == 'LINE':
                     an_edge=importOpenSCADdxf_LINE(entity)
 
-                elif entity.dxftype() == 'POLYGON': 
-                    an_edge=importOpenSCADdxf_POLYGON(entity)
+                elif entity.dxftype() == 'POLYLINE': 
+                    an_edge=importOpenSCADdxf_POLYLINE(entity)
 
                 elif entity.dxftype() == 'LWPOLYLINE':
                     an_edge=importOpenSCADdxf_LWPOLYLINE(entity)
@@ -240,8 +238,11 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                 elif entity.dxftype() == 'ARC':
                     an_edge=importOpenSCADdxf_ARC(entity)
 
-                elif entity.dxftype() == 'HATCH':
-                    an_edge=importOpenSCADdxf_HATCH(entity)
+                #elif entity.dxftype() == 'HATCH':
+                #    an_edge=importOpenSCADdxf_HATCH(entity) #not working bc of PolyLinePath??
+
+                elif entity.dxftype() in ['HATCH','TEXT','DIMENSION','REGION','INSERT','ATTDEF']:
+                    continue
 
                 else:
                     print("Unsupported type : ", entity.dxftype())
@@ -252,10 +253,12 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                     if len(edges)>1:
                         edges = [Part.sortEdges(edges)[0]]  #should only be edges...
                         edges=[item for sublist in edges for item in sublist] #flatten
-
+                        #print(edges)
+                        #edges = [Part.sortEdges(edges)]  #should only be edges...
+                        
                     if len(edges)>1:
                         #print("CHECKING IF LINE,SPLINE,LWPOLYLINE NEEDS CLOSING")
-                        if entity.dxftype() in ['LINE','SPLINE','LWPOLYLINE']:
+                        if entity.dxftype() in ['LINE','SPLINE','LWPOLYLINE','POLYLINE']:
                             if edges[0].Vertexes[0].X == edges[-1].Vertexes[1].X and edges[0].Vertexes[0].Y == edges[-1].Vertexes[1].Y:
                                 #print("THIS IS CLOSED")
                                 #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
@@ -278,26 +281,27 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                     else:
                         entitylist.append(edges)
                         entitytypelist.append(entity.dxftype())                        
-                else:
-                    print("EMPTY EDGE RETURNED???")
+                #else:
+                #    print("EMPTY EDGE RETURNED???")
             #end of for entity loop
-            if ('LINE' in entitytypes) or ('SPLINE' in entitytypes) or ('LWPOLYLINE' in entitytypes):
-                entitylist=[item for sublist in entitylist for item in sublist] #flatten
-
-            layerentitylist.append(entitylist)
-            layertypelist.append(entitytypelist)
+            if len(entitylist)>0:
+                if ('LINE' in entitytypes) or ('SPLINE' in entitytypes) or ('LWPOLYLINE' in entitytypes) or ('POLYLINE' in entitytypes) :
+                    entitylist=[item for sublist in entitylist for item in sublist] #flatten
+                layerentitylist.append(entitylist)
+                layertypelist.append(entitytypelist)
         #end of for layer loop
         
         #TODO: Unltimately, create a compound from the list of faces??
         faces=[]
         face=None
         if len(layerentitylist)>0:
+            if flattenlayers and len(layerentitylist)>1:
+                layerentitylist=[item for sublist in layerentitylist for item in sublist] #flatten
+                layerentitylist=[Part.sortEdges(layerentitylist)[0]]  #should only be edges...         
             for i,l in enumerate(layerentitylist):
-                entitylist = layerentitylist[i]
+                entitylist = layerentitylist[i] # this section needs cleanup?
                 if isinstance(entitylist[0], list) == False:  #make a list of entities
                     entitylist=[entitylist]
-                entitytypelist = layertypelist[i]
-                entitytypes = list(np.unique(entitytypelist))
                 if len(entitylist)==1 and isinstance(entitylist[0],list)==True:
                     entitylist=[entitylist[0]]
                 for el in entitylist:
@@ -311,7 +315,7 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                         try:  #TODO: figure out why this sometimes is needed
                             newwires = Part.Wire(e2)
                             # Create a face from the wire
-                            face = Part.Face(newwires)   
+                            face = Part.Face(newwires)
                             if face != None:
                                 faces.append(face)
                         except:
@@ -323,17 +327,17 @@ def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None):
                                     faces.append(face)
                             except:
                                 face = None
-                                
+
             #end of for layers loop
             # Create a compound of faces? faces list collects everything though ...
             if len(faces)>0:
-            ##    for f in faces:
-            ##        Part.show(f)
-            #    compound = Part.makeCompound(faces)
+            #    for f in faces:
+            #        Part.show(f)
+                compound = Part.makeCompound(faces)
             ##    Part.show(compound)
 
-                #Return compound, face; TODO: return layer name, color, labels?
-                return faces[0]
+                return faces, compound # TODO: return layer name, color, labels?
+                #return faces[0]
             else:
                 print("No wires created")
                 return None
