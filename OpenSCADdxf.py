@@ -1,116 +1,347 @@
+import ezdxf
+import FreeCAD
+from FreeCAD import Vector, Rotation #treat as vectors; need rotation for ellipse
+import Part
+#import Draft
+import numpy as np #for unique function
 
-def importEZDXFface(filename,layer=None,doc=None):
-    import ezdxf
-    import Part
-    import numpy as np
-    from FreeCAD import Vector
-    from ezdxf import recover
-    #ddoc = ezdxf.readfile(filename)
-    #try:
-    ddoc, auditor = recover.readfile(filename)
-    #except IOError:
-    #    print(f'Not a DXF file or a generic I/O error.')
-    #    #sys.exit(1)
-    #except ezdxf.DXFStructureError:
-    #    print(f'Invalid or corrupted DXF file.')
-    #    #sys.exit(2)
+def importOpenSCADdxf_LINE(an_entity):
+    #print("LINE")
+    start = Vector(an_entity.dxf.start)
+    end = Vector(an_entity.dxf.end)
+    if an_entity.dxf.start != an_entity.dxf.end:  #ensure it isn't effectively a point
+        aline = Part.makeLine( tuple([an_entity.dxf.start[0],an_entity.dxf.start[1],0.0]),
+                             tuple([an_entity.dxf.end[0],an_entity.dxf.end[1],0.0])) #makes Edge object
+        return [aline]
+    else: #else we found a point???
+        print("START==END?") #TODO: trap this??
+        return []
 
-    # DXF file can still have unrecoverable errors, but this is maybe just
-    # a problem when saving the recovered DXF file.
-    if auditor:
-      if auditor.has_errors:
-        auditor.print_error_report()
+def importOpenSCADdxf_POLYLINE(an_entity):
+    #print("POLYLINE")
+    # Get the points of the POLYLINE
+    verts = an_entity.vertices
+        
+    verts = [tuple(v.dxf.location) for v in verts]
+    if an_entity.is_closed:
+        verts += [verts[0]]
+        
+    if len(verts)>0:
+        apolygon = Part.makePolygon(verts).Edges #returns a list of Edges
+        return [apolygon] 
+    else:
+        print("NO LENGTH")
+        return []
 
-    #layernames = [layer.dxf.name for layer in ddoc.layers] #doesn't catch everything??
-    layernames = np.unique([e.dxf.layer for e in ddoc.entities])
+def importOpenSCADdxf_LWPOLYLINE(an_entity):
+    #TODO : this probably needs a lot of cleanup
+    if an_entity.is_closed == True:
+        #print("CLOSED LWPOLYLINE")
+        # Convert the lwpolyline to a list of vertices; TODO CHECK THIS
+        with an_entity.points("xy") as points:
+            vertices = [tuple([p[0], p[1], 0]) for p in points] #Vector?
+
+        if len(vertices)>1:
+            if vertices[0] != vertices[1]:
+                vertices += [vertices[0]] #because it should be closed
+                apolygon = Part.makePolygon(vertices).Edges #returns a List
+                wire = apolygon
+                return wire #its already a list
+
+            else:
+                print("CLOSED LWPOLYLINE is a POINT??")
+                return []
+
+        else:
+            print("LESS THAN 2 VERTICES FOUND FOR CLOSED LWPOLYLINE",len(vertices))
+            return []
+
+    else:
+        #print("OPEN LWPOLYLINE")
+        #print(an_entity.dxfattribs())
+        lwpentity=an_entity
+        if lwpentity[0] != lwpentity[-1]:
+            lwpentity.append(lwpentity[0]) #close polygon
+        lwpentity.close()
+        # Convert the lwpolyline to a list of vertices; TODO CHECK THIS
+        with lwpentity.points("xy") as points:
+            vertices = [tuple([p[0], p[1], 0]) for p in points] #Vector?
+
+        if len(vertices)>1:
+            apolygon = Part.makePolygon(vertices).Edges #returns 
+            wire = apolygon
+            return wire #already a list
+
+        else:
+            print("POLYLINE of 1 Vertex????")
+            return []
+
+def importOpenSCADdxf_SPLINE(an_entity):
+    #print("SPLINE")
+    control_points=()
+    if an_entity.control_point_count()>0:                    
+        control_points = an_entity.control_points
+    control_points=tuple(control_points)
+    aspline = Part.BSplineCurve()
+    aspline.buildFromPoles(control_points, False, 3)
+    thespline = aspline.toShape() #TODO CHECK THIS; this is an Edge object
+    return [thespline] #it needs to be a list; TODO: how check to ensure valid return object?
+
+def importOpenSCADdxf_CIRCLE(an_entity):
+    #print("CIRCLE")
+    # Get the center and radius of the circle
+    center = an_entity.dxf.center
+    radius = an_entity.dxf.radius
+    if radius != 0.0:
+        # Create a circle wire
+        circle = Part.Circle(Vector(center), Vector(0, 0, 1), radius).toShape() #returns Edge list
+        return [circle] #bc its not a list yet
+    else:
+        return []
+
+def importOpenSCADdxf_ELLIPSE(an_entity):
+    #print("ELLIPSE")  
+    #print(an_entity.dxfattribs())    
+    center = Vector(an_entity.dxf.center)
+    ratio = an_entity.dxf.ratio
+    major_axis = Vector(an_entity.dxf.major_axis)
+    normalv=Vector(0,0,1)
+    if an_entity.dxf_attrib_exists('ratio') == True:
+        minor_axis = major_axis.cross(normalv).normalize()*major_axis.Length*ratio
+    elif an_entity.dxf_attrib_exists('minor_axis') == True:
+        minor_axis = an_entity.dxf.minor_axis
+    else:  #trap
+        minor_axis = major_axis  #probably not a good trap
+
+    if ratio>1:
+        tempaxis=major_axis    
+        major_axis=minor_axis
+        minor_axis=tempaxis
+    elif ratio==1:
+        radius = np.sqrt(major_axis[0]**2+major_axis[1]**2+major_axis[2]**2)
+        ellipse=Part.Circle(center, normalv, radius).toShape()
+        return [ellipse]
+                
+    if Vector(minor_axis) != Vector(0,0,0):
+        # Create an ellipse wire
+        ellipse=Part.Ellipse(major_axis,minor_axis,Vector(0,0,0))
+        if an_entity.dxf.start_param != 0.0 or an_entity.dxf.end_param != 2*np.pi:
+            ellipse=Part.ArcOfEllipse(ellipse, an_entity.dxf.start_param-np.pi/2, an_entity.dxf.end_param-np.pi/2)
+        ellipse=ellipse.toShape()
+        ellipse=ellipse.translate(center)
+        return [ellipse] #bc not yet a List
+    else:
+        return []
+
+def importOpenSCADdxf_ARC(an_entity):
+    #print("ARC")
+    center = an_entity.dxf.center
+    radius = an_entity.dxf.radius
+    start_angle = np.deg2rad(an_entity.dxf.start_angle) #radians
+    end_angle = np.deg2rad(an_entity.dxf.end_angle)  #radians
+    if radius>0:
+        if start_angle != end_angle:
+            # Create the arc wire
+            circle = Part.Circle(Vector(center), Vector(0, 0, 1), radius) #returns cirlce; Edge with .toShape, fwiw
+            anarc = Part.ArcOfCircle(circle, start_angle, end_angle).toShape() #an Edge object
+            return [anarc]  #bc its not already a List
+        else:
+            return []
+    else:
+        return []
+
+def importOpenSCADdxf_HATCH(an_entity):
+    #absolutely no idea if this will work ...
+    #print("HATCH")
+    # Get the boundary path of the hatch
+    paths = an_entity.paths
+
+    # Create a wire from the boundary path
+    wire = Part.Wire()
+    for path in paths:
+        for segment in path:
+            if segment[0] == 'Line':
+                start = segment[1]
+                end = segment[2]
+                wire.add(Part.Line(Vector(start[0], start[1], 0), Vector(end[0], end[1], 0)))
+            elif segment[0] == 'Arc':
+                center = segment[1]
+                radius = segment[2]
+                start_angle = segment[3]
+                end_angle = segment[4]
+                wire.add(Part.ArcOfCircle(Vector(center[0], center[1], 0), Vector(0, 0, 1), radius, start_angle, end_angle))
+
+    return [wire] #Edges???
+
+def importEZDXFshape(filename=None, doc=None, layer=None, exlayer=None, flattenlayers=False):
+
+    #using exlayer as placeholder for perhaps later specifying 'all layers except ...'
+    # Return either a single face or the Shape of a compound if more than one Face
+
+    # Load the DXF file using ezdxf
+    #TODO: load in recover mode assuming it needs fixing?
+    #TODO : deal with any units specified in DXF?
+    #NOT DEALT WITH : 3D objects, linewidths, colors, user data
+
+    doc = ezdxf.readfile(filename)
+    msp = doc.modelspace()
+
+    # Get list of all layers
+    layernames = list(np.unique([e.dxf.layer for e in doc.entities]))
     print("ALL LAYER NAMES : ",layernames)
-    layer_names=list()
-    if layer != None :
-      if layer in layernames:
-        layer_names=[layer] #ok, just take that one layer
-      else:
-        print("Invalid layer name")
-    else:
-      layer_names=layernames #TODO: should only take 1??
-    #if len(layer_names)>0:
-    #  print(layer_names)
-    faces=list()
-    if len(layer_names)>0:
-      #msp = ddoc.modelspace()
-      elements=list()
-      for e in ddoc.entities:  #loop through all entities
-        if e.dxf.layer in layer_names: #select relevant layer
-          if e.dxftype() == "LINE":
-            if e.dxf.start != e.dxf.end:  #ensure it isn't effectively a point
-              #aline = Part.makeLine(Vector(e.dxf.start), Vector(e.dxf.end)) #makes Edge object
-              aline = Part.makeLine( Vector(e.dxf.start[0],e.dxf.start[1],0),
-                                     Vector(e.dxf.end[0],e.dxf.end[1],0)) #makes Edge object
-              awire=Part.Wire(aline)
-              if len(elements)>0:
-                if awire != elements[-1]:
-                  elements.append(awire)  #creates list of Wires for use in Part.Face  
+    if len(layernames)>0:  #if there are actually layers to loop through ...
+
+        layer_names=list()
+
+        if layer != None :  #layer(s) desired is specified
+          if layer in layernames:  #TODO adjust for multiple layer request or exclusion
+            layer_names=[layer] #ok, just take that one layer
+          else:
+            print("Layer name provided not found")
+
+        if len(layer_names) == 0:  #if we havent found a specified layer, look for defaults
+            print("No common layer name found; Selecting all")
+            #TODO select one with most entities? 1st one? None?
+            layer_names=layernames
+
+        layerentitylist=[] #list of list of processed entities per layer
+        layertypelist=[] #list of lists of entity types as they appear per layer
+
+        for count, alayer in enumerate(layer_names):  #for the layer(s) we want ....
+            # Initialize an empty list to hold the faces, entities and entity names
+            entitylist=[]
+            entitytypelist=[]
+            entities = msp.query(f'*[layer=="{alayer}"]') #get all the entities on that layer
+            entitytypes = list(np.unique([e.dxftype() for e in entities]))
+            for entity in entities: #loop through all the entities, process and store in lists
+                edges = []
+                an_edge = []
+
+                if entity.dxftype() == 'LINE':
+                    an_edge=importOpenSCADdxf_LINE(entity)
+
+                elif entity.dxftype() == 'POLYLINE': 
+                    an_edge=importOpenSCADdxf_POLYLINE(entity)
+
+                elif entity.dxftype() == 'LWPOLYLINE':
+                    an_edge=importOpenSCADdxf_LWPOLYLINE(entity)
+
+                elif entity.dxftype() == "SPLINE":
+                    an_edge=importOpenSCADdxf_SPLINE(entity)
+
+                elif entity.dxftype() == 'CIRCLE':
+                    an_edge=importOpenSCADdxf_CIRCLE(entity)
+
+                elif entity.dxftype() == 'ELLIPSE':  
+                    an_edge=importOpenSCADdxf_ELLIPSE(entity)
+
+                elif entity.dxftype() == 'ARC':
+                    an_edge=importOpenSCADdxf_ARC(entity)
+
+                #elif entity.dxftype() == 'HATCH':
+                #    an_edge=importOpenSCADdxf_HATCH(entity) #not working bc of PolyLinePath??
+
+                elif entity.dxftype() in ['HATCH','TEXT','DIMENSION','REGION','INSERT','ATTDEF']:
+                    continue
+
                 else:
-                  print("DUPLICATE ELEMENT?")
-              else:
-                elements.append(awire)  #creates list of Wires for use in Part.Face            
-            else: #else we found a point???
-              print("START==END?") #TODO: trap this??
-              print("CURRENT START/END : ", e.dxf.start, e.dxf.end)
-              print("PRIOR START : ", elements[-1].Vertexes[0].X, elements[-1].Vertexes[0].Y)
-              print("PRIOR END : ", elements[-1].Vertexes[1].X, elements[-1].Vertexes[1].Y)
-              print("FIRST START : ", elements[0].Vertexes[0].X, elements[0].Vertexes[0].Y)
-              print("FIRST END : ", elements[0].Vertexes[1].X, elements[0].Vertexes[1].Y)
+                    print("Unsupported type : ", entity.dxftype())
+
+                if any(an_edge) == True:
+                    edges+=an_edge
+
+                    if len(edges)>1:
+                        edges = [Part.sortEdges(edges)[0]]  #should only be edges...
+                        edges=[item for sublist in edges for item in sublist] #flatten
+                        #print(edges)
+                        #edges = [Part.sortEdges(edges)]  #should only be edges...
                         
-          if e.dxftype() == "SPLINE":
-            #print("SPLINE")
-            #https://forum.freecad.org/viewtopic.php?style=10&t=9894
-            #https://forum.freecad.org/viewtopic.php?t=35644
-            #fits=list()
-            #if e.fit_point_count()>0:
-            #  fits = e.fit_points
-            #knots=list()
-            #if e.knot_count()>0:
-            #  knots = e.knots
-            control_points=()
-            if e.control_point_count()>0:                    
-              control_points = e.control_points
-            #weights=()
-            #weights = e.weights
-            #n = len(control_points)-1
-            control_points=tuple(control_points)
-            aspline = Part.BSplineCurve()
-            aspline.buildFromPoles(control_points, False, 3)
-            elements.append(Part.Wire(aspline.toShape()))
+                    if len(edges)>1:
+                        #print("CHECKING IF LINE,SPLINE,LWPOLYLINE NEEDS CLOSING")
+                        if entity.dxftype() in ['LINE','SPLINE','LWPOLYLINE','POLYLINE']:
+                            if edges[0].Vertexes[0].X == edges[-1].Vertexes[1].X and edges[0].Vertexes[0].Y == edges[-1].Vertexes[1].Y:
+                                #print("THIS IS CLOSED")
+                                #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
+                                #print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
+                                #print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
+                                #print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)                
+                                entitylist.append(edges)
+                                entitytypelist.append(entity.dxftype())                                
+                            else:
+                                print("THIS IS NOT CLOSED")
+                                print("**** IGNORING ENTITY ****")
+                                #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
+                                #print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
+                                #print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
+                                #print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)
+                                edges=[]
+                        else:
+                            entitylist.append(edges)
+                            entitytypelist.append(entity.dxftype())
+                    else:
+                        entitylist.append(edges)
+                        entitytypelist.append(entity.dxftype())                        
+                #else:
+                #    print("EMPTY EDGE RETURNED???")
+            #end of for entity loop
+            if len(entitylist)>0:
+                if ('LINE' in entitytypes) or ('SPLINE' in entitytypes) or ('LWPOLYLINE' in entitytypes) or ('POLYLINE' in entitytypes) :
+                    entitylist=[item for sublist in entitylist for item in sublist] #flatten
+                layerentitylist.append(entitylist)
+                layertypelist.append(entitytypelist)
+        #end of for layer loop
+        
+        #TODO: Unltimately, create a compound from the list of faces??
+        faces=[]
+        face=None
+        if len(layerentitylist)>0:
+            if flattenlayers and len(layerentitylist)>1:
+                layerentitylist=[item for sublist in layerentitylist for item in sublist] #flatten
+                layerentitylist=[Part.sortEdges(layerentitylist)[0]]  #should only be edges...         
+            for i,l in enumerate(layerentitylist):
+                entitylist = layerentitylist[i] # this section needs cleanup?
+                if isinstance(entitylist[0], list) == False:  #make a list of entities
+                    entitylist=[entitylist]
+                if len(entitylist)==1 and isinstance(entitylist[0],list)==True:
+                    entitylist=[entitylist[0]]
+                for el in entitylist:
+                    if isinstance(el,list) == True:
+                        e = Part.sortEdges(el)
+                    else:
+                        e=[el2]
 
+                    #wires=None
+                    for i, e2 in enumerate(e): #only make a face from non-lines
+                        try:  #TODO: figure out why this sometimes is needed
+                            newwires = Part.Wire(e2)
+                            # Create a face from the wire
+                            face = Part.Face(newwires)
+                            if face != None:
+                                faces.append(face)
+                        except:
+                            # Create a face from the wire
+                            try:
+                                face = Part.Face(e2)
+                                # Append the face to the list of faces
+                                if face != None:
+                                    faces.append(face)
+                            except:
+                                face = None
 
-          if e.dxftype() == "POLYLINE":          
-            #print("POLYLINE")
-            verts = e.vertices
-            verts = [tuple(v.dxf.location) for v in verts]
-            if e.is_closed:
-              verts += [verts[0]]
-              poly = Part.makePolygon(verts) #makes a wire?
-            elements.append(poly)
-            
-          if e.dxftype() == "LWPOLYLINE":            
-            elements2=[]
-            #print("LWPOLYLINE")
-            with e.points("xy") as points: #xyseb
-              for p in points: #TODO: vectorize??
-                #print("P = ", p)
-                poly = tuple([p[0], p[1], 0])
-                elements2.append(poly)
-            #print("LWPOLY LEN : ",len(elements2))
-            if len(elements2)>1: #could get a point???
-              poly = Part.makePolygon(elements2) #makes a Wire?
-              elements.append(poly)
-    
-      try:  #TODO: figure out why this sometimes is needed
-        faces = Part.Face(elements)
-      except:
-        faces = Part.Wire(elements)
-        faces = Part.Face(faces)    
+            #end of for layers loop
+            # If more than one Face create a compound Shape
+            if len(faces)>0:
+                compound = Part.makeCompound(faces)
+                return compound
+            ##    Part.show(compound)
+
+            return faces[0]
+
+        else:
+            print("No layers extracted")
+            return None
     else:
-      print("No layers available")
+        print("No layers found")
+        return None
 
-    return faces
+
