@@ -1,0 +1,34 @@
+import Part
+
+from OpenSCADdxf  import importEZDXFface
+
+#filepath1="/path/to/openscad-source/tests/data/dxf/"
+filepath1="/Users/keithsloan/Library/Application Support/FreeCAD/Mod/Alternate_OpenSCAD/testDXFfiles/"
+filenames1=["arc.dxf",
+"circle.dxf",
+"circle-advanced.dxf",
+"circle-double.dxf",
+"circle-small.dxf",
+"ellipse.dxf",
+"ellipse-arc.dxf",
+"ellipse-reverse.dxf",
+"ellipse-rot.dxf",
+"lwpolyline.dxf",
+"lwpolyline2.dxf",
+"lwpolyline-closed.dxf",
+"null-polygons.dxf",
+"open-polyline.dxf",
+"polygon8.dxf",
+"polygon-concave.dxf",
+"polygon-concave-hole.dxf",
+"polygon-concave-simple.dxf",
+"polygon-holes-touch.dxf",
+"polygon-intersect.dxf",
+"polygon-many-holes.dxf",
+"polygon-riser.dxf",
+"polygons.dxf"] #THESE ALL SEEM TO WORK
+
+for fn in filenames1:
+	print(fn)
+	f, c = importEZDXFface(filepath1+fn, flattenlayers=True) #returns faces list and compound
+	Part.show(c)

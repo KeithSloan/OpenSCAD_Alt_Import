@@ -1020,8 +1020,7 @@ def processTextCmd(t):
 def processDXF(fname,layer):
     global doc
     #global pathName
-    #from OpenSCAD2Dgeom import importDXFface
-    from OpenSCADdxf import importEZDXFface
+    from OpenSCADdxf import importEZDXFshape
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
     if printverbose: print("Layer : "+layer)
@@ -1030,11 +1029,10 @@ def processDXF(fname,layer):
     filename = os.path.join(pathName,dxfname)
     shortname = os.path.split(fname)[1]
     if printverbose: print("DXF Full path : "+filename)
-    #face = importDXFface(filename,layer,doc)
-    face = importEZDXFface(filename,layer,doc)
-    print(f"face {face}")
+    dxfShape = importEZDXFshape(filename,layer,doc)
+    print(f"Shape {dxfShape}")
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
-    obj.Shape=face
+    obj.Shape=dxfShape
     if printverbose: print("DXF Diagnostics")
     if printverbose: print(obj.Shape.ShapeType)
     if printverbose: print("Closed : "+str(obj.Shape.isClosed()))
