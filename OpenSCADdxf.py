@@ -125,15 +125,24 @@ def importOpenSCADdxf_ELLIPSE(an_entity):
         tempaxis=major_axis    
         major_axis=minor_axis
         minor_axis=tempaxis
-       
+
+    elpart1=an_entity.dxf.start_param
+    elpart2=an_entity.dxf.end_param
+
+    if (elpart1 != elpart2) and (np.isclose(elpart1,elpart2)==True):
+      #elpart1=(an_entity.dxf.start_param+an_entity.dxf.end_param)/2
+      #elpart2=elpart1
+      elpart1=None
+      elpart2=None
+      
     if Vector(minor_axis) != Vector(0,0,0):
         # Create an ellipse wire
         ellipse=Part.Ellipse(major_axis,minor_axis,Vector(0,0,0))
-        if (an_entity.dxf.start_param != None) and (an_entity.dxf.end_param != None):
+        if (elpart1 != None) and (elpart2 != None):
             #print("ARC OF ELLIPSE")
             #print(an_entity.dxf.start_param)
             #print(an_entity.dxf.end_param)
-            ellipse=Part.ArcOfEllipse(ellipse, 2*np.pi-an_entity.dxf.end_param, 2*np.pi-an_entity.dxf.start_param) #DXF is ccw
+            ellipse=Part.ArcOfEllipse(ellipse, 2*np.pi-elpart2, 2*np.pi-elpart1) #DXF is ccw
         ellipse=ellipse.toShape()
         ellipse=ellipse.translate(center)
         return [ellipse] #bc not yet a List
@@ -149,7 +158,7 @@ def importOpenSCADdxf_ARC(an_entity):
     if radius>0:
         if start_angle != end_angle:
             # Create the arc wire
-            circle = Part.Circle(Vector(center), Vector(0, 0, 1), radius) #returns cirlce; Edge with .toShape, fwiw
+            circle = Part.Circle(Vector(center), Vector(0, 0, 1), radius) #returns circle; Edge with .toShape, fwiw
             anarc = Part.ArcOfCircle(circle, start_angle, end_angle).toShape() #an Edge object
             return [anarc]  #bc its not already a List
         else:
