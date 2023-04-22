@@ -1,4 +1,5 @@
 import ezdxf
+from ezdxf import recover
 import FreeCAD
 from FreeCAD import Vector, Rotation #treat as vectors; need rotation for ellipse
 import Part
@@ -10,9 +11,13 @@ def importOpenSCADdxf_LINE(an_entity):
     start = Vector(an_entity.dxf.start)
     end = Vector(an_entity.dxf.end)
     if an_entity.dxf.start != an_entity.dxf.end:  #ensure it isn't effectively a point
-        aline = Part.makeLine( tuple([an_entity.dxf.start[0],an_entity.dxf.start[1],0.0]),
-                             tuple([an_entity.dxf.end[0],an_entity.dxf.end[1],0.0])) #makes Edge object
-        return [aline]
+        try:
+            aline = Part.makeLine( tuple([an_entity.dxf.start[0],an_entity.dxf.start[1],0.0]),
+                                 tuple([an_entity.dxf.end[0],an_entity.dxf.end[1],0.0])) #makes Edge object
+            return [aline]
+        except:
+            print("problem in line??")
+            return []
     else: #else we found a point???
         print("START==END?") #TODO: trap this??
         return []
@@ -28,7 +33,7 @@ def importOpenSCADdxf_POLYLINE(an_entity):
         
     if len(verts)>0:
         apolygon = Part.makePolygon(verts).Edges #returns a list of Edges
-        return [apolygon] 
+        return apolygon 
     else:
         print("NO LENGTH")
         return []
@@ -68,9 +73,12 @@ def importOpenSCADdxf_LWPOLYLINE(an_entity):
             vertices = [tuple([p[0], p[1], 0]) for p in points] #Vector?
 
         if len(vertices)>1:
-            apolygon = Part.makePolygon(vertices).Edges #returns 
-            wire = apolygon
-            return wire #already a list
+            try:
+                apolygon = Part.makePolygon(vertices).Edges #returns 
+                return apolygon #already a list
+            except:
+                print("problem in open lwpolyline?")
+                return[]
 
         else:
             print("POLYLINE of 1 Vertex????")
@@ -117,16 +125,15 @@ def importOpenSCADdxf_ELLIPSE(an_entity):
         tempaxis=major_axis    
         major_axis=minor_axis
         minor_axis=tempaxis
-    elif ratio==1:
-        radius = np.sqrt(major_axis[0]**2+major_axis[1]**2+major_axis[2]**2)
-        ellipse=Part.Circle(center, normalv, radius).toShape()
-        return [ellipse]
-                
+       
     if Vector(minor_axis) != Vector(0,0,0):
         # Create an ellipse wire
         ellipse=Part.Ellipse(major_axis,minor_axis,Vector(0,0,0))
-        if an_entity.dxf.start_param != 0.0 or an_entity.dxf.end_param != 2*np.pi:
-            ellipse=Part.ArcOfEllipse(ellipse, an_entity.dxf.start_param-np.pi/2, an_entity.dxf.end_param-np.pi/2)
+        if (an_entity.dxf.start_param != None) and (an_entity.dxf.end_param != None):
+            #print("ARC OF ELLIPSE")
+            #print(an_entity.dxf.start_param)
+            #print(an_entity.dxf.end_param)
+            ellipse=Part.ArcOfEllipse(ellipse, 2*np.pi-an_entity.dxf.end_param, 2*np.pi-an_entity.dxf.start_param) #DXF is ccw
         ellipse=ellipse.toShape()
         ellipse=ellipse.translate(center)
         return [ellipse] #bc not yet a List
@@ -173,177 +180,225 @@ def importOpenSCADdxf_HATCH(an_entity):
 
     return [wire] #Edges???
 
-def importEZDXFface(filename=None, doc=None, layer=None, exlayer=None, flattenlayers=False):
+def importOpenSCADdxf_INSERT(an_entity):
+    new_entity = an_entity.explode()
+    #c=[processEntity(a) for a in new_entity if a.dxftype()!='INSERT'] #list of entities that should then be processed
+    c=list()
+    for a in new_entity:
+        if a.dxftype() != 'INSERT':
+            aresult = processEntity(a)
+            if aresult != None:
+                c.append(aresult)
+    while any([isinstance(a,list)==True for a in c]):
+        print("Flattening in INSERT...")
+        c=[item for sublist in c for item in sublist] #flatten hmm  ... if isinstance(c[0],list)==True?
+    return c
 
-    #using exlayer as placeholder for perhaps later specifying 'all layers except ...'
-    #explore returning a compound instead of a face????
+def importOpenSCADdxf_TEXT(an_entity):
+    # _label_ = Draft.make_label(target_point=FreeCAD.Vector(-0.9317530393600464, 0.6405777335166931, 0.0), placement=FreeCAD.Placement(FreeCAD.Vector(-1.2595092058181763, 0.5948442816734314, 0.0), FreeCAD.Rotation(0.0, 0.0, 0.0, 1.0)), target_object=FreeCAD.ActiveDocument.Dimension001, subelements=None, label_type='Custom', direction='Vertical', distance=-0.392545148730278)
 
-    # Load the DXF file using ezdxf
-    #TODO: load in recover mode assuming it needs fixing?
+    #_dim_ = Draft.make_linear_dimension(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Vector(-0.24974219501018524, -0.21259427070617676, 0.0), dim_line=FreeCAD.Vector(-0.6689651012420654, 0.1608951836824417, 0.0))
+
+    #pl = FreeCAD.Placement()
+    #pl.Rotation.Q = (0.0, 0.0, 0.0, 1.0)
+    #pl.Base = FreeCAD.Vector(0.0, 0.0, 0.0)
+    #_text_ = Draft.make_text(["My Test"], placement=pl)
+    ## Gui.Selection.addSelection('Unnamed','Text')
+    #Draft.autogroup(_text_)
+    return
+
+def processEntity(an_entity):
+    an_edge = None
+    #print("TYPE: ",an_entity.dxftype())
+    if an_entity.dxftype() == 'LINE':
+        an_edge=importOpenSCADdxf_LINE(an_entity)
+
+    elif an_entity.dxftype() == 'POLYLINE': 
+        an_edge=importOpenSCADdxf_POLYLINE(an_entity)
+
+    elif an_entity.dxftype() == 'LWPOLYLINE':
+        an_edge=importOpenSCADdxf_LWPOLYLINE(an_entity)
+
+    elif an_entity.dxftype() == "SPLINE":
+        an_edge=importOpenSCADdxf_SPLINE(an_entity)
+
+    elif an_entity.dxftype() == 'CIRCLE':
+        an_edge=importOpenSCADdxf_CIRCLE(an_entity)
+
+    elif an_entity.dxftype() == 'ELLIPSE':  
+        an_edge=importOpenSCADdxf_ELLIPSE(an_entity)
+
+    elif an_entity.dxftype() == 'ARC':
+        an_edge=importOpenSCADdxf_ARC(an_entity)
+
+    elif an_entity.dxftype() == 'INSERT':
+        an_edge=importOpenSCADdxf_INSERT(an_entity)
+
+    elif an_entity.dxftype() in ['HATCH','TEXT','DIMENSION','REGION','ATTDEF', 'LEADER','IMAGE']:
+        print("Not supported : ", an_entity.dxftype())
+
+    else:
+        print("Unsupported type : ", an_entity.dxftype())
+
+    return an_edge
+
+def loadDXF(filepath):
+    #based on https://ezdxf.readthedocs.io/en/stable/drawing/recover.html
+    #NOTE: This expects ASCII DXF files
+    #TODO: test if ZIP and handle that case??
+
+    try:  # Slow path including fixing low level structures:
+        doc, auditor = recover.readfile(filepath) #vs  doc = ezdxf.readfile(filename)
+    except IOError:
+        print(f'Not a DXF file or a generic I/O error.')
+        return None
+    except ezdxf.DXFStructureError:
+        print(f'Invalid or corrupted DXF file : {filepath}.')
+        return None
+
+    # DXF file can still have unrecoverable errors, but this is maybe
+    # just a problem when saving the recovered DXF file.
+    if auditor.has_errors:
+        print(f'Found unrecoverable errors in DXF file: {filepath}.')
+        auditor.print_error_report()
+        return None
+    else:
+        return doc
+
+def makeFace(e):
+    try:  #TODO: figure out why this sometimes is needed
+        newwires = Part.Wire(e)
+        # Create a face from the wire
+        face = Part.Face(newwires)
+    except:
+        # Create a face from the wire
+        try:
+            face = Part.Face(e)
+        except:
+            face = None
+
+    return face
+
+def importEZDXFshape(filename=None, doc=None, layer=None, exlayer=None, flattenlayers=False, explodelayers=False, explodez=1.0):
+
     #TODO : deal with any units specified in DXF?
     #NOT DEALT WITH : 3D objects, linewidths, colors, user data
+    units_table=[[0,'Unitless'],[1,'Inches'],[2,'Feet'],[3,'Miles'],[4,'Millimeters'],[5,'Centimeters'],[6,'Meters'],
+      [7,'Kilometers'],[8,'Microinches'],[9,'Mils'],[10,'Yards'],[11,'Angstroms'],[12,'Nanometers'],
+      [13,'Microns'],[14,'Decimeters'],[15,'Decameters'],[16,'Hectometers'],
+      [17,'Gigameters'],[18,'Astronomical units'],[19,'Light years'],[20,'Parsecs']]
+    #Load the DXF file using ezdxf    
+    doc = loadDXF(filename)
 
-    doc = ezdxf.readfile(filename)
-    msp = doc.modelspace()
+    if doc != None:
+        if doc.units:
+            print("DRAWING UNITS : ", doc.units,",", units_table[doc.units][1])    
+        #Get the modelspace
+        msp = doc.modelspace()    
 
-    # Get list of all layers
-    layernames = list(np.unique([e.dxf.layer for e in doc.entities]))
-    print("ALL LAYER NAMES : ",layernames)
-    if len(layernames)>0:  #if there are actually layers to loop through ...
+        #Make sure we have a list of layers to include even if None
+        if isinstance(layer,list) == False:
+            layer=[layer]
+        #Get list of any layers to exclude even if None
+        if isinstance(exlayer,list) == False:
+            exlayer=[exlayer]
+        #Get list of all layers in DXF
+        layernames = list(np.unique([e.dxf.layer for e in doc.entities]))
+        print("ALL LAYER NAMES : ",layernames)
 
-        layer_names=list()
+        if len(layernames)>0:  #if there are actually layers to loop through ...
 
-        if layer != None :  #layer(s) desired is specified
-          if layer in layernames:  #TODO adjust for multiple layer request or exclusion
-            layer_names=[layer] #ok, just take that one layer
-          else:
-            print("Layer name provided not found")
+            layer_names=list() #where to store layer names we want and exist
 
-        if len(layer_names) == 0:  #if we havent found a specified layer, look for defaults
-            print("No common layer name found; Selecting all")
-            #TODO select one with most entities? 1st one? None?
-            layer_names=layernames
-
-        layerentitylist=[] #list of list of processed entities per layer
-        layertypelist=[] #list of lists of entity types as they appear per layer
-
-        for count, alayer in enumerate(layer_names):  #for the layer(s) we want ....
-            # Initialize an empty list to hold the faces, entities and entity names
-            entitylist=[]
-            entitytypelist=[]
-            entities = msp.query(f'*[layer=="{alayer}"]') #get all the entities on that layer
-            entitytypes = list(np.unique([e.dxftype() for e in entities]))
-            for entity in entities: #loop through all the entities, process and store in lists
-                edges = []
-                an_edge = []
-
-                if entity.dxftype() == 'LINE':
-                    an_edge=importOpenSCADdxf_LINE(entity)
-
-                elif entity.dxftype() == 'POLYLINE': 
-                    an_edge=importOpenSCADdxf_POLYLINE(entity)
-
-                elif entity.dxftype() == 'LWPOLYLINE':
-                    an_edge=importOpenSCADdxf_LWPOLYLINE(entity)
-
-                elif entity.dxftype() == "SPLINE":
-                    an_edge=importOpenSCADdxf_SPLINE(entity)
-
-                elif entity.dxftype() == 'CIRCLE':
-                    an_edge=importOpenSCADdxf_CIRCLE(entity)
-
-                elif entity.dxftype() == 'ELLIPSE':  
-                    an_edge=importOpenSCADdxf_ELLIPSE(entity)
-
-                elif entity.dxftype() == 'ARC':
-                    an_edge=importOpenSCADdxf_ARC(entity)
-
-                #elif entity.dxftype() == 'HATCH':
-                #    an_edge=importOpenSCADdxf_HATCH(entity) #not working bc of PolyLinePath??
-
-                elif entity.dxftype() in ['HATCH','TEXT','DIMENSION','REGION','INSERT','ATTDEF']:
-                    continue
-
-                else:
-                    print("Unsupported type : ", entity.dxftype())
-
-                if any(an_edge) == True:
-                    edges+=an_edge
-
-                    if len(edges)>1:
-                        edges = [Part.sortEdges(edges)[0]]  #should only be edges...
-                        edges=[item for sublist in edges for item in sublist] #flatten
-                        #print(edges)
-                        #edges = [Part.sortEdges(edges)]  #should only be edges...
-                        
-                    if len(edges)>1:
-                        #print("CHECKING IF LINE,SPLINE,LWPOLYLINE NEEDS CLOSING")
-                        if entity.dxftype() in ['LINE','SPLINE','LWPOLYLINE','POLYLINE']:
-                            if edges[0].Vertexes[0].X == edges[-1].Vertexes[1].X and edges[0].Vertexes[0].Y == edges[-1].Vertexes[1].Y:
-                                #print("THIS IS CLOSED")
-                                #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
-                                #print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
-                                #print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
-                                #print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)                
-                                entitylist.append(edges)
-                                entitytypelist.append(entity.dxftype())                                
-                            else:
-                                print("THIS IS NOT CLOSED")
-                                print("**** IGNORING ENTITY ****")
-                                #print(edges[0].Vertexes[0].X, edges[0].Vertexes[0].Y)
-                                #print(edges[0].Vertexes[1].X, edges[0].Vertexes[1].Y)
-                                #print(edges[-1].Vertexes[0].X, edges[-1].Vertexes[0].Y)
-                                #print(edges[-1].Vertexes[1].X, edges[-1].Vertexes[1].Y)
-                                edges=[]
-                        else:
-                            entitylist.append(edges)
-                            entitytypelist.append(entity.dxftype())
-                    else:
-                        entitylist.append(edges)
-                        entitytypelist.append(entity.dxftype())                        
-                #else:
-                #    print("EMPTY EDGE RETURNED???")
-            #end of for entity loop
-            if len(entitylist)>0:
-                if ('LINE' in entitytypes) or ('SPLINE' in entitytypes) or ('LWPOLYLINE' in entitytypes) or ('POLYLINE' in entitytypes) :
-                    entitylist=[item for sublist in entitylist for item in sublist] #flatten
-                layerentitylist.append(entitylist)
-                layertypelist.append(entitytypelist)
-        #end of for layer loop
-        
-        #TODO: Unltimately, create a compound from the list of faces??
-        faces=[]
-        face=None
-        if len(layerentitylist)>0:
-            if flattenlayers and len(layerentitylist)>1:
-                layerentitylist=[item for sublist in layerentitylist for item in sublist] #flatten
-                layerentitylist=[Part.sortEdges(layerentitylist)[0]]  #should only be edges...         
-            for i,l in enumerate(layerentitylist):
-                entitylist = layerentitylist[i] # this section needs cleanup?
-                if isinstance(entitylist[0], list) == False:  #make a list of entities
-                    entitylist=[entitylist]
-                if len(entitylist)==1 and isinstance(entitylist[0],list)==True:
-                    entitylist=[entitylist[0]]
-                for el in entitylist:
-                    if isinstance(el,list) == True:
-                        e = Part.sortEdges(el)
-                    else:
-                        e=[el2]
-
-                    #wires=None
-                    for i, e2 in enumerate(e): #only make a face from non-lines
-                        try:  #TODO: figure out why this sometimes is needed
-                            newwires = Part.Wire(e2)
-                            # Create a face from the wire
-                            face = Part.Face(newwires)
-                            if face != None:
-                                faces.append(face)
-                        except:
-                            # Create a face from the wire
-                            try:
-                                face = Part.Face(e2)
-                                # Append the face to the list of faces
-                                if face != None:
-                                    faces.append(face)
-                            except:
-                                face = None
-
-            #end of for layers loop
-            # Create a compound of faces? faces list collects everything though ...
-            if len(faces)>0:
-            #    for f in faces:
-            #        Part.show(f)
-                compound = Part.makeCompound(faces)
-            ##    Part.show(compound)
-
-                return faces, compound # TODO: return layer name, color, labels?
-                #return faces[0]
+            if layer != [None] :  #layer(s) desired is specified
+                #Get the layers we want
+                layer_names=set(layer).intersection(set(layernames))
+                #Get rid of any to exclude  #TODO: not tested yet
+                layer_names=set(layer_names).difference(set(exlayer))
             else:
-                print("No wires created")
+                print("Layer name provided not found")
+
+            if len(layer_names) == 0:  #if we havent found a specified layer, look for defaults?
+                print("No common layer name found; Selecting all")
+                #TODO select one with most entities? 1st one? None?
+                layer_names=layernames
+
+            layerentitylist=[] #list of list of processed entities per layer
+
+            for each_layer in layer_names:  #for the layer(s) we want ....
+                # Initialize an empty list to hold the faces, entities and entity names
+                entitylist=[]
+                entities = msp.query(f'*[layer=="{each_layer}"]') #get all the entities on that layer
+                for entity in entities: #loop through all the entities, process and store in lists
+
+                    edges = processEntity(entity)
+
+                    if edges:
+                        if len(edges)>1:
+                            edges = Part.sortEdges(edges)[0]  #should only be edges... sortEdges wraps in list
+                        
+                        entitylist+=edges
+
+                #end of for entity loop
+                if len(entitylist)>0:
+                    layerentitylist.append(entitylist) #WANT to add as a list so we can differentiate among layers
+            #end of for layer loop
+            faces=[]
+            face=None
+            #global myfaces
+            #myfaces = []
+            #print("NUMBER OF LAYERS : ",len(layerentitylist))
+            if len(layerentitylist)>0:
+                #if flattenlayers==True :
+                #    while any([isinstance(a,list)==True for a in layerentitylist]):
+                #        print("Flattening...")
+                #        layerentitylist=[item for sublist in layerentitylist for item in sublist] #flatten
+                #    layerentitylist=Part.sortEdges(layerentitylist)[0]  #should only be edges...
+                #    print("FLATTENED EVERYTHING.  NUMBER OF ENTITIES : ",len(layerentitylist))
+                  
+                for i,l in enumerate(layerentitylist):
+                    if flattenlayers == True:
+                        entitylist = [layerentitylist]
+                    else:
+                        entitylist = layerentitylist[i] #This should be a list of entities in the ith layer
+                        if isinstance(entitylist[0], list) == False:  #make a list of entities
+                            entitylist=[entitylist]
+                        if len(entitylist)==1 and isinstance(entitylist[0],list)==True: #is it a list of a list??
+                            entitylist=[entitylist[0]]
+
+                    for el in entitylist:
+
+                        if isinstance(el,list) == True:
+                            e = Part.sortEdges(el)
+                        else:
+                            e = Part.sortEdges([el])
+
+                        for e2 in e: #only make a face from non-lines
+                            face = makeFace(e2)
+                            if face != None:
+                                faces+=[face]
+
+                        ##faces+=[makeFace(item) for sublist in e for item in sublist] # += concats, doesn't wrap in list like append
+                        ##myfaces+=[makeFace(item) for sublist in e for item in sublist]
+                #end of for layers loop
+
+                # If more than one Face create a compound Shape
+                if len(faces)>0:
+                    compound = Part.makeCompound(faces)
+                    if len(faces)==1:
+                        return compound #, faces[0]  ##uncomment to get just the face (why bother??)
+                    else:
+                        return compound #, faces ##uncomment to get list of individual faces
+                else:
+                    print("Problem with faces/compound creation")
+                    return None, None
+
+            else:
+                print("No layers extracted")
                 return None
         else:
-            print("No layers extracted")
+            print("No layers found")
             return None
     else:
-        print("No layers found")
+        print("Invalid file")
         return None
