@@ -257,6 +257,7 @@ def loadDXF(filepath):
     #TODO: test if ZIP and handle that case??
 
     try:  # Slow path including fixing low level structures:
+        print(f"Reading file {filepath}")
         doc, auditor = recover.readfile(filepath) #vs  doc = ezdxf.readfile(filename)
     except IOError:
         print(f'Not a DXF file or a generic I/O error.')
