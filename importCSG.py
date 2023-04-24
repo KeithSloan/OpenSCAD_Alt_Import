@@ -1015,7 +1015,7 @@ def processDXF(fname,layer):
     global doc
     global pathName
     #from OpenSCAD2Dgeom import importDXFface
-    from OpenSCADdxf import importEZDXFface
+    from OpenSCADdxf import importEZDXFshape
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
     if printverbose: print("Layer : "+layer)
@@ -1025,7 +1025,7 @@ def processDXF(fname,layer):
     shortname = os.path.split(fname)[1]
     if printverbose: print("DXF Full path : "+filename)
     #face = importDXFface(filename,layer,doc)
-    face = importEZDXFface(filename,layer,doc)
+    face = importEZDXFshape(filename,layer,doc)
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
     obj.Shape=face
     if printverbose: print("DXF Diagnostics")
