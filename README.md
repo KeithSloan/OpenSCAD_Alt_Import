@@ -20,12 +20,29 @@ Clone into FreeCAD's Mod directory see https://wiki.freecadweb.org/Installing_mo
 
 ## Now supports 
 
+The idea to allow hybrid development ( FreeCAD and OpenSCAD )
+
 * Importing SCAD files as FreeCAD Objects.
 * Edit SCADObjects with an external editor
+   
 * Import of Minkowski request with a Sphere as a Part::Offset
 * Import of Minkowski request with a Cylinder as Part::Offset & Part::Fillet
 
-The idea to allow hybrid development ( FreeCAD and OpenSCAD )
+* Matt Considine's improved OpenSCAD DXF import that uses EZdxf
+  
+  
+### New OpenSCAD DXF importer 
+  
+  * For test files see directory testDXFfiles
+  * Test of test files see Macro Macros/testSCAD_DXFfile.FCMacro
+    ( Copy to FreeCAD Macro's directory )
+  * If problems please report and drop back to main FreeCAD importer.
+  * Note: If the scad file imports external files use one of
+  
+      New Importer : SCAD (importCSG)
+      New Importer : SCADFileObject
+      
+  New Importer : SCADObject currently does not support import of external files    
 
 ### External Editor
   
@@ -176,6 +193,7 @@ The performance of OpenSCAD Preview has been significantly improved since Feb 20
                       
 ### Thanks to FreeCAD Users
 
+* mconsidine
 * wmayer
 * chennes
 * edwilliams16
