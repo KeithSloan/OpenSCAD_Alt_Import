@@ -26,7 +26,7 @@ def open(filename,acomp=True,thefaces=False): #options not currently used here
     else:
         FreeCAD.Console.PrintMessage('Not a DXF file : '+filename+'\n')
 
-def insert(filename, docname=FreeCAD.activeDocument().Name,acomp=True,thefaces=False):
+def insert(filename, docname, acomp=True,thefaces=False):
     "called when freecad imports a file"
     pathText = os.path.splitext(os.path.basename(filename))
     objectName  = pathText[0]
