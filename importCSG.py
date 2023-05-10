@@ -98,14 +98,14 @@ def open(filename):
             #pathName = os.getcwd() #https://github.com/openscad/openscad/issues/128
         else:
             pathName = os.path.dirname(os.path.normpath(filename))
-        processCSG(doc, pathName, tmpfile)
+        processCSG(doc, tmpfile)
         try:
             os.unlink(tmpfile)
         except OSError:
             pass
     else:
         pathName = os.path.dirname(os.path.normpath(filename))
-        processCSG(doc, pathName, filename)
+        processCSG(doc, filename)
     return doc
 
 def insert(filename,docname):
@@ -127,21 +127,18 @@ def insert(filename,docname):
         else:
             pathName = os.path.dirname(os.path.normpath(filename))
         print('Processing : '+filename)
-        processCSG(doc, pathName, tmpfile)
+        processCSG(doc, tmpfile)
         try:
             os.unlink(tmpfile)
         except OSError:
             pass
     else:
         pathName = os.path.dirname(os.path.normpath(filename))
-        processCSG(doc, pathName, filename)
+        processCSG(doc, filename)
 
-def processCSG(docSrc, path_Name, filename, fnmax_param = None):
+def processCSG(docSrc, filename, fnmax_param = None):
     global doc
     global fnmax
-    global pathName
-    pathName = path_Name
-
     if fnmax_param is None:
         fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
@@ -152,7 +149,6 @@ def processCSG(docSrc, path_Name, filename, fnmax_param = None):
 
     print('Using Alternate OpenSCAD Importer')
     print(f"Doc {doc.Name} useMaxFn {fnmax}")
-    print(f"CSG file {filename}")
 
     #import tokrules
     #from tokrules import tokens
@@ -909,7 +905,6 @@ def p_import_file1(p):
     else: 
         layerName = None    
     #p[0] = [process_import_file(filen,ext,p[3]['layer'])]
-    print(f"process_import_file {filen} {ext} {layerName}")
     p[0] = [process_import_file(filen, ext, layerName)]
     if printverbose: print("End Import File")
 
@@ -927,7 +922,6 @@ def p_surface_action(p):
 def process_import_file(fname, ext, layer):
     from OpenSCADUtils import reverseimporttypes
     if printverbose: print("Importing : "+fname+"."+ext+" Layer : "+layer)
-    print(f"Importing : {fname}.{ext} Layer : {layer}")
     if ext.lower() in reverseimporttypes()['Mesh']:
         obj=process_mesh_file(fname, ext)
     elif ext.lower() == 'dxf':
@@ -1007,8 +1001,8 @@ def processTextCmd(t):
     import os
     from OpenSCADUtils import callopenscadstring
     tmpfilename = callopenscadstring(t,'dxf')
-    from OpenSCAD2Dgeom import importDXFface 
-    face = importDXFface(tmpfilename,None,None)
+    from OpenSCAD2Dgeom import importDXFshape
+    face = importDXFshape(tmpfilename,None,None)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
     try:
@@ -1019,7 +1013,8 @@ def processTextCmd(t):
 
 def processDXF(fname,layer):
     global doc
-    #global pathName
+    global pathName
+    #from OpenSCAD2Dgeom import importDXFshape
     from OpenSCADdxf import importEZDXFshape
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
@@ -1029,10 +1024,10 @@ def processDXF(fname,layer):
     filename = os.path.join(pathName,dxfname)
     shortname = os.path.split(fname)[1]
     if printverbose: print("DXF Full path : "+filename)
-    dxfShape = importEZDXFshape(filename,layer,doc)
-    print(f"Shape {dxfShape}")
+    #face = importDXFshape(filename,layer,doc)
+    face = importEZDXFshape(filename,layer,doc)
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
-    obj.Shape=dxfShape
+    obj.Shape=face
     if printverbose: print("DXF Diagnostics")
     if printverbose: print(obj.Shape.ShapeType)
     if printverbose: print("Closed : "+str(obj.Shape.isClosed()))
