@@ -62,5 +62,5 @@ def open(filename,currentdoc=None):
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.SendMsgToActiveView("ViewFit")
 
-def insert(filename, currentdoc=FreeCAD.activeDocument().Name):
+def insert(filename, currentdoc):
     open(filename, currentdoc)
