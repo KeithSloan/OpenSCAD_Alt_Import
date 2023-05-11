@@ -42,18 +42,19 @@ if open.__module__ in ['__builtin__', 'io']:
 
 from DXFObjects import DXFObject, ViewDXFProvider
 
-
-def open(filename):
+def open(filename,currentdoc=None):
     "called when freecad opens a file."
     FreeCAD.Console.PrintMessage('Creating Object from : '+filename+'\n')
     pathText = os.path.splitext(os.path.basename(filename))
     objectName  = pathText[0]
     filePath = pathText[1]
     print(f"Create Object {objectName} path {filename}")
-    doc = FreeCAD.ActiveDocument
-    if doc is None:
-        doc=FreeCAD.newDocument(filename)
-    obj = doc.addObject("Part::FeaturePython", objectName)
+    #doc = FreeCAD.ActiveDocument
+    if currentdoc is None:
+        doc=FreeCAD.newDocument(objectName)    
+    else:
+        doc=FreeCAD.getDocument(currentdoc)
+    obj = doc.addObject("Part::FeaturePython", objectName) #vs Feature?? MattC
     DXFObject(obj, filename)
     ViewDXFProvider(obj.ViewObject)
     if hasattr(obj, 'Proxy'):
@@ -61,3 +62,5 @@ def open(filename):
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.SendMsgToActiveView("ViewFit")
 
+def insert(filename, currentdoc=FreeCAD.activeDocument().Name):
+    open(filename, currentdoc)

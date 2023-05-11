@@ -1001,8 +1001,8 @@ def processTextCmd(t):
     import os
     from OpenSCADUtils import callopenscadstring
     tmpfilename = callopenscadstring(t,'dxf')
-    from OpenSCAD2Dgeom import importDXFface 
-    face = importDXFface(tmpfilename,None,None)
+    from OpenSCAD2Dgeom import importDXFshape
+    face = importDXFshape(tmpfilename,None,None)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
     try:
@@ -1014,7 +1014,7 @@ def processTextCmd(t):
 def processDXF(fname,layer):
     global doc
     global pathName
-    #from OpenSCAD2Dgeom import importDXFface
+    #from OpenSCAD2Dgeom import importDXFshape
     from OpenSCADdxf import importEZDXFshape
     if printverbose: print("Process DXF file")
     if printverbose: print("File Name : "+fname)
@@ -1024,7 +1024,7 @@ def processDXF(fname,layer):
     filename = os.path.join(pathName,dxfname)
     shortname = os.path.split(fname)[1]
     if printverbose: print("DXF Full path : "+filename)
-    #face = importDXFface(filename,layer,doc)
+    #face = importDXFshape(filename,layer,doc)
     face = importEZDXFshape(filename,layer,doc)
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
     obj.Shape=face
