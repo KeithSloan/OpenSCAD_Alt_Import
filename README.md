@@ -28,7 +28,7 @@ The idea to allow hybrid development ( FreeCAD and OpenSCAD )
 * Import of Minkowski request with a Sphere as a Part::Offset
 * Import of Minkowski request with a Cylinder as Part::Offset & Part::Fillet
 
-* Matt Considine's improvements utilizing python DZdxf library 
+* **Matt Considine's** improvements utilizing python DZdxf library 
  
   * OpenSCAD DXF import
   * DXF importer
