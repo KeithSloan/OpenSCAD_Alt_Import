@@ -91,7 +91,8 @@ def createBrep(srcObj, tmpDir, wrkSrc):
         global pathName    
         pathName = os.path.dirname(os.path.normpath(source))
         print(f"CSG File name path {pathName} file {tmpFileName}")
-        processCSG(wrkDoc, pathName, tmpFileName, srcObj.fnmax)
+        #processCSG(wrkDoc, pathName, tmpFileName, srcObj.fnmax)
+        processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
         # *** Does not work for earrings.scad
         shapes = []
         for cnt, obj in enumerate(wrkDoc.RootObjects, start=1):
