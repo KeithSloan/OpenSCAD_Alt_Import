@@ -1,6 +1,6 @@
 import Part
 
-from OpenSCADdxf  import importEZDXFface
+from OpenSCADdxf  import importEZDXFshape
 
 #filepath1="/path/to/openscad-source/tests/data/dxf/"
 filepath1="/Users/keithsloan/Library/Application Support/FreeCAD/Mod/Alternate_OpenSCAD/testDXFfiles/"
@@ -30,5 +30,5 @@ filenames1=["arc.dxf",
 
 for fn in filenames1:
 	print(fn)
-	f, c = importEZDXFface(filepath1+fn, flattenlayers=True) #returns faces list and compound
+	c = importEZDXFshape(filepath1+fn, flattenlayers=True) #returns faces list and compound
 	Part.show(c)
