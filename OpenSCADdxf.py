@@ -259,6 +259,7 @@ def loadDXF(filepath):
     try:  # Slow path including fixing low level structures:
         print(f"Reading file {filepath}")
         doc, auditor = recover.readfile(filepath) #vs  doc = ezdxf.readfile(filename)
+        print(f'Doc {doc}')
     except IOError:
         print(f'Not a DXF file or a generic I/O error.')
         return None
