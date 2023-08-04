@@ -1024,7 +1024,6 @@ def processDXF(fname,layer):
     filename = os.path.join(pathName,dxfname)
     shortname = os.path.split(fname)[1]
     if printverbose: print("DXF Full path : "+filename)
-    #face = importDXFshape(filename,layer,doc)
     face = importEZDXFshape(filename,layer,doc)
     obj=doc.addObject('Part::Feature','dxf_%s_%s' % (shortname,layer or "all"))
     obj.Shape=face
