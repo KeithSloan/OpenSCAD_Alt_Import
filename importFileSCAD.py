@@ -48,14 +48,18 @@ printverbose = params.GetBool('printverbose',False)
 print(f'Verbose = {printverbose}')
 
 
-def open(filename):
+def open(filename,currentdoc=None):
     "called when freecad opens a file."
     FreeCAD.Console.PrintMessage('Creating SCAD File Object from : '+filename+'\n')
     pathText = os.path.splitext(os.path.basename(filename))
     objectName  = pathText[0]
     filePath = pathText[1]
     print(f"Create SCAD File Object {objectName} path {filename}")
-    doc = FreeCAD.ActiveDocument
+    #doc = FreeCAD.ActiveDocument
+    if currentdoc is None:
+        doc=FreeCAD.newDocument(objectName)    
+    else:
+        doc=FreeCAD.getDocument(currentdoc)    
     if doc is None:
         doc=FreeCAD.newDocument(filename)
     obj = doc.addObject("Part::FeaturePython", objectName)
@@ -65,3 +69,6 @@ def open(filename):
         obj.Proxy.executeFunction(obj)
     FreeCAD.ActiveDocument.recompute()
     FreeCADGui.SendMsgToActiveView("ViewFit")
+    
+def insert(filename, currentdoc):
+    open(filename, currentdoc)
