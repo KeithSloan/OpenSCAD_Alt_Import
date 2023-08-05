@@ -43,7 +43,9 @@ if open.__module__ in ['__builtin__', 'io']:
 from OpenSCADObjects import SCADObject, ViewSCADProvider
 
 #from OpenSCADFeatures import ViewProviderTree
-from importCSG import processCSG
+#from importCSG import processCSG
+
+from SCADparser import parseFile
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
@@ -64,18 +66,20 @@ def open(filename, currentdoc=None):
         doc=FreeCAD.getDocument(currentdoc)       
     if doc is None:
         doc=FreeCAD.newDocument(filename)
-    obj = doc.addObject("Part::FeaturePython", objectName)
-    scadObj = SCADObject(obj, filename)
-    ViewSCADProvider(obj.ViewObject)
-    if hasattr(obj, 'Proxy'):
-        obj.Proxy.executeFunction(obj)
-    FreeCAD.ActiveDocument.recompute()
-    FreeCADGui.SendMsgToActiveView("ViewFit")
-    #print(dir(scadObj))
-    #obj.execute = True
-    #scadObj.onChanged(obj, "execute")
-    #FreeCADGui.updateGui()
-    #FreeCADGui.Selection.addSelection(obj)
+    "Parse SCAD file looking for use and include"
+
+    #obj = doc.addObject("Part::FeaturePython", objectName)
+    #scadObj = SCADObject(obj, filename)
+    #ViewSCADProvider(obj.ViewObject)
+    #if hasattr(obj, 'Proxy'):
+    #    obj.Proxy.executeFunction(obj)
+    #FreeCAD.ActiveDocument.recompute()
+    #FreeCADGui.SendMsgToActiveView("ViewFit")
+    ##print(dir(scadObj))
+    ##obj.execute = True
+    ##scadObj.onChanged(obj, "execute")
+    ##FreeCADGui.updateGui()
+    ##FreeCADGui.Selection.addSelection(obj)
 
 def insert(filename, currentdoc):
     open(filename, currentdoc)
