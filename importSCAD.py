@@ -45,7 +45,7 @@ from OpenSCADObjects import SCADObject, ViewSCADProvider
 #from OpenSCADFeatures import ViewProviderTree
 #from importCSG import processCSG
 
-from OpenSCADparser import parseScadFile
+from scad_parser import copyUseIncludeFiles
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
@@ -67,7 +67,7 @@ def open(filename, currentdoc=None):
     if doc is None:
         doc=FreeCAD.newDocument(filename)
     "Parse SCAD file looking for use and include"
-    parseScadFile(filename)
+    copyUseIncludeFiles(filePath, filename)
 
     #obj = doc.addObject("Part::FeaturePython", objectName)
     #scadObj = SCADObject(obj, filename)
