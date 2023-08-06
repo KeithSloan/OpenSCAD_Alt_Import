@@ -593,7 +593,41 @@ def importEZDXFsimple(filename=None, doc=None, inlayer=None, exlayer=None,retcom
         print("Invalid file?")
         return
 
-def importEZDXFshape(filename=None, doc=None, inlayer=None, exlayer=None, flattenlayers=True, explodelayers=False, explodez=1.0,retcompound=True,retfaces=False):
+
+def makeholedshape(shapes) : #takes a list of faces
+
+  def AholdsB(A, B): #test for A completely enclosing B
+    if ((A.common(B).Area == B.Area) and (A != B)):
+      return 1
+    else :
+      return 0
+    
+  import numpy as np
+  num_shapes = len(shapes) #list of faces to start with
+  ra = np.zeros((num_shapes, num_shapes)) # array to hold flag "A holds B"
+    
+  featurelist=list()
+  for i in range(0,num_shapes): #use indexing because we should(?) only need to test a pair once
+    obj=shapes[i]  #a face to test ...
+    for j in range(0, num_shapes): #all other faces to test against #actually need to test both directions, unfortunately #TODO: speed up looping??
+      holdflag = AholdsB(shapes[i],shapes[j]) #0,1=false, true; self=0
+      if holdflag == 1: #only need to update array if A holds B
+        ra[i,j]=holdflag #update array
+        obj=obj.cut(shapes[j]) #iteratively cut out faces "held" by the face being tested
+    featurelist.append(obj) #we're done with that so add it to the list
+
+  ra2 = np.apply_along_axis(sum, 0, ra) #find out how many faces are contained by each
+
+  #find indices of faces that should be holes
+  #https://www.geeksforgeeks.org/python-get-indices-of-even-elements-from-list/
+  holes = [idx for idx, ele in enumerate(ra2) if ((ele % 2 != 0) and (ele > 0))] #odd values = holes (always?)
+
+  #make a new shape out of every face that does or doesn't have holes in it, but that isn't a hole itself
+  obj = Part.makeCompound([shp for idx, shp in enumerate(featurelist) if idx not in holes])
+
+  return obj
+
+def importEZDXFshape(filename=None, doc=None, layer=None, exlayer=None, flattenlayers=False, explodelayers=False, explodez=1.0, withholes=True):
 
     #TODO : deal with any units specified in DXF?
     #NOT DEALT WITH : 3D objects, linewidths, colors, user data
@@ -758,14 +792,21 @@ def importEZDXFshape(filename=None, doc=None, inlayer=None, exlayer=None, flatte
 
                 # If more than one Face create a compound Shape
                 if len(faces)>0:
-                    compound = Part.makeCompound(faces)
-                    if retcompound==True and retfaces==False:
-                        if compound:
-                            return compound
-                        else:
-                            return None
-                    elif retcompound==False and retfaces==True:
-                        return faces
+                    # Matt please check
+                    #compound = Part.makeCompound(faces)
+                    #if retcompound==True and retfaces==False:
+                    #    if compound:
+                    #        return compound
+                    #    else:
+                    #        return None
+                    #elif retcompound==False and retfaces==True:
+                    #    return faces
+                    if withholes == False:
+                        compound = Part.makeCompound(faces)
+                    else:
+                        compound = makeholedshape(faces)
+                    if len(faces)==1:
+                        return compound #, faces[0]  ##uncomment to get just the face (why bother??)
                     else:
                         if compound:
                             return compound, faces
