@@ -305,7 +305,7 @@ def makeholedshape(shapes) : #takes a list of faces
   featurelist=list()
   for i in range(0,num_shapes): #use indexing because we should(?) only need to test a pair once
     obj=shapes[i]  #a face to test ...
-    for j in range(i+1, num_shapes): #all other faces to test against
+    for j in range(0, num_shapes): #all other faces to test against #actually need to test both directions, unfortunately #TODO: speed up looping??
       holdflag = AholdsB(shapes[i],shapes[j]) #0,1=false, true; self=0
       if holdflag == 1: #only need to update array if A holds B
         ra[i,j]=holdflag #update array
