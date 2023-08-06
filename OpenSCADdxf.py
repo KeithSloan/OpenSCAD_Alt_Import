@@ -627,8 +627,7 @@ def makeholedshape(shapes) : #takes a list of faces
 
   return obj
 
-def importEZDXFshape(filename=None, doc=None, layer=None, exlayer=None, flattenlayers=False, explodelayers=False, explodez=1.0, withholes=True):
-
+def importEZDXFshape(filename=None, doc=None, inlayer=None, exlayer=None, flattenlayers=True, explodelayers=False, explodez=1.0,retcompound=True,retfaces=False,withholes=True):
     #TODO : deal with any units specified in DXF?
     #NOT DEALT WITH : 3D objects, linewidths, colors, user data
     dxfunits_table=[[0,'Unitless'],[1,'Inches'],[2,'Feet'],[3,'Miles'],[4,'Millimeters'],[5,'Centimeters'],[6,'Meters'],
@@ -792,15 +791,6 @@ def importEZDXFshape(filename=None, doc=None, layer=None, exlayer=None, flattenl
 
                 # If more than one Face create a compound Shape
                 if len(faces)>0:
-                    # Matt please check
-                    #compound = Part.makeCompound(faces)
-                    #if retcompound==True and retfaces==False:
-                    #    if compound:
-                    #        return compound
-                    #    else:
-                    #        return None
-                    #elif retcompound==False and retfaces==True:
-                    #    return faces
                     if withholes == False:
                         compound = Part.makeCompound(faces)
                     else:
