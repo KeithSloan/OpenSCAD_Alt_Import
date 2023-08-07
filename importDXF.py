@@ -21,7 +21,7 @@ def open(filename,acomp=True,thefaces=False): #options not currently used here
     if filename.lower().endswith('.dxf'):
         #doc = loadDXF(filename)
         obj = doc.addObject("Part::Feature", objectName)
-        obj.Shape = Part.Shape(importEZDXFshape(filename)) #, retcompound=True, retfaces=False))
+        obj.Shape = Part.Shape(importEZDXFshape(filename, retcompound=True, retfaces=False))
         FreeCAD.ActiveDocument.recompute()
         return doc
     else:
@@ -41,7 +41,7 @@ def insert(filename, docname, acomp=True,thefaces=False):
     if filename.lower().endswith('.dxf'):
         if acomp==True and thefaces==False:
             obj = doc.addObject("Part::Feature", objectName)
-            obj.Shape = Part.Shape(importEZDXFshape(filename)) #, retcompound=True, retfaces=False))
+            obj.Shape = Part.Shape(importEZDXFshape(filename, retcompound=True, retfaces=False))
         elif acomp==False and thefaces==True:
             obj = doc.addObject("App::DocumentObjectGroup", objectName)        
             f = importEZDXFshape(filename, retcompound=False, retfaces=True)
@@ -50,7 +50,7 @@ def insert(filename, docname, acomp=True,thefaces=False):
         elif acomp==True and thefaces==True:
             obj1 = doc.addObject("Part::Feature", objectName)    
             obj2 = doc.addObject("App::DocumentObjectGroup", objectName)                 
-            c,f = importEZDXFshape(filename) #, retcompound=True, retfaces=True)
+            c,f = importEZDXFshape(filename, retcompound=True, retfaces=True)
             obj1.Shape = Part.Shape(c)
             f = [Part.show(i) for i in f]
             obj2.addObjects(f)
