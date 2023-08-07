@@ -94,7 +94,10 @@ class DXFBase:
             #print(f"New Shape {newShp}")
             #print(f"Old Shape {shp}")
             #obj.Shape = newShp
-            obj.Shape = shp
+            if isinstance(shp, tuple):
+                obj.Shape = shp[0]
+            else:
+                obj.Shape = shp
         else:
             print(f"Shape is None")
             obj.Shape = Part.Shape()
