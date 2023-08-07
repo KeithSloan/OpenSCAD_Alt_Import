@@ -93,7 +93,7 @@ class DXFBase:
             #newShp = shp.copy()
             #print(f"New Shape {newShp}")
             #print(f"Old Shape {shp}")
-            obj.Shape = newShp
+            obj.Shape = shp
             #if isinstance(shp, tuple): #MattC commented out 20230807 0838
             #    obj.Shape = shp[0]
             #else:
