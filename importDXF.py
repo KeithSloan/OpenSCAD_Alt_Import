@@ -41,7 +41,7 @@ def insert(filename, docname, acomp=True,thefaces=False):
     if filename.lower().endswith('.dxf'):
         if acomp==True and thefaces==False:
             obj = doc.addObject("Part::Feature", objectName)
-            obj.Shape = Part.Shape(importEZDXFshape(filename), retcompound=True, retfaces=False))
+            obj.Shape = Part.Shape(importEZDXFshape(filename, retcompound=True, retfaces=False))
         elif acomp==False and thefaces==True:
             obj = doc.addObject("App::DocumentObjectGroup", objectName)        
             f = importEZDXFshape(filename, retcompound=False, retfaces=True)
