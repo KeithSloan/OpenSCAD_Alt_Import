@@ -21,7 +21,7 @@ def open(filename,acomp=True,thefaces=False): #options not currently used here
     if filename.lower().endswith('.dxf'):
         #doc = loadDXF(filename)
         obj = doc.addObject("Part::Feature", objectName)
-        obj.Shape = Part.Shape(importEZDXFshape(filename), retcompound=True, retfaces=False))
+        obj.Shape = Part.Shape(importEZDXFshape(filename, retcompound=True, retfaces=False))
         FreeCAD.ActiveDocument.recompute()
         return doc
     else:
