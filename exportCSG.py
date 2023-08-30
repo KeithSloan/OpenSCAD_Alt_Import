@@ -102,11 +102,16 @@ def shape2csg(shape):
     import math
     print(dir(shape))
     for n, f in enumerate(shape.Faces):
-        print(f" {n} Volume {f.Volume}")
         if math.isclose(f.Volume, 0, abs_tol=1e-4):
+            f.exportBrep("/Users/keithsloan/Downloads/Planar_"+str(n)+".brep")
             print(f"Planar")
+            print(f"Surface : {f.Surface} type : {f.Surface.TypeId}")
+            print(dir(f.Surface))
         else:    
             print(dir(f))
+            print(f"Shape Type : {f.ShapeType}")
+            f.exportBrep("/Users/keithsloan/Downloads/Shape_"+str(n)+".brep")
+            #print(f"Curve on Surface : {f.curveOnSurface()}")
 
 def process_object(csg,ob):
     print("Placement")
