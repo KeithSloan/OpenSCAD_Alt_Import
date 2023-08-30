@@ -98,6 +98,15 @@ def shape2polyhedron(shape):
     return mesh2polyhedron(MeshPart.meshFromShape(Shape=shape,\
         Deflection = params.GetFloat('meshdeflection', 0.0)))
 
+def shape2csg(shape):
+    import math
+    print(dir(shape))
+    for n, f in enumerate(shape.Faces):
+        print(f" {n} Volume {f.Volume}")
+        if math.isclose(f.Volume, 0, abs_tol=1e-4):
+            print(f"Planar")
+        else:    
+            print(dir(f))
 
 def process_object(csg,ob):
     print("Placement")
@@ -246,7 +255,8 @@ def process_object(csg,ob):
     elif hasattr(ob,'Shape'):
         print("Tessellate Shape")
         mm = check_multmatrix(csg,ob,0,0,0)
-        csg.write('%s\n' % shape2polyhedron(ob.Shape))
+        #csg.write('%s\n' % shape2polyhedron(ob.Shape))
+        csg.write('%s\n' % shape2csg(ob.Shape))
         if mm == 1 : csg.write("}\n")
 
     else:
