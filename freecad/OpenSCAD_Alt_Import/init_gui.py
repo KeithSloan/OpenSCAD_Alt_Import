@@ -6,3 +6,5 @@ FreeCAD.addImportType("New Importer : ScadFileObject (*.scad)","importFileSCAD")
 FreeCAD.addImportType("New Importer : DXF (*.dxf)","importDXF")
 FreeCAD.addImportType("New Importer : DxfObject (*.dxf)","importDXFObj")
 #FreeCAD.addImportType("New Importer : DxfFileObject (*.scad)","importFileDXFObj")
+FreeCAD.addExportType("New Importer : exportCSG (*.csg)","exportCSG")
+
