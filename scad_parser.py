@@ -50,6 +50,7 @@ def p_use_include(p):
                 |   INCLUDE FILENAME
                 '''
     print(f"Use Include Statement {p[1]} {p[2]}")
+    p[0] = p[2]
 
 def p_statement(p):
     ''' statement : IF "(" expression ")" statement %prec THEN
