@@ -257,7 +257,7 @@ def export(exportList, filename):
     "called when FreeCAD exports a file"
 
     # process Objects
-    print("\nStart Export 0.1d\n")
+    print("\nStart Alternate Export 0.1d\n")
     print("Open Output File")
     csg = pythonopen(filename,'w')
     print("Write Initial Output")
