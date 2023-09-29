@@ -400,8 +400,8 @@ class AddSCADTask:
                 import Mesh
                 Mesh.insert(tmpfilename,doc.Name)
             else:
-                import importCSG
-                importCSG.insert(tmpfilename,doc.Name)
+                import importAltCSG
+                importAltCSG.insert(tmpfilename,doc.Name)
             try:
                 os.unlink(tmpfilename)
             except OSError:
@@ -539,13 +539,13 @@ class Hull:
 
     def Activated(self):
         import Part,OpenSCADFeatures
-        import importCSG
+        import importAltCSG
         selection=FreeCADGui.Selection.getSelectionEx()
         objList = []
         for selobj in selection:
             objList.append(selobj.Object)
             selobj.Object.ViewObject.hide()
-        importCSG.process_ObjectsViaOpenSCAD(FreeCAD.activeDocument(),objList,"hull")
+        importAltCSG.process_ObjectsViaOpenSCAD(FreeCAD.activeDocument(),objList,"hull")
         FreeCAD.ActiveDocument.recompute()
     def GetResources(self):
         return {'Pixmap'  : 'OpenSCAD_Hull',
@@ -558,13 +558,13 @@ class Minkowski:
 
     def Activated(self):
         import Part,OpenSCADFeatures
-        import importCSG
+        import importAltCSG
         selection=FreeCADGui.Selection.getSelectionEx()
         objList = []
         for selobj in selection:
             objList.append(selobj.Object)
             selobj.Object.ViewObject.hide()
-        importCSG.process_ObjectsViaOpenSCAD(FreeCAD.activeDocument(),objList,"minkowski")
+        importAltCSG.process_ObjectsViaOpenSCAD(FreeCAD.activeDocument(),objList,"minkowski")
         FreeCAD.ActiveDocument.recompute()
     def GetResources(self):
         return {'Pixmap'  : 'OpenSCAD_Minkowski',

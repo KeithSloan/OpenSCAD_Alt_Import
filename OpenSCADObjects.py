@@ -69,7 +69,7 @@ def createMesh(srcObj, wrkSrc):
 
 # Source may be procesed
 def createBrep(srcObj, tmpDir, wrkSrc):
-    from importCSG import  processCSG
+    from importAltCSG import  processCSG
 
     print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
     actDoc = FreeCAD.activeDocument().Name

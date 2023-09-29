@@ -11,6 +11,7 @@ from OpenSCADdxf import importEZDXFshape #loadDXF
 
 def open(filename,acomp=True,thefaces=False): #options not currently used here
     "called when freecad opens a file."
+    print(f"Alternate importer")
     pathText = os.path.splitext(os.path.basename(filename))
     objectName  = pathText[0]
     filePath = pathText[1]    

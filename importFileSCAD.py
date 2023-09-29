@@ -41,7 +41,7 @@ if open.__module__ in ['__builtin__', 'io']:
 #import importCSG
 from OpenSCADObjects import SCADBase, ViewSCADProvider
 
-from importCSG import processCSG
+from importAltCSG import processCSG
 
 params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
