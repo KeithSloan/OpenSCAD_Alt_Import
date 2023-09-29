@@ -108,10 +108,22 @@ def shape2csg(shape):
             print(f"Surface : {f.Surface} type : {f.Surface.TypeId}")
             print(dir(f.Surface))
         else:    
-            print(dir(f))
             print(f"Shape Type : {f.ShapeType}")
             f.exportBrep("/Users/keithsloan/Downloads/Shape_"+str(n)+".brep")
             #print(f"Curve on Surface : {f.curveOnSurface()}")
+            print(dir(f))
+            print(dir(f.Surface))
+            surface = f.Surface
+            print(f"Surface Type {surface.TypeId}")
+            bspline =surface.toBSpline()
+            print(dir(bspline))
+            #print(f"Surface UPeriod {surface.UPeriod()} VPeriod {surface.VPeriod()}")
+            print(f"Surface UPeriod {surface.UPeriod()} VPeriod {surface.VPeriod}")
+            nurbs = f.toNurbs()
+            print(dir(nurbs))
+            # print(f"Nurb {nurbs.UPeriod} {nurbs.VPeriod}")
+
+
 
 def process_object(csg,ob):
     print("Placement")
