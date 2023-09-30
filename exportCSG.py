@@ -102,26 +102,36 @@ def shape2csg(shape):
     import math
     print(dir(shape))
     for n, f in enumerate(shape.Faces):
+        surface = f.Surface
+        surfType = surface.TypeId
+        print(f"Shape Type : {surfType}")
+        print(f"Is Planar : {surface.isPlanar()}")
         if math.isclose(f.Volume, 0, abs_tol=1e-4):
             f.exportBrep("/Users/keithsloan/Downloads/Planar_"+str(n)+".brep")
             print(f"Planar")
-            print(f"Surface : {f.Surface} type : {f.Surface.TypeId}")
-            print(dir(f.Surface))
+            print(dir(surface))
+            print(f"UPeriod Closed {surface.isUClosed()} VPeriod {surface.isVClosed()}")
+            print(f"UPeriod {surface.UPeriod} VPeriod {surface.VPeriod}")
         else:    
-            print(f"Shape Type : {f.ShapeType}")
             f.exportBrep("/Users/keithsloan/Downloads/Shape_"+str(n)+".brep")
             #print(f"Curve on Surface : {f.curveOnSurface()}")
-            print(dir(f))
-            print(dir(f.Surface))
-            surface = f.Surface
-            print(f"Surface Type {surface.TypeId}")
-            bspline =surface.toBSpline()
-            print(dir(bspline))
-            #print(f"Surface UPeriod {surface.UPeriod()} VPeriod {surface.VPeriod()}")
-            print(f"Surface UPeriod {surface.UPeriod()} VPeriod {surface.VPeriod}")
-            nurbs = f.toNurbs()
-            print(dir(nurbs))
-            # print(f"Nurb {nurbs.UPeriod} {nurbs.VPeriod}")
+            if surfType == "Part::GeomCylinder":
+                print(f"Not yet handled")
+            elif surfType == "Part::GeomSurfaceOfExtrusion":
+                print(dir(f))
+                print(dir(surface))
+                print(f"Basis Curve {surface.BasisCurve}")
+                print(f"UPeriod {surface.UPeriod} VPeriod {surface.VPeriod}")
+            else:
+                print(dir(f))
+                print(dir(surface))
+                bspline =surface.toBSpline()
+                print(dir(bspline))
+                #print(f"Surface UPeriod {surface.UPeriod()} VPeriod {surface.VPeriod()}")
+                print(f"Surface UPeriod {surface.UPeriod()} VPeriod {surface.VPeriod}")
+                nurbs = f.toNurbs()
+                print(dir(nurbs))
+                # print(f"Nurb {nurbs.UPeriod} {nurbs.VPeriod}")
 
 
 
