@@ -95,8 +95,15 @@ def vertexs2polygon(vertex):
 
 def shape2polyhedron(shape):
     import MeshPart
-    return mesh2polyhedron(MeshPart.meshFromShape(Shape=shape,\
-        Deflection = params.GetFloat('meshdeflection', 0.0)))
+    print(f"Shape2polyhedron")
+    msh = MeshPart.meshFromShape(Shape=shape, Deflection = params.GetFloat('meshdeflection', 0.0))
+    print(f"Meshed")    
+    print(f"Create Polyhderon")    
+    poly = mesh2polyhedron(msh)
+    print(f"Created")
+    return poly
+    #return mesh2polyhedron(MeshPart.meshFromShape(Shape=shape,\
+    #    Deflection = params.GetFloat('meshdeflection', 0.0)))
 
 
 def process_object(csg,ob):
