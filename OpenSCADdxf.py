@@ -1,5 +1,5 @@
 import ezdxf
-from ezdxf import recover
+from ezdxf import recover, query, disassemble
 import FreeCAD
 from FreeCAD import Vector, Rotation #treat as vectors; need rotation for ellipse
 import Part
@@ -207,8 +207,8 @@ def importOpenSCADdxf_HATCH(an_entity):
     return [wire] #Edges???
 
 def importOpenSCADdxf_INSERT(an_entity):
-    new_entity = an_entity.explode()
-    #new_entity = [e for e in an_entity.block()]
+    #new_entity = an_entity.explode()
+    new_entity = [e for e in an_entity.block()]
     #c=[processEntity(a) for a in new_entity if a.dxftype()!='INSERT'] #list of entities that should then be processed
     c=list()
     for a in new_entity:
@@ -218,6 +218,8 @@ def importOpenSCADdxf_INSERT(an_entity):
             aresult = processEntity(anent, None)
             if aresult != None : #and isinstance(aresult,Part.Vertex)==False:
                 c.append(aresult)
+        else:
+            importOpenSCADdxf_INSERT(a)                
     ##while any([isinstance(a,list)==True for a in c]):
     ##    #print("Flattening in INSERT...")
     ##    c=[item for sublist in c for item in sublist] #flatten hmm  ... if isinstance(c[0],list)==True?
@@ -495,7 +497,7 @@ def makeholedshape(shapes) : #takes a list of faces
   featurelist=list()
   for i in range(0,num_shapes): #use indexing because we should(?) only need to test a pair once
     obj=shapes[i]  #a face to test ...
-    for j in range(0, num_shapes): #all other faces to test against #need to test both ways
+    for j in range(i+1, num_shapes): #all other faces to test against
       holdflag = AholdsB(shapes[i],shapes[j]) #0,1=false, true; self=0
       if holdflag == 1: #only need to update array if A holds B
         ra[i,j]=holdflag #update array
@@ -533,13 +535,23 @@ def importEZDXFsimple(filename=None, doc=None, inlayer=None, exlayer=None,retcom
         points=[]
         edgefrompoints=[]
         edges=[]
+        defaultlayerexists = False
+        if "Default" in doc.layers:
+            defaultlayerexists = True        
         layer_names = getLayerNames(doc,inlayer,exlayer)
         #allents0 = doc.chain_layouts_and_blocks() #this picks up things not in modelspace
         #allents = msp.query('*')
-        for each_layer in layer_names:
-            entities = msp.query(f'*[layer=="{each_layer}"]') 
+        for a_layer in layer_names:
+            each_layer = a_layer
+            if a_layer == '0':
+                if defaultlayerexists:
+                    each_layer='Default'
+            #entities = msp.query(f'*[layer=="{each_layer}"]') 
             #layerents=[e for e in allents if e.dxf.layer==each_layer]
             #if entity.dxf.layer in layer_names:
+            ##based on: https://www.github.com/mozman/ezdxf/issues/910
+            plines=query.EntityQuery(disassemble.recursive_decompose(msp),query=f'*[layer=="{each_layer}"]')
+            entities = [x for x in plines]
             for entity in entities:
                 edges=[]
                 #print(entity.dxf.layer, entity.dxftype())
@@ -674,16 +686,25 @@ def importEZDXFshape(filename=None, doc=None, inlayer=None, exlayer=None, flatte
             #    print("No common layer name found; Selecting all")
             #    #TODO select one with most entities? 1st one? None?
             #    layer_names=layernames
-
+            defaultlayerexists = False
+            if "Default" in doc.layers:
+                defaultlayerexists = True
             layer_names = getLayerNames(doc,inlayer,exlayer)
             layerentitylist=[] #list of list of processed entities per layer
 
-            for each_layer in layer_names:  #for the layer(s) we want ....
+            ##for each_layer in layer_names:  #for the layer(s) we want ....
+            for a_layer in layer_names:
+                each_layer = a_layer
+                if a_layer == '0':
+                  if defaultlayerexists:
+                    each_layer='Default'
                 # Initialize an empty list to hold the faces, entities and entity names
                 entitylist=list()
                 points=[]
                 edgefrompoints=[]                
-                entities = msp.query(f'*[layer=="{each_layer}"]') #get all the entities on that layer
+                ##entities = msp.query(f'*[layer=="{each_layer}"]') #get all the entities on that layer
+                plines=query.EntityQuery(disassemble.recursive_decompose(msp),query=f'*[layer=="{each_layer}"]')
+                entities = [x for x in plines]
                 for entity in entities: #loop through all the entities, process and store in lists
                 #layerents=[e for e in allents if e.dxf.layer==each_layer]
                 #for entity in layerents:
