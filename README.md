@@ -32,6 +32,7 @@ The idea to allow hybrid development ( FreeCAD and OpenSCAD )
  
   * OpenSCAD DXF import
   * DXF importer
+  * Now supports DXF files with INSERT tag.
   
   
 ### New OpenSCAD DXF importer 
