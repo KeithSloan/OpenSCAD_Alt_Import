@@ -654,6 +654,8 @@ def fuse(lst,name):
        if printverbose: print("Multi Fuse")
        myfuse = doc.addObject('Part::MultiFuse',name)
        myfuse.Shapes = lst
+       for s in myfuse.Shapes:
+           checkObjShape(s)
        if gui:
            for subobj in myfuse.Shapes:
                subobj.ViewObject.hide()
@@ -674,6 +676,7 @@ def fuse(lst,name):
 def p_union_action(p):
     'union_action : union LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print("union")
+    print("union")
     newpart = fuse(p[5],p[1])
     if printverbose: print("Push Union Result")
     p[0] = [newpart]
@@ -719,6 +722,8 @@ def p_intersection_action(p):
        if printverbose: print("Multi Common")
        mycommon = doc.addObject('Part::MultiCommon',p[1])
        mycommon.Shapes = p[5]
+       for s in mycommon.Shapes:
+           checkObjShape(s)
        if gui:
            for subobj in mycommon.Shapes:
                subobj.ViewObject.hide()
@@ -728,6 +733,8 @@ def p_intersection_action(p):
        mycommon.Base = p[5][0]
        mycommon.Tool = p[5][1]
        checkObjShape(mycommon.Base)
+       checkObjShape(mycommon.Tool)
+       mycommon.Shape = mycommon.Base.Shape.common(mycommon.Tool.Shape)
        if gui:
            mycommon.Base.ViewObject.hide()
            mycommon.Tool.ViewObject.hide()
@@ -735,8 +742,6 @@ def p_intersection_action(p):
         mycommon = p[5][0]
     else : # 1 child
         mycommon = placeholder('group',[],'{}')
-    checkObjShape(mycommon.Tool)
-    mycommon.Shape = mycommon.Base.Shape.common(mycommon.Tool.Shape)
     p[0] = [mycommon]
     if printverbose: print("End Intersection")
 
