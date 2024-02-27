@@ -9,7 +9,7 @@
 
   <maintainer email="keith@sloan-home.co.uk">Keith Sloan</maintainer>
 
-  <license file="LICENSE">GPL-2</license>
+  <license file="LICENSE">GPL-2.0-only</license>
 
   <url branch="master" type="repository">https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
 
