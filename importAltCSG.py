@@ -874,7 +874,10 @@ def p_linear_extrude_with_transform(p):
     t = 0.0
     if printverbose: print("Twist : ",p[3])
     if 'scale' in p[3]:
-       s = [float(p[3]['scale'][0]), float(p[3]['scale'][1])]
+        if isinstance(p[3]['scale'], str):
+            s = [float(p[3]['scale']), float(p[3]['scale'])]
+        else:
+            s = [float(p[3]['scale'][0]), float(p[3]['scale'][1])]
        #print('Scale: '+str(s))
     if 'twist' in p[3]:
         t = float(p[3]['twist'])
@@ -891,8 +894,9 @@ def p_linear_extrude_with_transform(p):
         newobj = process_linear_extrude_with_transform(obj,h,t,s)
     else:
         newobj = process_linear_extrude(obj,h)
-    if p[3]['center']=='true' :
-       center(newobj,0,0,h)
+    if 'center' in p[3]:    
+        if p[3]['center']=='true' :
+            center(newobj,0,0,h)
     p[0] = [newobj]
     if gui:
        obj.ViewObject.hide()
