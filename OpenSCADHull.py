@@ -290,6 +290,10 @@ def someNormal(v):
             if vc.Length > 0.5: # at least one must be >= sqrt(2/3)
                 break
         return vc.normalize()
+
+def hullSphereCyclinderEqRad(obj0, obj1):
+    myComp = Part.makeCompound([obj1, obj0])
+    return myComp
     
 def hullTwoSpheres(obj1, obj2) :
     print('hullTwoSpheres')
@@ -516,6 +520,21 @@ def createHull(group) :
                    print(f"Face created {face}")
                    #return face
                    return face.extrude(FreeCAD.Vector(0,0,obj0.Height.Value))
+
+             if (
+                obj0.TypeId == 'Part::Cylinder' and \
+                obj1.TypeId == 'Part::Sphere'
+                 or
+                obj0.TypeId == 'Part::Sphere' and
+                obj1.TypeId == 'Part::Cylinder'
+                ) :
+                print('Hull Cylinder Sphere')
+                if obj1.Radius > obj0.Radius:
+                    obj1, obj0 = obj0, obj2
+                    return hullSphereCyclinderEqRad(obj0, obj1)
+                else:
+                    print('Need code')
+
 
     print('Not directly handled')
     print(group)
