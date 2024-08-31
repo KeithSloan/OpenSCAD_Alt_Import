@@ -56,12 +56,15 @@ params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
 print(f'Verbose = {printverbose}')
 #print(params.GetContents())
-#printverbose = True
+printverbose = True
 
 # Get the token map from the lexer.  This is required.
 import tokrules
 from tokrules import tokens
 
+# Dictionary of Parts used by MultMatrix
+# Used for linked Parts
+#partDict = {}
 try:
     from PySide import QtGui
     _encoding = QtGui.QApplication.UnicodeUTF8
@@ -86,6 +89,8 @@ def open(filename):
     "called when freecad opens a file."
     global doc
     global pathName
+    global partDict
+    partDict = {}
     FreeCAD.Console.PrintMessage('Processing : '+filename+'\n')
     docname = os.path.splitext(os.path.basename(filename))[0]
     doc = FreeCAD.newDocument(docname)
@@ -471,9 +476,11 @@ def checkObjShape(obj) :
             print(f'Recompute failed : {obj.Name}')
     else:
         if hasattr(obj, 'Name'):
-            print(f"obj {obj.Name} has no Shape")
+            if printverbose:
+                print(f"obj {obj.Name} has no Shape")
         else:
-            print(f"obj {obj} has no Name & Shape")            
+            if printverbose:
+                print(f"obj {obj} has no Name & Shape")            
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObject' :
@@ -1081,8 +1088,38 @@ def p_multmatrix_action(p):
         retList = []
         #print(f"Mult Matrix")
         for part in p[6]:
-           retList.append(performMultMatrix(part,matrixisrounded,transform_matrix))
+            key = remove_last_three_if_numeric(part.Label)
+            if key in partDict:
+                print(f"Use linked object {part.Label}")
+                if hasattr(part, 'Name'):
+                    doc.removeObject(part.Name)
+                elif gui:
+                    part.ViewObject.hide()
+                retList.append(addLinkedPart(key, partDict[key], transform_matrix))
+            else :    
+                partDict[key] = part
+                retList.append(performMultMatrix(part,matrixisrounded,transform_matrix))
+
         p[0] = retList
+
+
+def addLinkedPart(key, linkObj, transform_matrix):
+    # Add a linked object referencing the existing part
+    linked_part = doc.addObject("App::Link", "Linked"+key)
+    linked_part.LinkedObject = linkObj
+    # Modify the placement of the linked object
+    linked_part.Placement = FreeCAD.Placement(transform_matrix)
+    return linked_part
+
+
+def remove_last_three_if_numeric(s):
+    # Check if the last three characters are numeric
+    if len(s) >= 3 and s[-3:].isdigit():
+        # Remove the last three characters
+        return s[:-3]
+    else:
+        return s
+
 
 def performMultMatrix(part, matrixisrounded, transform_matrix) :
     from OpenSCADUtils import isspecialorthogonalpython, \

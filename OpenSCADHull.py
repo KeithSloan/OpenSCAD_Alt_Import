@@ -531,7 +531,8 @@ def createHull(group) :
                 print('Hull Cylinder Sphere')
                 if obj1.Radius > obj0.Radius:
                     obj1, obj0 = obj0, obj2
-                    return hullSphereCyclinderEqRad(obj0, obj1)
+                if obj1.Radius == obj0.Radius:    
+                    return hullSphereCyclinderEqRad(obj1, obj0)
                 else:
                     print('Need code')
 
