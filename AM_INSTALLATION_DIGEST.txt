@@ -1,2 +1,0 @@
-# The following files were created outside this installation path during the installation of this Addon on 2023-08-03 14:50:38.410064+00:00:
-/Users/keithsloan/Library/Application Support/FreeCAD/Macro/testSCAD_DXFfiles.FCMacro

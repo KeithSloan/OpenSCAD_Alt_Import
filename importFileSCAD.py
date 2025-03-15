@@ -37,6 +37,8 @@ else:
 if open.__module__ in ['__builtin__', 'io']:
     pythonopen = open
 
+from PySide import QtGui, QtCore
+
 #import OpenSCADObjects
 #import importCSG
 from OpenSCADObjects import SCADBase, ViewSCADProvider
@@ -47,28 +49,99 @@ params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
 print(f'Verbose = {printverbose}')
 
+class ImportType(QtGui.QWidget):
+	def __init__(self):
+		super().__init__()
+		self.layout = QtGui.QHBoxLayout()
+		self.label = QtGui.QLabel('Import Type')
+		self.layout.addWidget(self.label)
+		self.importType = QtGui.QComboBox()
+		self.importType.addItem('Brep')
+		self.importType.addItem('Mesh')
+		self.importType.addItem('Opt')
+		self.layout.addWidget(self.importType)
+		self.setLayout(self.layout)
+
+class IntegerValue(QtGui.QWidget):
+	def __init__(self, label, value):
+		super().__init__()
+		self.layout = QtGui.QHBoxLayout()
+		self.label = QtGui.QLabel(label)
+		self.value = QtGui.QLineEdit()
+		self.value.setText(str(value))
+		self.layout.addWidget(self.label)
+		self.layout.addWidget(self.value)
+		self.setLayout(self.layout)
+
+class Buttons(QtGui.QWidget):
+	def __init__(self):
+		super().__init__()
+		self.layout = QtGui.QHBoxLayout()
+		# cancel button
+		cancelButton = QtGui.QPushButton('Cancel', self)
+		cancelButton.clicked.connect(self.onCancel)
+		cancelButton.setAutoDefault(True)
+		self.layout.addWidget(cancelButton)
+
+		# OK button
+		okButton = QtGui.QPushButton('Okay', self)
+		okButton.clicked.connect(self.onOk)
+		self.layout.addWidget(okButton)
+		self.setLayout(self.layout)
+
+	def onCancel(self):
+		self.result = 'cancel'
+
+	def onOk(self):
+		self.result = 'ok'
+
+class OpenSCADimportOptions(QtGui.QDialog):
+	def __init__(self):
+	#def __init__(self, parent):
+		super(OpenSCADimportOptions, self).__init__()
+		self.initUI()
+
+	def initUI(self):
+		self.result = None
+		# create our window
+		# define window           xLoc,yLoc,xDim,yDim
+		self.setGeometry(150, 250, 300, 300)
+		self.setWindowTitle("FC OpenSCAD import Options")
+		self.setMouseTracking(True)
+		self.layout = QtGui.QVBoxLayout()
+		self.layout.addWidget(ImportType())
+		self.layout.addWidget(IntegerValue('FnMax', 16))
+		self.layout.addWidget(IntegerValue('TimeOut', 30))
+		self.layout.addWidget(Buttons())
+		self.setLayout(self.layout)
+		self.show()
+
 
 def open(filename,currentdoc=None):
     "called when freecad opens a file."
-    FreeCAD.Console.PrintMessage('Creating SCAD File Object from : '+filename+'\n')
     pathText = os.path.splitext(os.path.basename(filename))
     objectName  = pathText[0]
     filePath = pathText[1]
-    print(f"Create SCAD File Object {objectName} path {filename}")
-    #doc = FreeCAD.ActiveDocument
-    if currentdoc is None:
-        doc=FreeCAD.newDocument(objectName)    
-    else:
-        doc=FreeCAD.getDocument(currentdoc)    
-    if doc is None:
-        doc=FreeCAD.newDocument(filename)
-    obj = doc.addObject("Part::FeaturePython", objectName)
-    scadObj = SCADBase(obj, filename)
-    ViewSCADProvider(obj.ViewObject)
-    if hasattr(obj, 'Proxy'):
-        obj.Proxy.executeFunction(obj)
-    FreeCAD.ActiveDocument.recompute()
-    FreeCADGui.SendMsgToActiveView("ViewFit")
+    dialog = OpenSCADimportOptions()
+    dialog.exec_()
+    print(f"Result {dialog.result}")
+    if dialog.result is not None :
+    	FreeCAD.Console.PrintMessage('Creating SCAD File Object from : '+filename+'\n')
+    	#doc = FreeCAD.ActiveDocument
+    	if currentdoc is None:
+        	doc=FreeCAD.newDocument(objectName)    
+    	else:
+        	doc=FreeCAD.getDocument(currentdoc)    
+    	if doc is None:
+        	doc=FreeCAD.newDocument(filename)
+
+    	obj = doc.addObject("Part::FeaturePython", objectName)
+    	scadObj = SCADBase(obj, filename, mode='Mesh', fnmax=16, timeout=30)
+    	ViewSCADProvider(obj.ViewObject)
+    	if hasattr(obj, 'Proxy'):
+        	obj.Proxy.executeFunction(obj)
+    	FreeCAD.ActiveDocument.recompute()
+    	FreeCADGui.SendMsgToActiveView("ViewFit")
     
 def insert(filename, currentdoc):
     open(filename, currentdoc)

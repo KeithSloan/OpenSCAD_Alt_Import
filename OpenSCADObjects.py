@@ -208,7 +208,7 @@ def parse(obj, src):
 
 
 class SCADBase:
-    def __init__(self, obj, filename):
+    def __init__(self, obj, filename, mode='Brep', fnmax=16, timeout=30):
         super().__init__()
         obj.addProperty("App::PropertyFile","source","OpenSCAD","OpenSCAD source")
         obj.source = obj.Label+".scad"
@@ -223,17 +223,21 @@ class SCADBase:
         obj.addProperty("App::PropertyBool","execute","OpenSCAD","Process SCAD source")
         obj.modules = True
         obj.addProperty("App::PropertyEnumeration","mode","OpenSCAD","mode - create Brep or Mesh")
-        obj.mode = ['Brep', 'Mesh']
-        obj.mode = 0
+        modeLst = ['Brep', 'Mesh']
+        modeIdx = modeLst.index(mode)
+        obj.mode = modeLst
+        #obj.mode = modeIdx0
         obj.addProperty("App::PropertyInteger","fnmax","OpenSCAD","Max Poylgon - If circle or cylinder has more than this number of sides, treat as circle or cyliner")
-        obj.fnmax = 16
+        #obj.fnmax = 16
+        obj.fnmax = fnmax
         obj.addProperty("App::PropertyBool","mesh_recombine","OpenSCAD","Mesh Recombine")
         obj.mesh_recombine = False
         obj.addProperty("App::PropertyBool","keep_work","OpenSCAD","Keep FC Work Document")
         #obj.keep_work = True
         obj.keep_work = False
         obj.addProperty("App::PropertyInteger","timeout","OpenSCAD","OpenSCAD process timeout (secs)")
-        obj.timeout = 30
+        #obj.timeout = 30
+        obj.timeout = timeout
         #self.obj = obj
         obj.Proxy = self
         self.createGeometry(obj)
