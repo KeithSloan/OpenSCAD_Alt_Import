@@ -470,10 +470,17 @@ def checkObjShape(obj) :
         if (obj.Shape.isNull() == True):
             print(f'Recompute failed : {obj.Name}')
     else:
-        if hasattr(obj, 'Name'):
+        if len(obj) > 0:
+           print(f"check of obj list")
+           for i in obj:
+               checkObjShape(i)
+        elif hasattr(obj, 'Proxy'):
+           print(f"Proxy {obj.Proxy}")
+        elif hasattr(obj, 'Name'):
             print(f"obj {obj.Name} has no Shape")
         else:
-            print(f"obj {obj} has no Name & Shape")            
+            print(f"obj {obj} has no Name & Shape")
+            print(dir(obj[0]))
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObject' :
@@ -522,6 +529,7 @@ def p_hull_action(p):
     col = hullColour()
     for i in p[5] :
         setObjectColour(i,col)
+        checkObjShape(i)
     #myloft = doc.addObject("App::DocumentObjectGroup", "Hull")
     #myloft.addObjects(p[5])
     #p[0] =[myloft]
@@ -645,6 +653,7 @@ def fuse(lst,name):
        print(lst)
        for obj in lst :
            print(obj.Label)
+           checkObjShapes(obj)
     if len(lst) == 0:
         myfuse = placeholder('group',[],'{}')
     elif len(lst) == 1:
@@ -831,7 +840,12 @@ def process_linear_extrude(obj,h) :
     from OpenSCADFeatures import RefineShape
 
     newobj=doc.addObject("Part::FeaturePython",'RefineLinearExtrude')
+    checkObjShape(obj)
+    print(f"Refine Linear Extrude {obj} {obj.Shape} {obj.Shape.isNull()}")
     RefineShape(newobj,obj)#mylinear)
+    print(f"RefineShape {newobj} {newobj.Shape} {newobj.Shape.isNull()}")
+    newobj.Base.recompute()
+    print(f"RefineShape {newobj} {newobj.Shape} {newobj.Shape.isNull()}")
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
@@ -1085,6 +1099,8 @@ def p_multmatrix_action(p):
         p[0] = retList
 
 def performMultMatrix(part, matrixisrounded, transform_matrix) :
+    checkObjShape(part)
+    print(f"MultMatrix check isNull {part.Shape.isNull()}")
     from OpenSCADUtils import isspecialorthogonalpython, \
          fcsubmatrix, roundrotation, isrotoinversionpython, \
          decomposerotoinversion

@@ -460,6 +460,11 @@ def hullLoft(wire1, wire2, name) :
     #return myLoft
     return loftShape
 
+def checkGroupShapes(group):
+	print("Check Group Shapes")
+	for i in group:
+		checkObjShape(i)
+
 def createHull(group) :
     hShape = None
     obj0 = group[0]

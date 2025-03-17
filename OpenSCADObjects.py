@@ -69,77 +69,80 @@ def createMesh(srcObj, wrkSrc):
 
 # Source may be procesed
 def createBrep(srcObj, tmpDir, wrkSrc):
-    from importAltCSG import  processCSG
+	from importAltCSG import  processCSG
 
-    print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
-    actDoc = FreeCAD.activeDocument().Name
-    print(f"Active Document {actDoc}")
-    wrkDoc = FreeCAD.newDocument("work")
-    try:
-        print(f"Source : {srcObj.source}")
-        print(f"SourceFile : {srcObj.sourceFile}")
-        print(wrkDoc)
-        csgOutFile = os.path.join(tmpDir, srcObj.Name+'.csg')
-        brepOutFile = os.path.join(tmpDir, srcObj.Name+'.brep')
-        tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
-            outputfilename=csgOutFile, outputext='csg', \
-            timeout=int(srcObj.timeout))
-        if hasattr(srcObj, "source"):
-            source = srcObj.source
-        if hasattr(srcObj, "sourceFile"):
-            source = srcObj.sourceFile
-        global pathName    
-        pathName = os.path.dirname(os.path.normpath(source))
-        print(f"CSG File name path {pathName} file {tmpFileName}")
-        #processCSG(wrkDoc, pathName, tmpFileName, srcObj.fnmax)
-        processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
-        # *** Does not work for earrings.scad
-        shapes = []
-        for cnt, obj in enumerate(wrkDoc.RootObjects, start=1):
-            if hasattr(obj, "Shape"):
-                shapes.append(obj.Shape)
-        print(f"Shapes in WrkDoc {cnt}")        
-        if cnt > 1:
-            retShape = Part.makeCompound(shapes)
-        else:
-            retShape = shapes[0]
-        print(f"CreateBrep Shape {retShape}")
-        #links = []
-        #for cnt, obj in enumerate(wrkDoc.RootObjects):
-        #    if hasattr(obj, "Shape"):
-        #        links.append(obj)
-        #print(f"Number of Objects {len(wrkDoc.RootObjects)} {cnt}")        
-        #if cnt > 1:
-        #    retObj = wrkDoc.addObject("Part::Compound","Compound")
-        #    retObj.Links = links
-        #    #if not retObj.Shape.isValid():
-        #    #    print(f"Make Compound Failed")
-        #    #    retObj.Shape.check()
-        #    #    return
-        #else:
-        #    retObj = wrkDoc.RootObjects[0]    
-        if srcObj.keep_work is not True:
-            FreeCAD.closeDocument("work")
-        FreeCADGui.SendMsgToActiveView("ViewFit")
-        FreeCAD.setActiveDocument(actDoc)
-        #print(f"Ret Obj {retObj.Name} Shape {retObj.Shape}")
-        print(f"Ret Shape {retShape}")
-        return retShape
-        #return retObj
+	print(f"Create Brep {srcObj.source} {srcObj.fnmax}")
+	actDoc = FreeCAD.activeDocument().Name
+	print(f"Active Document {actDoc}")
+	wrkDoc = FreeCAD.newDocument("work")
+	try:
+		print(f"Source : {srcObj.source}")
+		print(f"SourceFile : {srcObj.sourceFile}")
+		print(wrkDoc)
+		csgOutFile = os.path.join(tmpDir, srcObj.Name+'.csg')
+		brepOutFile = os.path.join(tmpDir, srcObj.Name+'.brep')
+		print(f"Call OpenSCAD to create csg file from scad")
+		tmpFileName=OpenSCADUtils.callopenscad(wrkSrc, \
+			outputfilename=csgOutFile, outputext='csg', \
+			timeout=int(srcObj.timeout))
+		if hasattr(srcObj, "source"):
+			source = srcObj.source
+		if hasattr(srcObj, "sourceFile"):
+			source = srcObj.sourceFile
+		global pathName    
+		pathName = os.path.dirname(os.path.normpath(source))
+		print(f"Process CSG File name path {pathName} file {tmpFileName}")
+		#processCSG(wrkDoc, pathName, tmpFileName, srcObj.fnmax)
+		processCSG(wrkDoc, tmpFileName, srcObj.fnmax)
+		# *** Does not work for earrings.scad
+		shapes = []
+		for cnt, obj in enumerate(wrkDoc.RootObjects, start=1):
+			if hasattr(obj, "Shape"):
+				shapes.append(obj.Shape)
+		print(f"Shapes in WrkDoc {cnt}")        
+		if cnt > 1:
+			retShape = Part.makeCompound(shapes)
+		else:
+			retShape = shapes[0]
+		print(f"CreateBrep Shape {retShape}")
+		#links = []
+		#for cnt, obj in enumerate(wrkDoc.RootObjects):
+		#    if hasattr(obj, "Shape"):
+		#        links.append(obj)
+		#print(f"Number of Objects {len(wrkDoc.RootObjects)} {cnt}")        
+		#if cnt > 1:
+		#    retObj = wrkDoc.addObject("Part::Compound","Compound")
+		#    retObj.Links = links
+		#    #if not retObj.Shape.isValid():
+		#    #    print(f"Make Compound Failed")
+		#    #    retObj.Shape.check()
+		#    #    return
+		#else:
+		#    retObj = wrkDoc.RootObjects[0]    
+		if srcObj.keep_work_doc is not True:
+			FreeCAD.closeDocument("work")
+		# restore active document 
+		print(f"Set Active Document {actDoc}")
+		FreeCAD.setActiveDocument(actDoc)
+		#FreeCADGui.SendMsgToActiveView("ViewFit")
+		#print(f"Ret Obj {retObj.Name} Shape {retObj.Shape}")
+		print(f"Ret Shape {retShape}")
+		return retShape
+		#return retObj
 
-    except OpenSCADUtils.OpenSCADError as e:
-        #print(f"OpenSCADError {e} {e.value}")
-        before = e.value.split('in file',1)[0]
-        print(f"Before : {before}")
-        after = e.value.rsplit(',',1)[1]
-        print(f"After  : {after}")
-        after = after.splitlines()[0]
-        print(f"After  : {after}")
-        print(f"End After")
-        srcObj.message = before + after
-        print(f"Error Message {srcObj.message}")
-        FreeCAD.closeDocument("work")
-        srcObj.execute = False
+	except OpenSCADUtils.OpenSCADError as e:
+		#print(f"OpenSCADError {e} {e.value}")
+		before = e.value.split('in file',1)[0]
+		print(f"Before : {before}")
+		after = e.value.rsplit(',',1)[1]
+		print(f"After  : {after}")
+		after = after.splitlines()[0]
+		print(f"After  : {after}")
+		print(f"End After")
+		srcObj.message = before + after
+		print(f"Error Message {srcObj.message}")
+		FreeCAD.closeDocument("work")
+		srcObj.execute = False
 
 
 def scanForModules(appendFp, sourceFp, module):
@@ -173,7 +176,7 @@ def scanForModules(appendFp, sourceFp, module):
 
 def shapeFromSourceFile(srcObj, module=False, modules=False):
     global doc
-    print(f"shapeFrom Source File : keepWork {srcObj.keep_work}")
+    print(f"shapeFrom Source File : keepWork {srcObj.keep_work_doc}")
     tmpDir = tempfile.gettempdir()
     #if modules == True:
     #    wrkSrc = os.path.join(tmpDir, srcObj.Name+'.scad')
@@ -182,6 +185,10 @@ def shapeFromSourceFile(srcObj, module=False, modules=False):
     #else:
     #    wrkSrc = srcObj.sourceFile
     wrkSrc = srcObj.sourceFile
+
+    print(f"source name {srcObj.Label} mode {srcObj.mode}")
+
+    #srcObj.mode = "Mesh"
 
     if srcObj.mode == "Brep":
         brepShape = createBrep(srcObj, tmpDir, wrkSrc)
@@ -208,8 +215,9 @@ def parse(obj, src):
 
 
 class SCADBase:
-    def __init__(self, obj, filename, mode='Brep', fnmax=16, timeout=30):
+    def __init__(self, obj, filename, mode='Brep', fnmax=16, timeout=30, keep=False):
         super().__init__()
+        print(f"SCADBase {mode}")
         obj.addProperty("App::PropertyFile","source","OpenSCAD","OpenSCAD source")
         obj.source = obj.Label+".scad"
         obj.setEditorMode("source",1)
@@ -223,7 +231,7 @@ class SCADBase:
         obj.addProperty("App::PropertyBool","execute","OpenSCAD","Process SCAD source")
         obj.modules = True
         obj.addProperty("App::PropertyEnumeration","mode","OpenSCAD","mode - create Brep or Mesh")
-        modeLst = ['Brep', 'Mesh']
+        modeLst = ['Mesh', 'BRep']
         modeIdx = modeLst.index(mode)
         obj.mode = modeLst
         #obj.mode = modeIdx0
@@ -232,9 +240,10 @@ class SCADBase:
         obj.fnmax = fnmax
         obj.addProperty("App::PropertyBool","mesh_recombine","OpenSCAD","Mesh Recombine")
         obj.mesh_recombine = False
-        obj.addProperty("App::PropertyBool","keep_work","OpenSCAD","Keep FC Work Document")
-        #obj.keep_work = True
-        obj.keep_work = False
+        obj.addProperty("App::PropertyBool","keep_work_doc","OpenSCAD","Keep FC Work Document")
+        #obj.keep_work_doc = True
+        #obj.keep_work_doc = False
+        obj.keep_work_doc = keep
         obj.addProperty("App::PropertyInteger","timeout","OpenSCAD","OpenSCAD process timeout (secs)")
         #obj.timeout = 30
         obj.timeout = timeout
@@ -252,10 +261,14 @@ class SCADBase:
             print(f"OnChange Shape {fp.Shape}")
             return
 
+        if prop in ['mode']:
+                print(f"Change of Mode")
+
         if prop in ["execute"]:
             if fp.execute == True:
                 self.executeFunction(fp)
                 fp.execute = False
+                FreeCADGui.SendMsgToActiveView("ViewFit")
             else:
                 print(f"Touched execute Shape {fp.Shape}")
                 #obj.Shape = self.newShape
@@ -279,7 +292,7 @@ class SCADBase:
 
     def executeFunction(self, obj):
         from timeit import default_timer as timer
-        print(f"Execute {obj.Name} keepWork {obj.keep_work}")
+        print(f"Execute {obj.Name} Mode {obj.mode} keepWork {obj.keep_work_doc}")
         start = timer()
         #print(dir(obj))
         obj.message = ""
@@ -304,7 +317,8 @@ class SCADBase:
             obj.ViewObject.DisplayMode = u"Shaded"
         end = timer()
         print(f"==== Create Shape took {end-start} secs ====")    
-        #obj.recompute()
+        obj.recompute()
+        print(f"Active Document recompute {FreeCAD.ActiveDocument.Name}")
         FreeCAD.ActiveDocument.recompute()
         FreeCADGui.Selection.addSelection(obj)
         FreeCADGui.SendMsgToActiveView("ViewFit")
