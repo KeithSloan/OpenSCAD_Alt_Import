@@ -311,16 +311,18 @@ class SCADBase:
             obj.Shape = Part.Shape()
         print(f"Function Object Shape {obj.Shape}")
         obj.execute = False
-        if obj.mode == 'Mesh':
-            obj.ViewObject.DisplayMode = u"Wireframe"
-        if obj.mode == 'Brep':
-            obj.ViewObject.DisplayMode = u"Shaded"
+        #if obj.mode == 'Mesh':
+        #    obj.ViewObject.DisplayMode = u"Wireframe"
+        #if obj.mode == 'Brep':
+        #    obj.ViewObject.DisplayMode = u"Shaded"
+        obj.ViewObject.DisplayMode = u"Shaded"
         end = timer()
         print(f"==== Create Shape took {end-start} secs ====")    
         obj.recompute()
-        print(f"Active Document recompute {FreeCAD.ActiveDocument.Name}")
-        FreeCAD.ActiveDocument.recompute()
+        #print(f"Active Document recompute {FreeCAD.ActiveDocument.Name}")
+        #FreeCAD.ActiveDocument.recompute()
         FreeCADGui.Selection.addSelection(obj)
+        FreeCADGui.runCommand('Std_RandomColor',0)
         FreeCADGui.SendMsgToActiveView("ViewFit")
         # Need to update Gui for properties change
         # try and catch as puts out warning
