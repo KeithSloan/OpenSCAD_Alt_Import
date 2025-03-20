@@ -1026,7 +1026,8 @@ def processTextCmd(t):
     tmpfilename = callopenscadstring(t,'dxf')
     #from OpenSCAD2Dgeom import importDXFshape
     from OpenSCAD2Dgeom import importDXFface
-    face = importDXFshape(tmpfilename,None,None)
+    #face = importDXFshape(tmpfilename,None,None)
+    face = importDXFface(tmpfilename,None,None)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
     try:
