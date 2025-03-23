@@ -1,0 +1,3 @@
+[submodule "scadParser"]
+	path = scadParser
+	url = https://github.com/jeff-dh/py_scadparser_gplv2.git
