@@ -1,2 +1,10 @@
-__path__ = __import__('pkgutil').extend_path(__path__, __name__)
-__import__("pkg_resources").declare_namespace(__name__)
+import FreeCAD
+FreeCAD.addImportType("New Importer : CSG (*.csg)","importAltCSG")
+FreeCAD.addImportType("New Importer : SCAD (*.scad)","importAltCSG")
+#FreeCAD.addImportType("New Importer : ScadObject (*.scad)","importSCAD")
+FreeCAD.addImportType("New Importer : ScadFileObject (*.scad)","importFileSCAD")
+FreeCAD.addImportType("New Importer : DXF (*.dxf)","importAltDXF")
+FreeCAD.addImportType("New Importer : DxfObject (*.dxf)","importDXFObj")
+#FreeCAD.addImportType("New Importer : DxfFileObject (*.scad)","importFileDXFObj")
+FreeCAD.addExportType("New Exporter : exportCSG (*.csg)","exportAltCSG")
+

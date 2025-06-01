@@ -115,6 +115,8 @@ class OpenSCADimportOptions(QtGui.QDialog):
 	        # Connect the dialog buttons to standard slots
 		self.buttonBox.accepted.connect(self.accept)
 		self.buttonBox.rejected.connect(self.reject)
+		self.createOnly = BooleanValue('Create Only (Edit)',True)
+		self.layout.addWidget(self.createOnly)
 		self.importType = ImportType()
 		self.layout.addWidget(self.importType)
 		self.fnMax = IntegerValue('FnMax', 16)
@@ -128,7 +130,9 @@ class OpenSCADimportOptions(QtGui.QDialog):
 		self.show()
 
 	def getValues(self):
-		return(self.importType.getVal(), \
+		return(
+			self.createOnly.getVal(), \
+			self.importType.getVal(), \
 			self.fnMax.getVal(), \
 			self.timeOut.getVal(), \
 			self.keepOption.getVal()
@@ -143,6 +147,7 @@ class OpenSCADimportOptions(QtGui.QDialog):
 		#QtGui.QGuiApplication.restoreOverrideCursor()	
 
 def open(filename):
+	import os
 	"called when freecad opens a file."
 	pathText = os.path.splitext(os.path.basename(filename))
 	objectName  = pathText[0]
@@ -167,18 +172,21 @@ def insert(filename, docName):
 		options = dialog.getValues()
 		print(f"Options {options}")
 
-		#view = FreeCADGui.ActiveDocument.ActiveView
-
+		# Create SCAD Object
 		obj = doc.addObject("Part::FeaturePython", objectName)
 		#
 		#scadObj = SCADBase(obj, filename, mode='Mesh', fnmax=16, timeout=30)
 		# change SCADBase to accept single options call ?
 		#
-		scadObj = SCADBase(obj, filename, options[0], \
-			options[1], options[2], options[3])
+		scadObj = SCADBase(obj, filename, options[1], \
+			options[2], options[3], options[4])
 		ViewSCADProvider(obj.ViewObject)
+		
 		if hasattr(obj, 'Proxy'):
-			obj.Proxy.executeFunction(obj)
+			if options[0] == False:
+				obj.Proxy.executeFunction(obj)
+			elif options[0] == True:
+				obj.Proxy.editFile(filename)
 		#FreeCAD.ActiveDocument.recompute()
 		#obj.recompute()
 		doc.recompute()
