@@ -4,7 +4,7 @@
 
 Functions such as PrismaticToroid require facilities in the FreeCAD version 0.20 of Part
 
-import SCADobject depreciated
+import SCADobject depreciated, so now just SCADFileObjects
 
 ## Installation
 
