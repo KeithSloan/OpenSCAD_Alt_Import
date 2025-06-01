@@ -4,6 +4,8 @@
 
 Functions such as PrismaticToroid require facilities in the FreeCAD version 0.20 of Part
 
+import SCADobject depreciated
+
 ## Installation
 
 It can be installed via the [Addon Manager](https://github.com/FreeCAD/FreeCAD-addons) (from Tools menu)
@@ -64,7 +66,9 @@ The idea to allow hybrid development ( FreeCAD and OpenSCAD )
                 OpenSCAD
                     externalEditor
                         Text : <path to editor > 
-                        e.g. Text /usr/local/bin/code
+                        examples  Text /usr/local/bin/code
+                                  Text /usr/local/bin/codium
+                        
 
 ### Use
 
