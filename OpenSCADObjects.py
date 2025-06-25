@@ -231,7 +231,7 @@ class SCADBase:
         obj.addProperty("App::PropertyBool","execute","OpenSCAD","Process SCAD source")
         obj.modules = True
         obj.addProperty("App::PropertyEnumeration","mode","OpenSCAD","mode - create Brep or Mesh")
-        modeLst = ['Mesh', 'BRep']
+        modeLst = ['Mesh', 'Brep']
         modeIdx = modeLst.index(mode)
         obj.mode = modeLst
         #obj.mode = modeIdx0
