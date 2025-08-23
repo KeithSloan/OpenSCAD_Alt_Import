@@ -21,7 +21,7 @@
 
 __title__ = "FreeCAD OpenSCAD Workbench - Parametric Features"
 __author__ = "Sebastian Hoogen"
-__url__ = ["https://www.freecadweb.org"]
+__url__ = ["https://www.freecad.org"]
 
 try:
     long
@@ -57,11 +57,11 @@ class ViewProviderTree:
     def onChanged(self, vp, prop):
         return
 
-    def __getstate__(self):
+    def dumps(self):
 #        return {'ObjectName' : self.Object.Name}
         return None
 
-    def __setstate__(self,state):
+    def loads(self,state):
         if state is not None:
             import FreeCAD
             doc = FreeCAD.ActiveDocument #crap
@@ -197,7 +197,7 @@ class Resize:
 
     def onChanged(self, fp, prop):
         if prop in ['Object','Vector']:
-           self.createGeometry(fp)
+            self.createGeometry(fp)
 
     def execute(self, fp):
         self.createGeometry(fp)
@@ -210,10 +210,10 @@ class Resize:
         mat.A33 = self.Vector[2]
         fp.Shape = self.Target.Shape.transformGeometry(mat)
 
-    def __getstate__(self):
+    def dumps(self):
         return None
 
-    def __setstate__(self,state):
+    def loads(self,state):
         return None
 
 
@@ -342,52 +342,127 @@ class GetWire:
             #sh = fp.Base.Shape.Wires[0].copy; sh.transformSahpe(fp.Base.Shape.Placement.toMatrix()); fp.Shape = sh #untested
 
 class Frustum:
-    def __init__(self, obj,r1=1,r2=2,n=3,h=4):
-        obj.addProperty("App::PropertyInteger","FacesNumber","Base","Number of faces")
-        obj.addProperty("App::PropertyDistance","Radius1","Base","Radius of lower the inscribed control circle")
-        obj.addProperty("App::PropertyDistance","Radius2","Base","Radius of upper the inscribed control circle")
-        obj.addProperty("App::PropertyDistance","Height","Base","Height of the Frustum")
+	def __init__(self, obj,r1=1,r2=2,n=3,h=4):
+		obj.addProperty("App::PropertyInteger","FacesNumber","Base","Number of faces")
+		obj.addProperty("App::PropertyDistance","Radius1","Base","Radius of lower the inscribed control circle")
+		obj.addProperty("App::PropertyDistance","Radius2","Base","Radius of upper the inscribed control circle")
+		obj.addProperty("App::PropertyDistance","Height","Base","Height of the Frustum")
 
-        obj.FacesNumber = n
-        obj.Radius1 = r1
-        obj.Radius2=  r2
-        obj.Height= h
-        obj.Proxy = self
+		obj.FacesNumber = n
+		obj.Radius1 = r1
+		obj.Radius2=  r2
+		obj.Height= h
+		obj.Proxy = self
 
-    def execute(self, fp):
-        self.createGeometry(fp)
+	def execute(self, fp):
+		self.createGeometry(fp)
 
-    def onChanged(self, fp, prop):
-        if prop in ["FacesNumber","Radius1","Radius2","Height"]:
-            self.createGeometry(fp)
+	def onChanged(self, fp, prop):
+		if prop in ["FacesNumber","Radius1","Radius2","Height"]:
+			self.createGeometry(fp)
 
-    def createGeometry(self,fp):
-        if all((fp.Radius1,fp.Radius2,fp.FacesNumber,fp.Height)):
-            import math
-            import FreeCAD,Part
-            #from draftlibs import fcgeo
-            plm = fp.Placement
-            wires = []
-            faces = []
-            for ir,r in enumerate((fp.Radius1,fp.Radius2)):
-                angle = (math.pi*2)/fp.FacesNumber
-                pts = [FreeCAD.Vector(r.Value,0,ir*fp.Height.Value)]
-                for i in range(fp.FacesNumber-1):
-                    ang = (i+1)*angle
-                    pts.append(FreeCAD.Vector(r.Value*math.cos(ang),\
-                            r.Value*math.sin(ang),ir*fp.Height.Value))
-                pts.append(pts[0])
-                shape = Part.makePolygon(pts)
-                face = Part.Face(shape)
-                if ir == 0: #top face
-                    face.reverse()
-                wires.append(shape)
-                faces.append(face)
-            #shellperi = Part.makeRuledSurface(*wires)
-            shellperi = Part.makeLoft(wires)
-            shell = Part.Shell(shellperi.Faces+faces)
-            fp.Shape = Part.Solid(shell)
-            fp.Placement = plm
+
+	def createTopBottomPoints(self, radiusValue, facesNumber, angle, heightValue):
+		import FreeCAD, math
+		pts = [FreeCAD.Vector(radiusValue,0,heightValue)]
+		if radiusValue == 0:
+			return pts
+			
+		#print(f"angle {angle} facesNumbers {facesNumber}")
+		for i in range(facesNumber-1):
+			ang = (i+1)*angle
+			pts.append(FreeCAD.Vector(radiusValue*math.cos(ang),\
+                            radiusValue*math.sin(ang),heightValue))
+		pts.append(pts[0])
+		return pts
+
+	def createPyramidSides(self, pts, apex):
+		import Part
+		faces = []
+		for i in range(len(pts)-1):
+			shape = Part.makePolygon([apex, pts[i], pts[i+1], apex]) 
+			faces.append(Part.Face(shape))
+		return faces
+
+
+	def createSides(self, topPts, botPts):
+		import Part, FreeCAD
+		faces = []
+		if len(topPts) == 1:
+			apex = topPts[0]
+			pts  = botPts
+			return self.createPyramidSides(pts, apex)
+		if len(botPts) == 1:
+			apex = botPts[0]
+			pts = topBots
+			return self.createPyramidSides(pts, apex)
+		for i in range(len(topPts)-1):
+			shape = Part.makePolygon([topPts[i], topPts[i+1], botPts[i+1], botPts[i], topPts[i]])
+			faces.append(Part.Face(shape))
+		return faces
+		
+
+	def createGeometry(self,fp):
+		import Part, math
+		plm = fp.Placement
+		print(f"Radius 1 {fp.Radius1.Value} Radius2 {fp.Radius2}")
+		faces = []
+		angle = (math.pi*2)/fp.FacesNumber
+		topPts = self.createTopBottomPoints(fp.Radius2.Value, fp.FacesNumber, angle, fp.Height.Value)
+		botPts = self.createTopBottomPoints(fp.Radius1.Value, fp.FacesNumber, angle, 0)
+		#print(f"topPts {topPts}")
+		#print(f"botPts {botPts}")
+		faces  = self.createSides(topPts, botPts)
+		if fp.Radius1.Value == 0:
+			print(f"Faces {faces}")
+			shape = Part.makePolygon(topPts)
+			topFace = Part.Face(shape)
+			faces.append(topFace)
+		if fp.Radius2.Value != 0:
+			shape = Part.makePolygon(topPts)
+			topFace = Part.Face(shape)
+			faces.append(topFace)
+			#	wires.append(shape)
+		if fp.Radius1.Value != 0:
+			shape = Part.makePolygon(botPts)
+			botFace = Part.Face(shape)
+			faces.append(botFace)
+			#	wires.append(shape)
+		#print(f"Faces + base {faces}")
+		shell = Part.Shell(faces)
+		fp.Shape = Part.Solid(shell)
+		fp.Placement = plm
+		return
+
+		# Old code
+				
+		if all((fp.Radius1,fp.Radius2,fp.FacesNumber,fp.Height)):
+			import math
+			import FreeCAD
+			import Part
+			#from draftlibs import fcgeo
+			plm = fp.Placement
+			wires = []
+			faces = []
+			for ir,r in enumerate((fp.Radius1,fp.Radius2)):
+				angle = (math.pi*2)/fp.FacesNumber
+				pts = [FreeCAD.Vector(r.Value,0,ir*fp.Height.Value)]
+				for i in range(fp.FacesNumber-1):
+					ang = (i+1)*angle
+					pts.append(FreeCAD.Vector(r.Value*math.cos(ang),\
+						r.Value*math.sin(ang),ir*fp.Height.Value))
+				pts.append(pts[0])
+				shape = Part.makePolygon(pts)
+				face = Part.Face(shape)
+				if ir == 0: #top face
+					face.reverse()
+				wires.append(shape)
+			faces.append(face)
+			#shellperi = Part.makeRuledSurface(*wires)
+			#shellperi = Part.makeLoft(wires)
+			#shell = Part.Shell(shellperi.Faces+faces)
+			fp.Shape = Part.Solid(shell)
+			fp.Placement = plm
 
 class Twist:
     def __init__(self, obj, child=None, h=1.0, angle=0.0, scale=[1.0,1.0]):
@@ -413,7 +488,10 @@ class Twist:
             self.createGeometry(fp)
 
     def createGeometry(self, fp):
-        import FreeCAD,Part,math,sys
+        import FreeCAD
+        import Part
+        import math
+        import sys
         if fp.Base and fp.Height and fp.Base.Shape.isValid():
             solids = []
             for lower_face in fp.Base.Shape.Faces:
@@ -483,7 +561,10 @@ class PrismaticToroid:
             self.createGeometry(fp)
 
     def createGeometry(self,fp):
-        import FreeCAD,Part,math,sys
+        import FreeCAD
+        import Part
+        import math
+        import sys
         if fp.Base and fp.Angle and fp.Segments and fp.Base.Shape.isValid():
             solids = []
             min_sweep_angle_per_segment = 360.0 / fp.Segments # This is how OpenSCAD defines $fn
@@ -580,7 +661,8 @@ class CGALFeature:
     def execute(self,fp):
         #arguments are ignored
         maxmeshpoints = None #TBD: add as property
-        import Part, OpenSCAD.OpenSCADUtils
+        import Part
+        import OpenSCAD.OpenSCADUtils
         shape = OpenSCAD.OpenSCADUtils.process_ObjectsViaOpenSCADShape(fp.Document,fp.Children,\
                 fp.Operation, maxmeshpoints=maxmeshpoints)
         if shape:
