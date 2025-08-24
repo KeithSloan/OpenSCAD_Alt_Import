@@ -1,4 +1,4 @@
-This replaces whats in importCSG.py:
+This replaces what's in importCSG.py:
 def p_import_file1(p):
     'import_file1 : import LPAREN keywordargument_list RPAREN SEMICOL'
     if printverbose: print("Import File")
@@ -16,7 +16,7 @@ def p_import_file1(p):
     if printverbose: print("End Import File")
     
 
-This replaces whats in OpenSCAD2Dgeom.py:
+This replaces what's in OpenSCAD2Dgeom.py:
 def importDXFface(filename,layer=None,doc=None):
     import ezdxf
     import Part

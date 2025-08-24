@@ -67,7 +67,7 @@ def createMesh(srcObj, wrkSrc):
         FreeCAD.closeDocument("work")
         srcObj.execute = False
 
-# Source may be procesed
+# Source may be processed
 def createBrep(srcObj, tmpDir, wrkSrc):
 	from importAltCSG import  processCSG
 
