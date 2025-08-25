@@ -91,7 +91,7 @@ the user will be prompted with which importer to use.
 
 * **Minkowski**
 
-Minkowski requests where the second object is a Sphere or Cyclinder is handled as follows
+Minkowski requests where the second object is a Sphere or Cylinder is handled as follows
 
   **Sphere**
   
