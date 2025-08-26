@@ -46,9 +46,7 @@ The idea to allow hybrid development ( FreeCAD and OpenSCAD )
   * Note: If the scad file imports external files use one of
   
       New Importer : SCAD (importCSG)
-      New Importer : SCADFileObject
-      
-  New Importer : SCADObject currently does not support import of external files    
+      New Importer : SCADFileObject   
 
 ### External Editor
   
