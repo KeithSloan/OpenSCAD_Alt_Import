@@ -79,7 +79,8 @@ With the workbench installed when opening a CSG or SCAD File with
 
 the user will be prompted with which importer to use.
 
-![Image 20-02-2023 at 14 29](https://user-images.githubusercontent.com/2291247/220134298-944e8fe6-4ac6-4db7-b072-fe257e0b0905.jpg)
+
+![Image 26-08-2025 at 08 17](https://github.com/user-attachments/assets/4705b4b6-69a5-45ab-bac0-6526ab732904)
 
   * SCAD (ImportCSG)                : Uses OpenSCAD to convert SCAD file to CSG and then import as FreeCAD Brep Objects
   * SCADFileObject (ImportFileSCAD) : Imports as a FreeCAD SCADObject. Source remains the original file.
