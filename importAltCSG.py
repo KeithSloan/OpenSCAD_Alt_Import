@@ -461,14 +461,35 @@ def p_offset_action(p):
 #            newobj.ViewObject.Proxy = 0
     p[0] = [newobj]
 
-def checkObjShape(obj) :
-    if printverbose: print('Check Object Shape')
-    if hasattr(obj, 'Shape'):    
-        if obj.Shape.isNull() == True :
-            if printverbose: print('Shape is Null - recompute')
+def checkObjShape(obj):
+    if printverbose:
+        print('Check Object Shape')
+
+    # If shape is null, attempt recompute
+    if obj.Shape.isNull():
+        if printverbose:
+            print(f'Shape is Null - recompute: {obj.Name}')
+
+        try:
+            # suppress console prints during recompute
             obj.recompute()
-        if (obj.Shape.isNull() == True):
-            print(f'Recompute failed : {obj.Name}')
+        except Exception:
+            # swallow the exception; FreeCAD often throws
+            # when recomputing incomplete/invalid geometry
+            if printverbose:
+                print(f'Recompute exception suppressed for: {obj.Name}')
+
+            # Check children
+            if printverbose:
+                print(f'Check if Children : {obj.Name}')
+
+            if obj.OutList:
+                for childObj in obj.OutList:
+                    checkObjShape(childObj)
+            else:
+                print(f'Recompute failed : {obj.Name}')
+        pass
+
     else:
         if len(obj) > 0:
            print(f"check of obj list")
