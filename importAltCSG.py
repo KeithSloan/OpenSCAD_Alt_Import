@@ -461,14 +461,24 @@ def p_offset_action(p):
 #            newobj.ViewObject.Proxy = 0
     p[0] = [newobj]
 
+
 def checkObjShape(obj) :
     if printverbose: print('Check Object Shape')
     if hasattr(obj, 'Shape'):    
         if obj.Shape.isNull() == True :
-            if printverbose: print('Shape is Null - recompute')
+            if printverbose: print('Shape is Null - recompute')            
+            #try:
+            #    obj.recompute()
+            #except Exception as e:
             obj.recompute()
-        if (obj.Shape.isNull() == True):
-            print(f'Recompute failed : {obj.Name}')
+            if obj.Shape.isNull() == True :
+               # Check Children 
+               print(f'Check if Children : {obj.Name}')
+               if len(obj.OutList) > 0:
+                  for childObj in obj.OutList:
+                      checkObjShape(childObj)
+               else:
+                  print(f'Recompute failed : {obj.Name}')
     else:
         if len(obj) > 0:
            print(f"check of obj list")
