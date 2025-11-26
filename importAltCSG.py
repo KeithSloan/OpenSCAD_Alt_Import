@@ -485,8 +485,9 @@ def checkObjShape(obj) :
               print(f"check of obj list")
               for i in obj:
                   checkObjShape(i)
-        elif obj.TypeId == "Part::Common":
-           print("Compound")
+        if hasattr(obj, "TypeId"):
+           if obj.TypeId == "Part::Common":
+              print("Compound")
         elif hasattr(obj, 'Proxy'):
            print(f"Proxy {obj.Proxy}")
         elif hasattr(obj, 'Name'):
