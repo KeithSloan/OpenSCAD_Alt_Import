@@ -480,17 +480,20 @@ def checkObjShape(obj) :
                else:
                   print(f'Recompute failed : {obj.Name}')
     else:
-        if len(obj) > 0:
-           print(f"check of obj list")
-           for i in obj:
-               checkObjShape(i)
+        if hasattr(obj, "len"):
+           if len(obj) > 0:
+              print(f"check of obj list")
+              for i in obj:
+                  checkObjShape(i)
+        elif obj.TypeId == "Part::Common":
+           print("Compound")
         elif hasattr(obj, 'Proxy'):
            print(f"Proxy {obj.Proxy}")
         elif hasattr(obj, 'Name'):
             print(f"obj {obj.Name} has no Shape")
         else:
             print(f"obj {obj} has no Name & Shape")
-            print(dir(obj[0]))
+            print(dir(obj))
 
 def checkObjType2D(obj) :
     if obj.TypeId == 'Part::Part2DObject' :
@@ -754,6 +757,7 @@ def p_intersection_action(p):
        checkObjShape(mycommon.Base)
        checkObjShape(mycommon.Tool)
        mycommon.Shape = mycommon.Base.Shape.common(mycommon.Tool.Shape)
+       checkObjShape(mycommon.Shape)
        if gui:
            mycommon.Base.ViewObject.hide()
            mycommon.Tool.ViewObject.hide()
@@ -769,6 +773,7 @@ def process_rotate_extrude(obj,angle):
     from OpenSCADFeatures import RefineShape     
     newobj=doc.addObject("Part::FeaturePython",'RefineRotateExtrude')
     RefineShape(newobj,obj)
+    checkObjShape(newobj)
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
@@ -785,7 +790,7 @@ def process_rotate_extrude(obj,angle):
     myrev.Placement=FreeCAD.Placement(FreeCAD.Vector(),FreeCAD.Rotation(0,0,90))
     if gui:
         newobj.ViewObject.hide()
-    return(myrev)
+    return myrev
 
 def process_rotate_extrude_prism(obj, angle, n):
     from OpenSCADFeatures import PrismaticToroid      
@@ -851,11 +856,8 @@ def process_linear_extrude(obj,h) :
 
     newobj=doc.addObject("Part::FeaturePython",'RefineLinearExtrude')
     checkObjShape(obj)
-    print(f"Refine Linear Extrude {obj} {obj.Shape} {obj.Shape.isNull()}")
     RefineShape(newobj,obj)#mylinear)
-    print(f"RefineShape {newobj} {newobj.Shape} {newobj.Shape.isNull()}")
-    newobj.Base.recompute()
-    print(f"RefineShape {newobj} {newobj.Shape} {newobj.Shape.isNull()}")
+    checkObjShape(newobj)
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
@@ -873,12 +875,13 @@ def process_linear_extrude(obj,h) :
     mylinear.Solid = False
     if gui:
         newobj.ViewObject.hide()
-    return(mylinear)
+    return mylinear
 
 def process_linear_extrude_with_transform(base,height,twist,scale) :   
     from OpenSCADFeatures import Twist
     newobj=doc.addObject("Part::FeaturePython",'twist_extrude')
     Twist(newobj,base,height,-twist,scale) #base is an FreeCAD Object, height and twist are floats
+    checkObjShape(newobj)
     if gui:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
             GetBool('useViewProviderTree'):
@@ -888,7 +891,7 @@ def process_linear_extrude_with_transform(base,height,twist,scale) :
             newobj.ViewObject.Proxy = 0
     #import ViewProviderTree from OpenSCADFeatures
     #ViewProviderTree(obj.ViewObject)
-    return(newobj)
+    return newobj
 
 def p_linear_extrude_with_transform(p):
     'linear_extrude_with_transform : linear_extrude LPAREN keywordargument_list RPAREN OBRACE block_list EBRACE'
@@ -921,6 +924,7 @@ def p_linear_extrude_with_transform(p):
     if 'center' in p[3]:    
         if p[3]['center']=='true' :
             center(newobj,0,0,h)
+    checkObjShape(newobj)
     p[0] = [newobj]
     if gui:
        obj.ViewObject.hide()
@@ -1222,7 +1226,7 @@ def myPolygon(n,r1):
 
     polygon = doc.addObject("Part::Feature","Polygon")
     polygon.Shape = Part.Face(polygonwire)
-    return(polygon)
+    return polygon
 
 def p_cylinder_action(p):
     'cylinder_action : cylinder LPAREN keywordargument_list RPAREN SEMICOL'
