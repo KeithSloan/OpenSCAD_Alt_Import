@@ -168,16 +168,13 @@ Where the FreeCAD has an editable Fillet
   
   * mesh_recombine : For future option
     
-  ### SCADObjects
+  ### SCAD File Objects
   
-  Created from imported file - Saved using JSON with the FreeCAD document
-  
-  For creating FreeCAD objects from SCAD source. 
-  Should avoid SCAD files that depend on other files i.e. Have use or include statements.
+  Created from imported file - FreeCAD SCAD Object has file name in properties
   
   **Properties** : See SCADFileObjects properties.
   
-  ### Using SCADObjects and OpenSCAD external editor.
+  ### Using SCADFileObjects and OpenSCAD external editor.
   
   Using a combination of an external editor for SCADObjects and having OpenSCAD set up for an external editor allows.
   
@@ -186,7 +183,7 @@ Where the FreeCAD has an editable Fillet
   * When happy with source definition
   
     * Save SCAD Source file
-    * Toggle SCADObjects - execute property to have changes brought into FreeCAD
+    * Toggle SCADFileObjects property - execute property to have changes brought into FreeCAD
 
 Example Screenshot.
 ![Image 20-02-2023 at 14 02](https://user-images.githubusercontent.com/2291247/220147105-8689b944-315c-47cc-92f7-c3806b088177.jpg)
