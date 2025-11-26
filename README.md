@@ -146,6 +146,13 @@ Where the FreeCAD has an editable Fillet
   * execute     : Will process the SCAD source ( Object or File ) to create a the Objects Shape.
   * message     : Any error messages from OpenSCAD.
   * mode        : Brep or Mesh.
+
+    As SCAD operations hull and minkowski need to be sent to OpenSCAD to create and return a Mesh,
+    it is suggested that if you know hull or minkowski is used then set mode to Mesh.
+
+    There a limited number of use cases of hull and minkowski where there is no need for OpenSCAD
+    to be called and Brep objects are created.
+        
   * timeout     : time out value for operations passed to OpenSCAD.
   * source      : Source file name
   * source File : Path to source file (ImportFileSCAD)
