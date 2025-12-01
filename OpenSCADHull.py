@@ -554,19 +554,26 @@ def createHullShape(list_group, flag) :
     #   objList = list_group
     if len(list_group) > 1:
        #return createHullShapeFromList(list_group)
+       FreeCAD.Console.PrintError("Shape From List\n")
        shape = createHullShapeFromList(list_group)
        FreeCAD.Console.PrintError("Shape "+str(shape)+" "+str(shape.TypeId)+"\n")
        return shape
-    elif hasattr(list_group, "Part::PartFeature"):
-       #return createHullShapeFromMultiFuse(list_group)
-       #shape = processObjectsViaOpenSCAD(list_group)
-       shape = createHullShapeFromList(list_group)
-       shape = processHullViaOpenSCAD(group)    
-       return shape
+    else:
+       FreeCAD.Console.PrintError("list_group "+str(list_group)+"\n")
+       FreeCAD.Console.PrintError("TypeId "+str(list_group[0].TypeId)+"\n")
+       if hasattr(list_group[0], "TypeId"):
+           if list_group[0].TypeId == "Part::MultiFuse":
+              FreeCAD.Console.PrintError("MultiFuse")
+              shape = createHullShapeFromMultiFuse(list_group[0].Shapes)
+              #shape = processObjectsViaOpenSCAD(list_group)
+              #shape = processHullViaOpenSCAD(group)    
+              return shape
     #print(group)
 
 def createHullShapeFromMultiFuse(fuseObj):
     FreeCAD.Console.PrintError("\n Create Hull Object from MultiFuse\n")
+    shape = process_ObjectsViaOpenSCAD(FreeCAD.activeDocument(),fuseObj.Shapes,"hull")
+    return shape
 
 
 def createHullShapeFromList(GrpList):
@@ -682,7 +689,8 @@ def createHullFeaturePart(list_group, flag=False):
     #          return processHullViaOpenSCAD(objList)
     #else:
     #   hullObj.Shape = createHull(hullList)
-    #hullObj.Shape = createHullShape(list_group, flag)
+    FreeCAD.Console.PrintError("list_group "+str(list_group)+"\n") 
+    hullObj.Shape = createHullShape(list_group, flag)
     import Part
     Part.show(hullObj.Shape)
     if hullObj.Shape.isNull():
