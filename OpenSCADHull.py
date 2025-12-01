@@ -6,11 +6,27 @@ from pivy import coin
 
 printverbose = False
 
-class Hull(object):
-    def __init__(self, obj=None):
-        self.Object = obj
-        if obj:
-            self.attach(obj)
+#########################################################################
+# Class for PartFeature Hull
+#
+# HullFeature(obj, list_group)
+# Parameters for creation of Hull
+#     obj        - Created by doc.addObject('Part::FeaturePython', 'hull')
+#     list_group - Either
+#                   A list of objects to be hulled
+#                  Or 
+#                   A Part::FeaturePython with TypeId Part::MultiFuse
+#
+    #def __init__(self, obj=None):
+    #    #self.Object = obj
+    #    #if obj:
+    #    #    self.attach(obj)
+class HullFeature(object):
+    def __init__(self, obj, list_group, flag):
+       self.attach
+       self.Object = obj
+       self.ListGroup = list_group
+       self.flag = flag
 
     def __getstate__(self):
         return
@@ -27,16 +43,37 @@ class Hull(object):
         self.Object = obj
 
     def execute(self, obj):
-        print('Hull execute : '+obj.Label)
-        # Group jas been set to items on stack at time of hull request
-        if hasattr(obj,'Group') :
-           print('Has Group')
-           if len(obj.Group) > 1 :
-              obj.Shape = createHull(obj.Group)
-              print(f"return from execute")
-              return
-        else :
-           print('Error Invalid hull request')
+        import FreeCAD
+        FreeCAD.Console.PrintError("Hull Execute "+str(self.ListGroup)+"/n")
+        #        print('Hull execute : '+obj.Label)
+        #self.Shape = self.createHullShape(self, self.ListGroup, self.flag)
+        self.Shape = createHullShape(self, self.ListGroup, self.flag)
+
+        # Group has been set to items on stack at time of hull request
+        #if hasattr(obj,'Group') :
+        #   print('Has Group')
+        #   if len(obj.Group) > 1 :
+        #      obj.Shape = createHull(obj.Group)
+        #      print(f"return from execute")
+        #      return
+        #else :
+        #   print('Error Invalid hull request')
+
+# Basica ViewProvider
+class ViewProvider():
+   def __init__(self, obj):
+       '''Set this object to the proxy object of the actual view provider'''
+       if hasattr(obj, "Proxy"):                                          
+            obj.Proxy = self
+
+   def attach(self,obj):
+       return                                                             
+ 
+   def updateData(self, fp, prop):                                        
+       '''If a property of the handled feature has changed we have the chance to handle this here'''
+       #print('updateData ViewProvider')
+       #pass
+       return
 
 class ViewProviderMyGroup(object):
     def __init__(self,vobj=None):
@@ -61,6 +98,7 @@ class ViewProviderMyGroup(object):
 
     def __setstate__(self, _state):
         return None
+
 
 class ViewProviderMyGroupEx(ViewProviderMyGroup):
     def __init__(self,vobj=None):
@@ -130,10 +168,36 @@ class ViewProviderMyGroupEx(ViewProviderMyGroup):
             self.setupShapeGroup()
 
 def checkObjShape(obj) :
-    #print('Check Object Shape')
-    if obj.Shape.isNull() == True :
-       if printverbose: print(f'{obj.Name} Shape is Null - recompute')
-       obj.recompute()
+    #if printverbose: print('Check Object Shape')
+    if hasattr(obj, 'Shape'):
+        if obj.Shape.isNull() == True :                                    
+            #if printverbose: print('Shape is Null - recompute')
+            #try:
+            #    obj.recompute() 
+            #except Exception as e:                                        
+            obj.recompute()                                                
+            if obj.Shape.isNull() == True :
+               # Check Children
+               print(f'Check if Children : {obj.Name}')
+               if len(obj.OutList) > 0:
+                  for childObj in obj.OutList:
+                      checkObjShape(childObj)
+               else:
+                  print(f'Recompute failed : {obj.Name}')
+    else:
+        if hasattr(obj, "len"):
+           if len(obj) > 0:
+              print(f"check of obj list")
+              for i in obj:
+                  checkObjShape(i)
+        if hasattr(obj, "TypeId"):
+           if obj.TypeId == "Part::Common":
+              print("Compound")
+        elif hasattr(obj, 'Proxy'):
+           print(f"Proxy {obj.Proxy}")
+        elif hasattr(obj, 'Name'):
+            print(f"obj {obj.Name} has no Shape")
+
 
 def chk2D(obj) :
     return  obj.Shape.Volume == 0
@@ -211,6 +275,7 @@ def hullTwoEqCircles(obj1, obj2, flag2D) :
 
 def hullTwoCircles(obj1, obj2, flag2D) :
     print(f'hullTwoCircles 2D {flag2D}')
+    FreeCAD.Console.PrintError("hull Two Circles\n")
     if obj1.Radius == obj2.Radius :
        return(hullTwoEqCircles(obj1, obj2, flag2D))
 
@@ -266,6 +331,7 @@ def hullTwoCircles(obj1, obj2, flag2D) :
     print(f"Two Circles Wire {wire}")
     #face = Part.makeFace(wire)
     face = Part.Face(wire)
+    FreeCAD.Console.PrintError("return face\n")
     return face
 
 def hullTwoEqSpheres(obj1, obj2) :
@@ -406,10 +472,12 @@ def chkCollinear(group) :       # Assumes already checked parallel
     #isAligned = align1 and align2  # both lined up
     return True
 
+
 def chkOrthoganal(obj1, obj2) :
     dv = obj1.Placement.Base - obj2.Placement.Base #displacement
     ax1 = obj1.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
     return ax1.dot(dv) <= 1e-15*dv.Length
+
 
 def chkCircular(group) :
     print('Check Circular')
@@ -418,6 +486,7 @@ def chkCircular(group) :
           return False
     return True
 
+
 def getCircularDetails(obj):
     print('Get circular Details')
     if hasattr(obj,'Radius') :
@@ -425,6 +494,7 @@ def getCircularDetails(obj):
     if hasattr(obj,'Radius1') :
        return obj.Height.Value, obj.Radius1.Value, obj.Radius2.Value
     print('Not circular')
+
 
 def createRevolveHull(coordlist) :
     points = sorted(coordlist, key = lambda x: x[2]) # sort by z-coord
@@ -440,14 +510,17 @@ def createRevolveHull(coordlist) :
     revHull = poly.revolve(FreeCAD.Vector(0,0,0),FreeCAD.Vector(0,0,1),360)
     return revHull
 
+
 def _isConvex(p, q, r, ind1, ind2):
     'return True if the vectors pq to qr is a right turn ie convex'
     return q[ind1]*r[ind2] + p[ind1]*q[ind2] + r[ind1]*p[ind2] - \
             (q[ind1]*p[ind2] + r[ind1]*q[ind2] + p[ind1]*r[ind2]) < 0
 
+
 def chkPerpendicular(obj) :
     m1 = obj1.Placement.Rotation.Matrix
     return(FreeCAD.Placement(m1.invert))
+
 
 def hullLoft(wire1, wire2, name) :
     print('Loft')
@@ -459,17 +532,49 @@ def hullLoft(wire1, wire2, name) :
     #myLoft.Closed = False
     #return myLoft
     return loftShape
+ 
 
 def checkGroupShapes(group):
 	print("Check Group Shapes")
 	for i in group:
 		checkObjShape(i)
 
-def createHull(group) :
-    hShape = None
-    obj0 = group[0]
-    if len(group) == 2 :
-       obj1 = group[1]
+########################################################################
+# Create a Hull Shape
+# parameter a list of objects or a group (PartFeature TypeId = MultiFuse)
+# flag control ViewProvider
+########################################################################
+def createHullShape(list_group, flag) :
+    # csg groups created as PartMultiFuse name Group
+    FreeCAD.Console.PrintError("\n Create Hull Object "+str(list_group)+"\n")
+    #if hasattr(list_group, "Group"):
+    #   FreeCAD.Console.PrintError("Group")
+    #   objList = list(list_group)
+    #else:
+    #   objList = list_group
+    if len(list_group) > 1:
+       #return createHullShapeFromList(list_group)
+       shape = createHullShapeFromList(list_group)
+       FreeCAD.Console.PrintError("Shape "+str(shape)+" "+str(shape.TypeId)+"\n")
+       return shape
+    elif hasattr(list_group, "Part::PartFeature"):
+       #return createHullShapeFromMultiFuse(list_group)
+       #shape = processObjectsViaOpenSCAD(list_group)
+       shape = createHullShapeFromList(list_group)
+       shape = processHullViaOpenSCAD(group)    
+       return shape
+    #print(group)
+
+def createHullShapeFromMultiFuse(fuseObj):
+    FreeCAD.Console.PrintError("\n Create Hull Object from MultiFuse\n")
+
+
+def createHullShapeFromList(GrpList):
+    FreeCAD.Console.PrintError("\n Create Hull Object from List\n")
+    Shape = None
+    obj0 = GrpList[0]
+    if len(GrpList) == 2 :
+       obj1 = GrpList[1]
        checkObjShape(obj0)
        checkObjShape(obj1)
        if chk2D(obj0) and chk2D(obj1) :
@@ -485,14 +590,14 @@ def createHull(group) :
           else :
              return hullTwoSpheres(obj0,obj1)
 
-    if chkParallel(group) :
+    if chkParallel(GrpList) :
        print('Parallel')
-       if chkCollinear(group) :
+       if chkCollinear(GrpList) :
           print('Collinear')
-          if chkCircular(group) :
+          if chkCircular(GrpList) :
              print('Circular')
              pointLst = []
-             for obj in group :
+             for obj in GrpList :
                  h,r1,r2 = getCircularDetails(obj)
                  #print('h  : '+str(h))
                  ax1 = obj.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
@@ -512,9 +617,9 @@ def createHull(group) :
              print(revHull.Placement.Rotation)
              return revHull
 
-       if len(group) == 2 : 
-          obj0 = group[0]
-          obj1 = group[1]
+       if len(GrpList) == 2 : 
+          obj0 = GrpList[0]
+          obj1 = GrpList[1]
           if chkOrthoganal(obj0,obj1) :
              print('Orthoganal')
              if obj0.TypeId == 'Part::Cylinder' and \
@@ -540,36 +645,59 @@ def createHull(group) :
                 else:
                     print('Need code')
 
-
     print('Not directly handled')
-    print(group)
-    for obj in group :
-       print(obj.Name)
+    return processObjectsViaOpenSCAD(GrpList)
+
+
+def processObjectsViaOpenSCAD(GrpList):
+    #print(group)
+    #for obj in group :
+    #   print(obj.Name)
     #from OpenSCADFeatures import CGALFeature
-    #myObj = FreeCAD.ActiveDocument.addObject('Part::FeaturePython','Fred')
-    #CGALFeature(myObj,'hull',obj.Group)
-    # import OpenSCADFeatures
-    #return myObj.Shape
     import OpenSCADUtils
     print('Process OpenSCAD Shapes via OpenSCAD')
     return OpenSCADUtils.process_ObjectsViaOpenSCADShape(FreeCAD.ActiveDocument,\
-    group,'hull',maxmeshpoints=None)
+    GrpList,'hull',maxmeshpoints=None)
 
-def makeHull(hullList, ex=False):
-    print('makeHull')
-    print(list)
+
+def processHullViaOpenSCAD(group):
+    from OpenSCADFeatures import CGALFeature
+    myObj = FreeCAD.ActiveDocument.addObject('Part::FeaturePython','Fred')
+    CGALFeature(myObj,'hull',group)
+    return myObj.Shape
+
+
+def createHullFeaturePart(list_group, flag=False):
+    FreeCAD.Console.PrintError("makeHull"+str(list_group)+"\n")
     doc = FreeCAD.ActiveDocument
     if not doc:
         doc = FreeCAD.newDocument()
     hullObj = doc.addObject('Part::FeaturePython', 'hull')
-    hullObj.Shape = createHull(hullList)
-    #Hull(hullObj)
-    if ex:
-        ViewProviderMyGroupEx(hullObj.ViewObject)
-    else:
-        ViewProviderMyGroup(hullObj.ViewObject)
+    HullFeature(hullObj, list_group, flag)
+    #if len(hullList) == 1:
+    #    objList = hullList[0]
+    #    if hasattr(objList, "TypeId"):
+    #       if objList.TypeId == "Part::MultiFuse":
+    #          #hullObj.Shape = createHull(objList.Shapes)
+    #          return processHullViaOpenSCAD(objList)
+    #else:
+    #   hullObj.Shape = createHull(hullList)
+    #hullObj.Shape = createHullShape(list_group, flag)
+    import Part
+    Part.show(hullObj.Shape)
+    if hullObj.Shape.isNull():
+       FreeCAD.Console.PrintError("Null Shape") 
+    #return
+    #if flag:
+    #    ViewProviderMyGroupEx(hullObj.ViewObject)
+    #else:
+    #    ViewProviderMyGroup(hullObj.ViewObject)
+    #ViewProviderMyGroup(hullObj.ViewObject)
+
+    ViewProvider(hullObj.ViewObject)
     # Make Group the objects to be Hulled
-    #hullObj.Group = list
+    #hullObj.Group = list_group
     hullObj.recompute(True)
     # Just return Hull Object let importCSG put on Stack
+    #return
     return hullObj

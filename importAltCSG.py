@@ -534,9 +534,17 @@ def setObjectColour(obj, col) :
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     #printverbose=True
+    FreeCAD.Console.PrintError("hull function"+str(p[5])+"\n")
     if printverbose: print('hull function')
-    from OpenSCADHull import makeHull
-    myHull = makeHull(p[5],True)
+    from OpenSCADHull import createHullFeaturePart
+    FreeCAD.Console.PrintError(p[5])
+    col = hullColour()
+    for i in p[5] :
+        setObjectColour(i,col)
+        FreeCAD.Console.PrintError("\n Name "+str(i.Name)+str(i)+"TypeId "+str(i.TypeId)+" "+str(hasattr(i,"Shape"))+"\n")
+        # checkObjShape(i)
+    # True to use hull treeview
+    myHull = createHullFeaturePart(p[5],True)
     p[0] = [myHull]
     return
 

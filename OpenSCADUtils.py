@@ -593,27 +593,101 @@ def process3D_ObjectsViaOpenSCAD(doc,ObjList,Operation):
               index.ViewObject.hide()
         return(obj)
 
-def process_ObjectsViaOpenSCADShape(doc,children,name,maxmeshpoints=None):
-    if all((not obj.Shape.isNull() and obj.Shape.Volume == 0) \
-            for obj in children):
-        return process2D_ObjectsViaOpenSCADShape(children,name,doc)
-    elif all((not obj.Shape.isNull() and obj.Shape.Volume > 0) \
-            for obj in children):
-        return process3D_ObjectsViaOpenSCADShape(children,name,maxmeshpoints)
+import FreeCAD
+
+def checkObjShape(obj) :
+    #if printverbose: print('Check Object Shape')
+    if hasattr(obj, 'Shape'):
+        if obj.Shape.isNull() == True :
+            #if printverbose: print('Shape is Null - recompute')
+            #try:
+            #    obj.recompute()
+            #except Exception as e:
+            obj.recompute()
+            if obj.Shape.isNull() == True :
+               # Check Children
+               print(f'Check if Children : {obj.Name}')
+               if len(obj.OutList) > 0:
+                  for childObj in obj.OutList:
+                      checkObjShape(childObj)
+               else:
+                  print(f'Recompute failed : {obj.Name}')
     else:
-        import FreeCAD
-        FreeCAD.Console.PrintError( translate('OpenSCAD',\
-            "Error all shapes must be either 2D or both must be 3D")+u'\n')
+        if hasattr(obj, "len"):
+           if len(obj) > 0:
+              print(f"check of obj list")
+              for i in obj:
+                  checkObjShape(i)
+        if hasattr(obj, "TypeId"):
+           if obj.TypeId == "Part::Common":
+              print("Compound")
+        elif hasattr(obj, 'Proxy'):
+           print(f"Proxy {obj.Proxy}")
+        elif hasattr(obj, 'Name'):
+            print(f"obj {obj.Name} has no Shape")
+                                                                        
+def checkObjType2D(obj) :
+    if obj.TypeId == 'Part::Part2DObject' :
+       #if printverbose: print('2D')
+       return True
+    if obj.TypeId == 'Part::Cut' or obj.TypeId == 'Part::Fuse' or \
+       obj.TypeId == 'Part::Common' or obj.TypeId == 'Part::MultiFuse' :
+       if checkObjType2D(obj.Base) and checkObjType2D(obj.Tool) :
+          return True
+    return  False
+
+def process_ObjectsViaOpenSCADShape(doc, children, name, maxmeshpoints=None):
+    import FreeCAD
+    FreeCAD.Console.PrintError("\nprocess Objects Via OpenSCADShape\n")
+
+    # --- NEW: Ensure shapes are up-to-date ---
+    for obj in children:
+        try:
+            checkObjShape(obj)
+        except Exception as e:
+            FreeCAD.Console.PrintError(
+                f"Error checking Shape for {getattr(obj, 'Name', obj)}: {e}\n"
+            )
+
+    # --- Existing checks, now safe because shapes are validated ---
+    try:
+        if all((not obj.Shape.isNull() and obj.Shape.Volume == 0)
+               for obj in children):
+            return process2D_ObjectsViaOpenSCADShape(children, name, doc)
+
+        elif all((not obj.Shape.isNull() and obj.Shape.Volume > 0)
+                 for obj in children):
+            return process3D_ObjectsViaOpenSCADShape(children, name, maxmeshpoints)
+
+        else:
+            FreeCAD.Console.PrintError(
+                translate('OpenSCAD',
+                "Error all shapes must be either 2D or both must be 3D") + u'\n'
+            )
+
+    except Exception as e:
+        FreeCAD.Console.PrintError(f"Error processing objects: {e}\n")
 
 def process_ObjectsViaOpenSCAD(doc,children,name):
-    if all((not obj.Shape.isNull() and obj.Shape.Volume == 0) \
-            for obj in children):
-        return process2D_ObjectsViaOpenSCAD(children,name,doc)
-    elif all((not obj.Shape.isNull() and obj.Shape.Volume > 0) \
-            for obj in children):
-        return process3D_ObjectsViaOpenSCAD(doc,children,name)
-    else:
-        import FreeCAD
+    import FreeCAD
+    FreeCAD.Console.PrintError("process Objects Children Via OpenSCAD\n")
+    # --- NEW: Ensure shapes are up-to-date ---
+    for obj in children:
+        try:
+            checkObjShape(obj)
+        except Exception as e:
+            FreeCAD.Console.PrintError(
+                f"Error checking Shape for {getattr(obj, 'Name', obj)}: {e}\n"
+            )
+    try:
+       if all((not obj.Shape.isNull() and obj.Shape.Volume == 0) \
+               for obj in children):
+          return process2D_ObjectsViaOpenSCAD(children,name,doc)
+       elif all((not obj.Shape.isNull() and obj.Shape.Volume > 0) \
+               for obj in children):
+           return process3D_ObjectsViaOpenSCAD(doc,children,name)
+
+    except Exception as e:
         FreeCAD.Console.PrintError( translate('OpenSCAD',\
             "Error all shapes must be either 2D or both must be 3D")+u'\n')
 
