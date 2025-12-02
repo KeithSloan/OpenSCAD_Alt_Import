@@ -814,3 +814,18 @@ def makeSurfaceVolume(filename):
     s = Part.Shell(faces)
     solid = Part.Solid(s)
     return solid,last_col,last_row
+
+def CGALFeatureObj(featureObj, name, children, arguments=[]):
+    import FreeCAD
+    CGALFeature(featureObj, name, children, str(arguments))
+    if FreeCAD.GuiUp:
+        for subobj in children:
+            subobj.ViewObject.hide()
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+            GetBool('useViewProviderTree'):
+            from OpenSCADFeatures import ViewProviderTree
+            ViewProviderTree(myobj.ViewObject)
+        else:
+            featureObj.ViewObject.Proxy = 0
+    featureObj.recompute()
+    return featureObj

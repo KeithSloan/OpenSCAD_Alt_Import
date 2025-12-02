@@ -167,6 +167,30 @@ class ViewProviderMyGroupEx(ViewProviderMyGroup):
         if prop == 'DisplayMode':
             self.setupShapeGroup()
 
+from OpenSCADFeatures import CGALFeatureObj
+
+def hull_lex(p):
+    ### For Reference ###
+    '''
+    hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE
+    '''
+    from OpenSCADFeatures import CGALFeatureObj
+
+    hullObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", p[1])
+    list_group = p[5]
+    shape = Part.Shape()
+    if len(list_group) == 2 :     # Two objects on stack
+       shape = processHull(p[6])
+    if shape.isNull():
+       cgal  = CGALFeatureObj( hullObj, p[1], p[5])
+    # Just return hull let importCSG put on Stack
+    return cgal
+
+
+def processHull(list_group):
+    return Part.Shape()
+
+
 def checkObjShape(obj) :
     #if printverbose: print('Check Object Shape')
     if hasattr(obj, 'Shape'):

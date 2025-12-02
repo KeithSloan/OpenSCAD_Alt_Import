@@ -536,16 +536,19 @@ def p_hull_action(p):
     #printverbose=True
     FreeCAD.Console.PrintError("hull function"+str(p[5])+"\n")
     if printverbose: print('hull function')
-    from OpenSCADHull import createHullFeaturePart
+    #from OpenSCADHull import createHullFeaturePart
     FreeCAD.Console.PrintError(p[5])
-    col = hullColour()
-    for i in p[5] :
-        setObjectColour(i,col)
-        FreeCAD.Console.PrintError("\n Name "+str(i.Name)+str(i)+"TypeId "+str(i.TypeId)+" "+str(hasattr(i,"Shape"))+"\n")
-        # checkObjShape(i)
+    #col = hullColour()
+    #for i in p[5] :
+    #    setObjectColour(i,col)
+    #    FreeCAD.Console.PrintError("\n Name "+str(i.Name)+str(i)+"TypeId "+str(i.TypeId)+" "+str(hasattr(i,"Shape"))+"\n")
+    #    # checkObjShape(i)
     # True to use hull treeview
-    myHull = createHullFeaturePart(p[5],True)
-    p[0] = [myHull]
+    #myHull = createHullFeaturePart(p[5],True)
+    #p[0] = [myHull]
+
+    from OpenSCADHull import hull_lex
+    p[0] = [hull_lex(p)]
     return
 
     col = hullColour()
