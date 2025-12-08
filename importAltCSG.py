@@ -56,7 +56,7 @@ params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
 printverbose = params.GetBool('printverbose',False)
 print(f'Verbose = {printverbose}')
 #print(params.GetContents())
-#printverbose = True
+printverbose = True
 
 # Get the token map from the lexer.  This is required.
 import tokrules
@@ -157,6 +157,16 @@ def processCSG(docSrc, filename, fnmax_param = None):
     if printverbose: print ('ImportCSG Version 0.6a')
     # Build the lexer
     if printverbose: print('Start Lex')
+    # Set up a logging object
+    import logging
+    logging.basicConfig(
+       level = logging.DEBUG,
+       filename = "/tmp/parselog.txt",
+       filemode = "w",
+       format = "%(filename)10s:%(lineno)4d:%(message)s"
+    )
+    log = logging.getLogger()
+    #lex.lex(module=tokrules, errorlog=log)
     lex.lex(module=tokrules)
     if printverbose: print('End Lex')
 
@@ -164,6 +174,7 @@ def processCSG(docSrc, filename, fnmax_param = None):
     if printverbose: print('Load Parser')
     # No debug out otherwise Linux has protection exception
     parser = yacc.yacc(debug=False, write_tables=False)
+    #parser = yacc.yacc(debug=False, write_tables=True, errorlog=log)
     if printverbose: print('Parser Loaded')
     # Give the lexer some input
     #f=open('test.scad', 'r')
@@ -205,6 +216,7 @@ def p_render_action(p):
 def p_group_action1(p):
     'group_action1 : group LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print(f"Group : {p[5]}")
+    FreeCAD.Console.PrintError(f"Group : {p[5]}")
 # Test if need for implicit fuse
     if p[5] is None:
        p[0] = []
@@ -531,6 +543,7 @@ def setObjectColour(obj, col) :
           if hasattr(obj.ViewObject,'ShapeColor') :
              obj.ViewObject.ShapeColor = col
 
+
 def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     #printverbose=True
@@ -651,31 +664,35 @@ def p_keywordargument_list(p):
         p[1][p[3][0]] = p[3][1]
         p[0]=p[1]
 
+
 def p_color_action(p):
     'color_action : color LPAREN vector RPAREN OBRACE block_list EBRACE'
     import math
+    FreeCAD.Console.PrintError(f"Color block {p[6]}")
     if printverbose: print("Color")
     color = tuple([float(f) for f in p[3][:3]]) #RGB
     transp = 100 - int(math.floor(100*float(p[3][3]))) #Alpha
     if gui:
-        for obj in p[6]:
+       for obj in p[6]:
             obj.ViewObject.ShapeColor =color
             obj.ViewObject.Transparency = transp
     p[0] = p[6]
 
 # Error rule for syntax errors
 def p_error(p):
+    FreeCAD.Console.PrintError(f"Syntax error in input!")
     if printverbose: print("Syntax error in input!")
     if printverbose: print(p)
 
 def fuse(lst,name):
     global doc
+    FreeCAD.Console.PrintError(f"fuse")
     if printverbose: 
        print("Fuse")
        print(lst)
        for obj in lst :
            print(obj.Label)
-           checkObjShapes(obj)
+           checkObjShape(obj)
     if len(lst) == 0:
         myfuse = placeholder('group',[],'{}')
     elif len(lst) == 1:
@@ -1085,42 +1102,63 @@ def processDXF(fname,layer):
 def processSTL(fname):
     if printverbose: print("Process STL file")
 
+
 def p_multmatrix_action(p):
-    'multmatrix_action : multmatrix LPAREN matrix RPAREN OBRACE block_list EBRACE'
-    #from OpenSCADUtils import isspecialorthogonalpython, \
-    #     fcsubmatrix, roundrotation, isrotoinversionpython, \
-    #     decomposerotoinversion
-    from OpenSCADFeatures import RefineShape     
-    if printverbose: print(f"MultMatrix matrix {p[3]} objects {p[6]}")
-    transform_matrix = FreeCAD.Matrix()
-    m1l=sum(p[3],[])
-    if any('x' in me for me in m1l): #hexfloats
-        m1l=[float.fromhex(me) for me in m1l]
-        matrixisrounded=False
-    elif max((len(me) for me in m1l)) >= 14: #might have double precision
-        m1l=[float(me) for me in m1l] # assume precise output
-        m1l=[(0 if (abs(me) < 1e-15) else me) for me in m1l]
-        matrixisrounded=False
-    else: #trucanted numbers
-        m1l=[round(float(me),12) for me in m1l] #round
-        matrixisrounded=True
+    '''
+    multmatrix_action : multmatrix LPAREN matrix RPAREN OBRACE block_list EBRACE
+                       | multmatrix LPAREN matrix RPAREN statement
+    '''
+    # Determine the body of the multmatrix
+    if len(p) == 8:
+        body = p[6]           # block_list
+        FreeCAD.Console.PrintError(f"multmatrix {body}\n")
+    else:
+        body = [p[5]]         # single statement wrapped in list
+        FreeCAD.Console.PrintError(f"multmatrix Single body {body}\n")
+
+    # Flatten the matrix into a single list
+    m1l = sum(p[3], [])  # matrix is a list of 4 vectors
+
+    # Detect number type / precision
+    matrixisrounded = False
+    if any('x' in me for me in m1l):  # hex floats
+        m1l = [float.fromhex(me) for me in m1l]
+    elif max(len(me) for me in m1l) >= 14:  # possibly high-precision
+        m1l = [float(me) for me in m1l]
+        m1l = [(0 if abs(me) < 1e-15 else me) for me in m1l]
+    else:  # truncated numbers, round
+        m1l = [round(float(me), 12) for me in m1l]
+        matrixisrounded = True
+
+    # Build FreeCAD.Matrix
     transform_matrix = FreeCAD.Matrix(*tuple(m1l))
-    if printverbose: print(transform_matrix)
-    if printverbose: print(f"Apply Multmatrix : {p[6]}")
-#   If more than one object on the stack for multmatrix fuse first
-    #for o in p[6]:    
-    #    print(f"{o.Label} {o}")
-    if p[6] == None :
-       print(p) 
-       print(dir(p))
-    if (len(p[6]) == 0) :
-        part = placeholder('group',[],'{}')
-    else :
-        retList = []
-        #print(f"Mult Matrix")
-        for part in p[6]:
-           retList.append(performMultMatrix(part,matrixisrounded,transform_matrix))
-        p[0] = retList
+
+    if printverbose:
+        print(f"MultMatrix matrix {p[3]} objects {body}")
+        FreeCAD.Console.PrintError(f"MultMatrix matrix {p[3]} objects {body}")
+        print(transform_matrix)
+        print(f"Apply Multmatrix : {body}")
+
+    # If no objects, create placeholder
+    if not body:
+        part = placeholder('group', [], '{}')
+        p[0] = [part]
+        return
+    # Apply matrix to each object
+    retList = []
+
+    # Flatten nested lists
+    flat_body = []
+    for item in body:
+        if isinstance(item, list):
+            flat_body.extend(item)
+        else:
+            flat_body.append(item)
+
+    for part in flat_body:
+        retList.append(performMultMatrix(part, matrixisrounded, transform_matrix))
+
+    p[0] = retList
 
 def performMultMatrix(part, matrixisrounded, transform_matrix) :
     checkObjShape(part)
@@ -1213,7 +1251,8 @@ def center(obj,x,y,z):
     
 def p_sphere_action(p):
     'sphere_action : sphere LPAREN keywordargument_list RPAREN SEMICOL'
-    if printverbose: print("Sphere : ",p[3])
+    FreeCAD.Console.PrintError(f"Sphere : {p[3]}\n")
+    if printverbose: print(f"Sphere : {p[3]}\n")
     r = float(p[3]['r'])
     mysphere = doc.addObject("Part::Sphere",p[1])
     mysphere.Radius = r

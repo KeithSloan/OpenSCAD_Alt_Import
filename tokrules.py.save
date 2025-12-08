@@ -25,20 +25,6 @@ __title__="FreeCAD OpenSCAD Workbench - CSG importer Version 0.5c"
 __author__ = "Keith Sloan <keith@sloan-home.co.uk>"
 __url__ = ["http://www.sloan-home.co.uk/ImportCSG"]
 
-def t_DEBUG_OBRACE(t):
-    r'\{'
-    print(">>> LEX OBRACE at", t.lexpos)
-    t.type = "OBRACE"
-    return t
-
-def t_DEBUG_EBRACE(t):
-    r'\}'
-    print(">>> LEX EBRACE at", t.lexpos)
-    t.type = "EBRACE"
-    return t
-
-
-
 # Reserved words
 reserved = (
     'group',

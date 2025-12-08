@@ -1,6 +1,6 @@
 import FreeCAD, FreeCADGui, Part
 
-
+from OpenSCADUtils import process_ObjectsViaOpenSCAD
 from FreeCAD import Units
 from pivy import coin
 
@@ -23,10 +23,12 @@ printverbose = False
     #    #    self.attach(obj)
 class HullFeature(object):
     def __init__(self, obj, list_group, flag):
+       FreeCAD.Console.PrintError("Hull Feature\n")
        self.attach
        self.Object = obj
        self.ListGroup = list_group
        self.flag = flag
+       self.execute(obj)
 
     def __getstate__(self):
         return
@@ -44,10 +46,10 @@ class HullFeature(object):
 
     def execute(self, obj):
         import FreeCAD
-        FreeCAD.Console.PrintError("Hull Execute "+str(self.ListGroup)+"/n")
+        FreeCAD.Console.PrintError("Hull Execute "+str(self.ListGroup)+"\n")
         #        print('Hull execute : '+obj.Label)
         #self.Shape = self.createHullShape(self, self.ListGroup, self.flag)
-        self.Shape = createHullShape(self, self.ListGroup, self.flag)
+        self.Shape = createHullShape(self.ListGroup, self.flag)
 
         # Group has been set to items on stack at time of hull request
         #if hasattr(obj,'Group') :
@@ -546,7 +548,7 @@ def checkGroupShapes(group):
 ########################################################################
 def createHullShape(list_group, flag) :
     # csg groups created as PartMultiFuse name Group
-    FreeCAD.Console.PrintError("\n Create Hull Object "+str(list_group)+"\n")
+    FreeCAD.Console.PrintError("\n Create Hull Shape "+str(list_group)+"\n")
     #if hasattr(list_group, "Group"):
     #   FreeCAD.Console.PrintError("Group")
     #   objList = list(list_group)
@@ -564,13 +566,14 @@ def createHullShape(list_group, flag) :
        if hasattr(list_group[0], "TypeId"):
            if list_group[0].TypeId == "Part::MultiFuse":
               FreeCAD.Console.PrintError("MultiFuse")
-              shape = createHullShapeFromMultiFuse(list_group[0].Shapes)
+              shape = createHullShapeFromMultiFuse(list_group[0])
               #shape = processObjectsViaOpenSCAD(list_group)
               #shape = processHullViaOpenSCAD(group)    
               return shape
     #print(group)
 
 def createHullShapeFromMultiFuse(fuseObj):
+    from OpenSCADUtils import process_ObjectsViaOpenSCAD
     FreeCAD.Console.PrintError("\n Create Hull Object from MultiFuse\n")
     shape = process_ObjectsViaOpenSCAD(FreeCAD.activeDocument(),fuseObj.Shapes,"hull")
     return shape
@@ -675,7 +678,7 @@ def processHullViaOpenSCAD(group):
 
 
 def createHullFeaturePart(list_group, flag=False):
-    FreeCAD.Console.PrintError("makeHull"+str(list_group)+"\n")
+    FreeCAD.Console.PrintError("makeHull "+str(list_group)+"\n")
     doc = FreeCAD.ActiveDocument
     if not doc:
         doc = FreeCAD.newDocument()
@@ -689,12 +692,12 @@ def createHullFeaturePart(list_group, flag=False):
     #          return processHullViaOpenSCAD(objList)
     #else:
     #   hullObj.Shape = createHull(hullList)
-    FreeCAD.Console.PrintError("list_group "+str(list_group)+"\n") 
-    hullObj.Shape = createHullShape(list_group, flag)
-    import Part
-    Part.show(hullObj.Shape)
-    if hullObj.Shape.isNull():
-       FreeCAD.Console.PrintError("Null Shape") 
+    #FreeCAD.Console.PrintError("list_group "+str(list_group)+"\n") 
+    #hullObj.Shape = createHullShape(list_group, flag)
+    #import Part
+    #Part.show(hullObj.Shape)
+    #if hullObj.Shape.isNull():
+    #   FreeCAD.Console.PrintError("Null Shape") 
     #return
     #if flag:
     #    ViewProviderMyGroupEx(hullObj.ViewObject)
@@ -705,7 +708,8 @@ def createHullFeaturePart(list_group, flag=False):
     ViewProvider(hullObj.ViewObject)
     # Make Group the objects to be Hulled
     #hullObj.Group = list_group
-    hullObj.recompute(True)
+    #FreeCAD.Console.PrintError("Recompute hullObj\n") 
+    #hullObj.recompute(True)
     # Just return Hull Object let importCSG put on Stack
     #return
     return hullObj
