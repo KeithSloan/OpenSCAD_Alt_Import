@@ -1,38 +1,92 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
-<package format="1">
+<?xml
+    version = '1.0'
+    encoding = 'UTF-8'
+    standalone = 'no'
+?>
+<package
+    format = '1'
+    xmlns = 'https://wiki.freecad.org/Package_Metadata'
+>
 
-  <name>OpenSCAD alternate importer</name>
+    <!--[ Versions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-  <description>An alternate OpenSCAD importer - with some experimental features</description>
+    <freecadmin>0.20.0</freecadmin>
+    <version>1.0.0</version>
+    <date>2022-08-18</date>
 
-  <version>1.0.0</version>
+    <!--[ Dependencies ]―――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-  <maintainer email="keith@sloan-home.co.uk">Keith Sloan</maintainer>
+    <depend 
+        version_gte = '1.4.3'
+        type = 'python'
+    >ezdxf</depend>
+    
+    <depend 
+        version_gte = '3.11'
+        type = 'python'
+    >ply</depend>
 
-  <license file="LICENSE">LGPL-2.1</license>
+    <!--[ Info ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-  <url branch="master" type="repository">https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
+    <description>An alternate OpenSCAD importer with some experimental features.</description>
+    <name>OpenSCAD Alternate Importer</name>
 
-  <url type="readme">https://github.com/KeithSloan/OpenSCAD_Alt_Import/blob/master/README.md</url>
+    <!--[ Tags ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-  <url type="documentation">https://github.com/KeithSloan/OpenSCAD_Alt_Import/wiki</url>
+    <tag>Programming</tag>
+    <tag>Scripting</tag>
+    <tag>OpenSCAD</tag>
+    <tag>Importer</tag>
+    <tag>Editor</tag>
 
-  <icon>freecad/OpenSCAD_Alt_Import/Resources/icons/OpenSCAD_Alternate.png</icon>
+    <!--[ Maintainers ]――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
-  <date>2022-08-18</date>
+    <maintainer
+        email = 'keith@sloan-home.co.uk'
+    >Keith Sloan</maintainer>
 
-  <content>
-    <workbench>
-      <freecadmin>0.20.0</freecadmin>
-      <tag>openscad</tag>
-      <tag>scripting</tag>
-      <tag>programming</tag>
-      <icon>freecad/OpenSCAD_Alt_Import/Resources/icons/OpenSCAD_Alternate.png</icon>
-      <classname>OpenSCAD_Alt_Import</classname>
-      <subdirectory>./</subdirectory>
-      <depend type="python">ply</depend>
-      <depend type="python">ezdxf</depend>
-    </workbench>
-  </content>
+    <!--[ Authors ]――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <author
+        email = 'keith@sloan-home.co.uk'
+    >Keith Sloan</author>
+
+    <!--[ Licenses ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <license
+        file = 'LICENSE'
+    >LGPL-2.1-or-later</license>
+
+    <!--[ Icon ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <icon>freecad/OpenSCAD_Alt_Import/Resources/icons/OpenSCAD_Alternate.png</icon>
+
+    <!--[ Urls ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <url
+        type = 'documentation'
+    >https://github.com/KeithSloan/OpenSCAD_Alt_Import/wiki</url>
+
+    <url
+        branch = 'master'
+        type = 'repository'
+    >https://github.com/KeithSloan/OpenSCAD_Alt_Import</url>
+
+    <url
+        type = 'bugtracker'
+    >https://github.com/KeithSloan/OpenSCAD_Alt_Import/issues</url>
+
+    <url
+        type = 'readme'
+    >https://github.com/KeithSloan/OpenSCAD_Alt_Import/blob/master/README.md</url>
+
+    <!--[ Content ]――――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
+
+    <content>
+        <workbench>
+            <subdirectory>.</subdirectory>
+            <classname>OpenSCAD_Alt_Import</classname>
+        </workbench>
+    </content>
 
 </package>
