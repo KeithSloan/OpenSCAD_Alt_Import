@@ -150,9 +150,9 @@ def getHeight(obj) :
     if hasattr(obj,'Height') :
        return obj.Height
     if hasattr(obj,'Radius') :
-       return obj,Radius
+       return obj.Radius
     if hasattr(obj,'Radius1') :
-       return obj,Radius1
+       return obj.Radius1
 
 def chkDisplaced(obj1, obj2) :
     a = obj1.Placement.Base
@@ -450,7 +450,7 @@ def _isConvex(p, q, r, ind1, ind2):
             (q[ind1]*p[ind2] + r[ind1]*q[ind2] + p[ind1]*r[ind2]) < 0
 
 def chkPerpendicular(obj) :
-    m1 = obj1.Placement.Rotation.Matrix
+    m1 = obj.Placement.Rotation.Matrix
     return(FreeCAD.Placement(m1.invert))
 
 def hullLoft(wire1, wire2, name) :
@@ -540,7 +540,7 @@ def createHull(group) :
                 ) :
                 print('Hull Cylinder Sphere')
                 if obj1.Radius > obj0.Radius:
-                    obj1, obj0 = obj0, obj2
+                    obj1, obj0 = obj0, obj1
                     return hullSphereCyclinderEqRad(obj0, obj1)
                 else:
                     print('Need code')
