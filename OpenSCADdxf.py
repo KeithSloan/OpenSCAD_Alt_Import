@@ -5,7 +5,7 @@ from FreeCAD import Vector, Rotation #treat as vectors; need rotation for ellips
 import Part
 #import Draft
 import numpy as np #for unique function
-
+import math
 def importOpenSCADdxf_POINT(an_entity):
     #print("POINT")
     # Get a point and return a small circle
@@ -485,7 +485,7 @@ def getFlatList(a_nested_list):
 def makeholedshape(shapes) : #takes a list of faces
 
   def AholdsB(A, B): #test for A completely enclosing B
-    if ((A.common(B).Area == B.Area) and (A != B)):
+    if ((math.isclose(A.common(B).Area,B.Area,rel_tol=1e-09) == True) and (A != B)):
       return 1
     else :
       return 0

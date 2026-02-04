@@ -174,7 +174,7 @@ def getWire(obj) :
 
 def hullTwoEqCircles(obj1, obj2, flag2D) :
     # Used by 2D and Cylinder
-    print('hullTwoEqCircles')
+    print(f'hullTwoEqCircles flag2D {flag2D}')
     r = obj1.Radius
     print(f"(Radius : {r}")
     v1 = obj1.Placement.Base
@@ -203,6 +203,9 @@ def hullTwoEqCircles(obj1, obj2, flag2D) :
     face = Part.Face(wire)
     #return(face)
     if flag2D:
+        Part.export([face], "/tmp/debug_face.brep")
+        Part.export([obj1.Shape], "/tmp/debug_shape1.brep")
+        Part.export([obj2.Shape], "/tmp/debug_shape2.brep")
         return obj1.Shape.fuse(face.fuse(obj2.Shape))
     else:
         s1 = Part.makeCircle(obj1.Radius,obj1.Placement.Base)
@@ -266,6 +269,7 @@ def hullTwoCircles(obj1, obj2, flag2D) :
     print(f"Two Circles Wire {wire}")
     #face = Part.makeFace(wire)
     face = Part.Face(wire)
+    print(f"face {face}")
     return face
 
 def hullTwoEqSpheres(obj1, obj2) :
@@ -521,7 +525,8 @@ def createHull(group) :
                 obj1.TypeId == 'Part::Cylinder' :
                 if obj0.Height == obj1.Height :
                    print('Hull two Cyls')
-                   face = hullTwoCircles(obj0, obj1, False)
+                   #face = hullTwoCircles(obj0, obj1, False)
+                   face = hullTwoCircles(obj0, obj1, True)
                    print(f"Face created {face}")
                    #return face
                    return face.extrude(FreeCAD.Vector(0,0,obj0.Height.Value))
@@ -557,7 +562,7 @@ def createHull(group) :
 
 def makeHull(hullList, ex=False):
     print('makeHull')
-    print(list)
+    print(hullList)
     doc = FreeCAD.ActiveDocument
     if not doc:
         doc = FreeCAD.newDocument()
