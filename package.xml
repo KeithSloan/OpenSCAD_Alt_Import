@@ -17,6 +17,16 @@
     <!--[ Dependencies ]―――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
     <depend 
+        version_gte = '4.8.2'
+        type = 'python'
+    >tinydb</depend>
+
+    <depend 
+        version_gte = '6.0.0'
+        type = 'python'
+    >watchdog</depend>
+
+    <depend 
         version_gte = '1.4.3'
         type = 'python'
     >ezdxf</depend>

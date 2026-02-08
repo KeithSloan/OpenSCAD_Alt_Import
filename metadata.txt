@@ -1,2 +1,2 @@
 workbenches=OpenSCAD
-pylibs=ply,ezdxf
+pylibs=ply,ezdxf,tinydb,watchdog
