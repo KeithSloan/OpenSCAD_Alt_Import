@@ -30,6 +30,10 @@ __title__="FreeCAD OpenSCAD Workbench - CSG importer"
 __author__ = "Keith Sloan <keith@sloan-home.co.uk>"
 __url__ = ["http://www.sloan-home.co.uk/ImportCSG"]
 
+import tinydb
+import watchdog
+
+
 import FreeCAD, Part, Draft, io, os, sys, xml.sax
 if FreeCAD.GuiUp:
     import FreeCADGui

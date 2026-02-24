@@ -1,4 +1,5 @@
 .DS_Store
+AM_INSTALLATION_Digest.txt
 __pycache__/
 .pyc
 .py[cod]
