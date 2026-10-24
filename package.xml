@@ -11,20 +11,10 @@
     <!--[ Versions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
     <freecadmin>0.20.0</freecadmin>
-    <version>1.0.0</version>
-    <date>2022-08-18</date>
+    <version>1.0.1</version>
+    <date>2026-10-24</date>
 
     <!--[ Dependencies ]―――――――――――――――――――――――――――――――――――――――――――――――――――――-->
-
-    <depend 
-        version_gte = '4.8.2'
-        type = 'python'
-    >tinydb</depend>
-
-    <depend 
-        version_gte = '6.0.0'
-        type = 'python'
-    >watchdog</depend>
 
     <depend 
         version_gte = '1.4.3'
