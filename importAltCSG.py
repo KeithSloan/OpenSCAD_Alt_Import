@@ -248,8 +248,29 @@ def p_statement(p):
                  | color_action
                  | render_action
                  | not_supported
+                 | empty_action
     '''
     p[0] = p[1]
+
+def p_empty_action(p):
+    '''
+    empty_action : union LPAREN RPAREN SEMICOL
+                 | difference LPAREN RPAREN SEMICOL
+                 | intersection LPAREN RPAREN SEMICOL
+                 | hull LPAREN RPAREN SEMICOL
+                 | minkowski LPAREN keywordargument_list RPAREN SEMICOL
+                 | multmatrix LPAREN matrix RPAREN SEMICOL
+                 | color LPAREN vector RPAREN SEMICOL
+                 | render LPAREN keywordargument_list RPAREN SEMICOL
+                 | linear_extrude LPAREN keywordargument_list RPAREN SEMICOL
+                 | offset LPAREN keywordargument_list RPAREN SEMICOL
+                 | resize LPAREN keywordargument_list RPAREN SEMICOL
+                 | projection LPAREN keywordargument_list RPAREN SEMICOL
+    '''
+    # OpenSCAD writes an operation with no children as "name(...);"
+    # e.g. "union();" - it contributes nothing, like an empty group.
+    if printverbose: print(f"Empty {p[1]}()")
+    p[0] = []
 
 def p_anymodifier(p):
     '''anymodifier : MODIFIERBACK
@@ -426,7 +447,8 @@ def p_offset_action(p):
     # print(len(p))
     # print(f'p6 : {p[6]}')
     if len(p[6]) == 0:
-        newobj = placeholder('group',[],'{}')
+        p[0] = []
+        return
     elif (len(p[6]) == 1 ): #single object
         subobj = p[6][0]
     else:
@@ -480,11 +502,12 @@ def checkObjShape(obj) :
                else:
                   print(f'Recompute failed : {obj.Name}')
     else:
-        if hasattr(obj, "len"):
-           if len(obj) > 0:
-              print(f"check of obj list")
-              for i in obj:
-                  checkObjShape(i)
+        if isinstance(obj, (list, tuple)):
+           # a list of objects from the parse stack - check each one
+           if printverbose: print(f"check of obj list")
+           for i in obj:
+               checkObjShape(i)
+           return
         if hasattr(obj, "TypeId"):
            if obj.TypeId == "Part::Common":
               print("Compound")
@@ -535,6 +558,9 @@ def p_hull_action(p):
     'hull_action : hull LPAREN RPAREN OBRACE block_list EBRACE'
     #printverbose=True
     if printverbose: print('hull function')
+    if len(p[5]) == 0:
+        p[0] = []
+        return
     from OpenSCADHull import makeHull
     myHull = makeHull(p[5],True)
     p[0] = [myHull]
@@ -657,8 +683,13 @@ def p_color_action(p):
 
 # Error rule for syntax errors
 def p_error(p):
-    if printverbose: print("Syntax error in input!")
-    if printverbose: print(p)
+    # Always report - a silent syntax error leaves parts of the model
+    # unparsed and the remaining objects detached from their transforms
+    if p is None:
+        FreeCAD.Console.PrintError("CSG syntax error : unexpected end of file\n")
+    else:
+        FreeCAD.Console.PrintError(f"CSG syntax error : unexpected {p.type} "
+                                   f"'{p.value}' at line {p.lineno}\n")
 
 def fuse(lst,name):
     global doc
@@ -667,7 +698,7 @@ def fuse(lst,name):
        print(lst)
        for obj in lst :
            print(obj.Label)
-           checkObjShapes(obj)
+           checkObjShape(obj)
     if len(lst) == 0:
         myfuse = placeholder('group',[],'{}')
     elif len(lst) == 1:
@@ -699,7 +730,6 @@ def fuse(lst,name):
 def p_union_action(p):
     'union_action : union LPAREN RPAREN OBRACE block_list EBRACE'
     if printverbose: print("union")
-    print("union")
     newpart = fuse(p[5],p[1])
     if printverbose: print("Push Union Result")
     p[0] = [newpart]
@@ -712,7 +742,7 @@ def p_difference_action(p):
     if printverbose: print(len(p[5]))
     if printverbose: print(p[5])
     if (len(p[5]) == 0 ): #nochild
-        mycut = placeholder('group',[],'{}')
+        p[0] = []
     elif (len(p[5]) == 1 ): #single object
         p[0] = p[5]
     else:
@@ -764,8 +794,9 @@ def p_intersection_action(p):
            mycommon.Tool.ViewObject.hide()
     elif (len(p[5]) == 1):
         mycommon = p[5][0]
-    else : # 1 child
-        mycommon = placeholder('group',[],'{}')
+    else : # no children
+        p[0] = []
+        return
     p[0] = [mycommon]
     if printverbose: print("End Intersection")
 
@@ -838,6 +869,10 @@ def p_rotate_extrude_file(p):
     angle = 360.0
     if 'angle' in p[3]:
         angle = float(p[3]['angle'])
+    if 'file' not in p[3]:
+        # rotate_extrude() with no children - nothing to create
+        p[0] = []
+        return
     filen,ext =p[3]['file'] .rsplit('.',1)
     obj = process_import_file(filen,ext,p[3]['layer'])
     n = int(round(float(p[3]['$fn'])))
@@ -1039,10 +1074,20 @@ def processTextCmd(t):
     import os
     from OpenSCADUtils import callopenscadstring
     tmpfilename = callopenscadstring(t,'dxf')
-    #from OpenSCAD2Dgeom import importDXFshape
-    from OpenSCAD2Dgeom import importDXFface
-    #face = importDXFshape(tmpfilename,None,None)
-    face = importDXFface(tmpfilename,None,None)
+    face = None
+    try:
+        # Use the addon's own ezdxf reader (as for import() of DXF files).
+        # Draft's legacy importDXF needs the separately downloaded
+        # dxfLibrary and in the GUI stops to ask before downloading it.
+        from OpenSCADdxf import importEZDXFshape
+        face = importEZDXFshape(filename=tmpfilename)
+    except ImportError:
+        # ezdxf not installed for this FreeCAD's Python version
+        FreeCAD.Console.PrintWarning("ezdxf not available, "
+            "using Draft DXF importer for text\n")
+    if face is None:
+        from OpenSCAD2Dgeom import importDXFface
+        face = importDXFface(tmpfilename,None,None)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
     try:
@@ -1106,7 +1151,7 @@ def p_multmatrix_action(p):
        print(p) 
        print(dir(p))
     if (len(p[6]) == 0) :
-        part = placeholder('group',[],'{}')
+        p[0] = []
     else :
         retList = []
         #print(f"Mult Matrix")
@@ -1116,11 +1161,11 @@ def p_multmatrix_action(p):
 
 def performMultMatrix(part, matrixisrounded, transform_matrix) :
     checkObjShape(part)
-    print(f"MultMatrix check isNull {part.Shape.isNull()}")
+    if printverbose: print(f"MultMatrix check isNull {part.Shape.isNull()}")
     from OpenSCADUtils import isspecialorthogonalpython, \
          fcsubmatrix, roundrotation, isrotoinversionpython, \
          decomposerotoinversion
-    print(f"performMultMatrix {part.Name}")     
+    if printverbose: print(f"performMultMatrix {part.Name}")
     if (isspecialorthogonalpython(fcsubmatrix(transform_matrix))) :
        if printverbose: print("special orthogonal")
        if matrixisrounded:
@@ -1164,7 +1209,7 @@ def performMultMatrix(part, matrixisrounded, transform_matrix) :
         if printverbose: print("Transform Geometry")
 #       Need to recompute to stop transformGeometry causing a crash        
         doc.recompute()
-        print(f"Matrix Deformation {part.Label}")
+        if printverbose: print(f"Matrix Deformation {part.Label}")
         #new_part = doc.addObject("Part::Feature","Matrix Deformation")
         new_part = doc.addObject("Part::Feature","Matrix Deformation "+part.Label)
         #  new_part.Shape = part.Base.Shape.transformGeometry(transform_matrix)
@@ -1405,19 +1450,21 @@ def p_square_action(p) :
 
 
 def addString(t,s,p):
-    print(f"addString {s}")
-    if s in p[3]:
-        print(f" Value {p[3][s]}")
+    if printverbose: print(f"addString {s}")
+    # Newer OpenSCAD writes e.g. valign = "default" in the CSG, which
+    # OpenSCAD's own text() then rejects - leave such arguments out
+    if s in p[3] and p[3][s] != 'default':
+        if printverbose: print(f" Value {p[3][s]}")
         return(t + ', ' +s+' = "'+p[3][s]+'"')
     else:
         return t
 
 def addValue(t,v,p):
-    print(f"addValue {v}")
+    if printverbose: print(f"addValue {v}")
     if v in p[3]:
         return(t + ', ' +v+' = '+p[3][v])
     else:
-        return v    
+        return t
 
 def p_text_action(p) :
     'text_action : text LPAREN keywordargument_list RPAREN SEMICOL'
@@ -1514,14 +1561,12 @@ def p_polyhedron_action(p) :
         pp =[v2(v[k]) for k in i]
         # Add first point to end of list to close polygon
         pp.append(pp[0])
-        print("pp")
-        print(pp)
+        if printverbose: print(f"pp {pp}")
         try:
             w = Part.makePolygon(pp)
-            print("w")
-            print(w)
+            if printverbose: print(f"w {w}")
             f = Part.Face(w)
-        except:
+        except Exception:
             secWireList = w.Edges[:]
             f = Part.makeFilledFace(Part.__sortEdges__(secWireList))
         #f = make_face(v[int(i[0])],v[int(i[1])],v[int(i[2])])

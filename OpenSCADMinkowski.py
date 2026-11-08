@@ -87,7 +87,7 @@ def minkowski(p):
                 newObj.Intersection = False
                 newObj.SelfIntersection = False
                 newObj.Fill = False
-                if hasattr(obj1, 'ViewObject'):
+                if FreeCAD.GuiUp:
                     obj1.ViewObject.hide()
                 FreeCAD.ActiveDocument.removeObject(obj2.Name)
                 #p[0] = [newObj]
@@ -126,7 +126,8 @@ def minkowski(p):
                     myFillet = FreeCAD.ActiveDocument.addObject("Part::Fillet","Fillet")
                     myFillet.Base = newObj
                     myFillet.Edges =fEdges
-                    newObj.ViewObject.hide()
+                    if FreeCAD.GuiUp:
+                        newObj.ViewObject.hide()
                     #myFillet.recompute()
                     #p[0] = [myFillet]
                     return myFillet
