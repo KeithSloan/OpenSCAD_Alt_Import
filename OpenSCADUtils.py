@@ -109,7 +109,10 @@ def workaroundforissue128needed():
     for versions <= 2012.06.23 to the current working dir
     for versions above to the inputfile dir
     see https://github.com/openscad/openscad/issues/128'''
-    vdate=getopenscadversion().split('-')[0]
+    version = getopenscadversion()
+    if not version:
+        return False
+    vdate=version.split('-')[0]
     vdate=vdate.split(' ')[2].split('.')
     if len(vdate) == 1: # probably YYYYMMDD format (i.e. git version)
         vdate = vdate[0]
@@ -126,10 +129,7 @@ def workaroundforissue128needed():
 def getopenscadversion(osfilename=None):
     import os,subprocess,time
     if not osfilename:
-        import FreeCAD
-        osfilename = FreeCAD.ParamGet(\
-            "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-            GetString('openscadexecutable')
+        osfilename = getopenscadexe()
     if osfilename and os.path.isfile(osfilename):
         p=subprocess.Popen([osfilename,'-v'],\
             stdout=subprocess.PIPE,stderr=subprocess.PIPE,universal_newlines=True)
@@ -189,9 +189,10 @@ def callopenscad(inputfilename,outputfilename=None,outputext='csg',keepname=Fals
             # Second call no timeout to clean up?
             stdoutd,stderrd = p.communicate()
 
-    osfilename = FreeCAD.ParamGet(\
-        "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
-        GetString('openscadexecutable')
+    # Preference first, then search the usual install locations. A new
+    # FreeCAD version starts with a fresh user.cfg, so the preference may
+    # not be set yet even though OpenSCAD is installed.
+    osfilename = getopenscadexe()
     if osfilename and os.path.isfile(osfilename):
         if not outputfilename:
             dir1=tempfile.gettempdir()

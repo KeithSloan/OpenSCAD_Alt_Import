@@ -11,8 +11,13 @@
     <!--[ Versions ]―――――――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 
     <freecadmin>0.20.0</freecadmin>
+<<<<<<< Updated upstream
     <version>1.0.1</version>
     <date>2026-10-24</date>
+=======
+    <version>1.0.2</version>
+    <date>2026-11-08</date>
+>>>>>>> Stashed changes
 
     <!--[ Dependencies ]―――――――――――――――――――――――――――――――――――――――――――――――――――――-->
 

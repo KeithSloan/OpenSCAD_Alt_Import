@@ -46,7 +46,17 @@ class ViewProviderMyGroup(object):
             self.ViewObject = None
 
     def attach(self,vobj):
-        vobj.addExtension('Gui::ViewProviderGeoFeatureGroupExtensionPython')
+        # No longer used for new hulls (see makeHull), but documents saved
+        # by earlier versions restore hull objects with this view provider.
+        # Those App objects have no group extension, so the GUI group
+        # extension's claimChildren() throws from getExtension() - on macOS
+        # that escapes the Qt event loop and FreeCAD aborts. Make sure the
+        # App side has the matching (empty) group extension first.
+        obj = vobj.Object
+        if not obj.hasExtension('App::GeoFeatureGroupExtension'):
+            obj.addExtension('App::GeoFeatureGroupExtensionPython')
+        if not vobj.hasExtension('Gui::ViewProviderGeoFeatureGroupExtension'):
+            vobj.addExtension('Gui::ViewProviderGeoFeatureGroupExtensionPython')
         self.ViewObject = vobj
         try:
             vobj.SwitchNode.defaultChild = 1
@@ -172,45 +182,34 @@ def getWire(obj) :
           r = obj.Radius2
     return d, Part.makeCircle(r)
 
+def circleAxis(obj) :
+    # Normal of a 2D circle / symmetry axis of a cylinder : its local Z
+    return obj.Placement.Rotation.multVec(FreeCAD.Vector(0,0,1))
+
+def circleFace(obj, r) :
+    # Disc of radius r at the object's base, normal to its local Z
+    circle = Part.makeCircle(r, obj.Placement.Base, circleAxis(obj))
+    return Part.Face(Part.Wire(circle))
+
 def hullTwoEqCircles(obj1, obj2, flag2D) :
-    # Used by 2D and Cylinder
-    print(f'hullTwoEqCircles flag2D {flag2D}')
-    r = obj1.Radius
-    print(f"(Radius : {r}")
+    # Used by 2D circles and by two parallel cylinders of equal radius.
+    # Returns the 2D hull face in the plane of obj1's base; for cylinders
+    # the caller extrudes it.
+    if printverbose: print(f'hullTwoEqCircles flag2D {flag2D}')
+    r = float(obj1.Radius)
     v1 = obj1.Placement.Base
     v2 = obj2.Placement.Base
-    nm = someNormal(v1 - v2)
-    #print(f"Normal {nm}")
-    ln = v1-v2
-    dv = ln.cross(nm)
-    #print(f"dv {dv}")
-    dn = dv.normalize()
-    #print(f"Normalised {dn}")
-    dr = dn.multiply(r)
-    #print(f"dr : {dr}")
-    t11 = v1.sub(dr)
-    #print(t11)
-    t12 = v1.add(dr)
-    t21 = v2.add(dr)
-    t22 = v2.sub(dr)
-    l1 = Part.makeLine(t11,t12)
-    l2 = Part.makeLine(t12,t21)
-    l3 = Part.makeLine(t21,t22)
-    l4 = Part.makeLine(t22,t11)
-    wire = Part.Wire([l1,l2,l3,l4])
-    #print(wire)
-    #face = Part.makeFace(wire)
-    face = Part.Face(wire)
-    #return(face)
-    if flag2D:
-        Part.export([face], "/tmp/debug_face.brep")
-        Part.export([obj1.Shape], "/tmp/debug_shape1.brep")
-        Part.export([obj2.Shape], "/tmp/debug_shape2.brep")
-        return obj1.Shape.fuse(face.fuse(obj2.Shape))
-    else:
-        s1 = Part.makeCircle(obj1.Radius,obj1.Placement.Base)
-        s2 = Part.makeCircle(obj2.Radius,obj2.Placement.Base)    
-        return s1.fuse(face.fuse(s2))
+    axis = circleAxis(obj1)
+    dv = (v1 - v2).cross(axis)
+    if dv.Length < 1e-9 :
+        # same centre - the hull is just the circle
+        return circleFace(obj1, r)
+    dr = FreeCAD.Vector(dv).normalize() * r
+    band = Part.Face(Part.makePolygon([v1 - dr, v1 + dr, v2 + dr, v2 - dr, v1 - dr]))
+    hull = circleFace(obj1, r).fuse([band, circleFace(obj2, r)]).removeSplitter()
+    if len(hull.Faces) == 1 :
+        return hull.Faces[0]
+    return hull
 
 def hullTwoCircles(obj1, obj2, flag2D) :
     print(f'hullTwoCircles 2D {flag2D}')
@@ -224,16 +223,17 @@ def hullTwoCircles(obj1, obj2, flag2D) :
     print(f"Hull Two Circles r1 {obj1.Radius.Value} r2 {obj2.Radius.Value}")
     #print(dir(obj1.Placement))
     #print(dir(obj1.Placement.Rotation))
-    c1 = Part.Circle(obj1.Placement.Base, obj1.Placement.Rotation.Axis, \
+    # All circles lie in the plane normal to the local Z of obj1
+    # (Rotation.Axis is the axis OF the rotation, not the circle normal)
+    axis = circleAxis(obj1)
+    c1 = Part.Circle(obj1.Placement.Base, axis, \
          obj1.Radius.getValueAs('mm'))
-    c2 = Part.Circle(obj2.Placement.Base, obj2.Placement.Rotation.Axis, \
+    c2 = Part.Circle(obj2.Placement.Base, axis, \
          obj2.Radius.getValueAs('mm'))
 
     # helper circle located at c1
-    c3 = Part.Circle()
-    #c3.Center = obj1.Center
-    c3.Center = obj1.Placement.Base
-    c3.Radius = obj1.Radius - obj2.Radius
+    c3 = Part.Circle(obj1.Placement.Base, axis, \
+         obj1.Radius.getValueAs('mm') - obj2.Radius.getValueAs('mm'))
 
     # get the mid point of the line from the center of c1 to c2
     #v1 = obj1.Center
@@ -244,9 +244,7 @@ def hullTwoCircles(obj1, obj2, flag2D) :
 
     # Thales circle that is located in v3 and goes through
     #  the center points of c1 and c2
-    c4 = Part.Circle()
-    c4.Center = v3
-    c4.Radius = (v1 - v2).Length / 2
+    c4 = Part.Circle(v3, axis, (v1 - v2).Length / 2)
 
     # Intersections of Thales and helper circle
     p1, p2 = c4.intersect(c3)
@@ -476,7 +474,8 @@ def createHull(group) :
        obj1 = group[1]
        checkObjShape(obj0)
        checkObjShape(obj1)
-       if chk2D(obj0) and chk2D(obj1) :
+       if chk2D(obj0) and chk2D(obj1) and \
+          hasattr(obj0, 'Radius') and hasattr(obj1, 'Radius') :
           print('Both 2D')
           if obj0.Radius == obj1.Radius :
              return hullTwoEqCircles(obj0, obj1, True)
@@ -529,7 +528,7 @@ def createHull(group) :
                    face = hullTwoCircles(obj0, obj1, True)
                    print(f"Face created {face}")
                    #return face
-                   return face.extrude(FreeCAD.Vector(0,0,obj0.Height.Value))
+                   return face.extrude(circleAxis(obj0) * obj0.Height.Value)
 
              if (
                 obj0.TypeId == 'Part::Cylinder' and \
@@ -567,14 +566,30 @@ def makeHull(hullList, ex=False):
     if not doc:
         doc = FreeCAD.newDocument()
     hullObj = doc.addObject('Part::FeaturePython', 'hull')
-    hullObj.Shape = createHull(hullList)
-    #Hull(hullObj)
-    if ex:
-        ViewProviderMyGroupEx(hullObj.ViewObject)
-    else:
-        ViewProviderMyGroup(hullObj.ViewObject)
-    # Make Group the objects to be Hulled
-    #hullObj.Group = list
+    hullShape = createHull(hullList)
+    if hullShape is None:
+        FreeCAD.Console.PrintError('Hull : unable to create hull of '
+            + ', '.join(obj.Label for obj in hullList) + '\n')
+        hullShape = Part.Compound([])
+    hullObj.Shape = hullShape
+    # Record the hulled objects. The hull Shape is computed at import time,
+    # so the object must NOT get the GeoFeatureGroup view provider
+    # (ViewProviderMyGroup/Ex): the App object has no group extension and
+    # in the GUI that raises "ExtensionContainer::getExtension: No extension
+    # of given type available", aborting the import.
+    hullObj.addProperty('App::PropertyLinkList', 'Children', 'OpenSCAD',
+                        'Objects hulled')
+    hullObj.Children = hullList
+    if FreeCAD.GuiUp:
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
+            GetBool('useViewProviderTree'):
+            from OpenSCADFeatures import ViewProviderTree
+            ViewProviderTree(hullObj.ViewObject)
+        else:
+            hullObj.ViewObject.Proxy = 0
+        for obj in hullList:
+            if hasattr(obj, 'ViewObject') and obj.ViewObject is not None:
+                obj.ViewObject.hide()
     hullObj.recompute(True)
     # Just return Hull Object let importCSG put on Stack
     return hullObj
