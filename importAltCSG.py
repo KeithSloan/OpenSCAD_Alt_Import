@@ -136,9 +136,14 @@ def insert(filename,docname):
         pathName = os.path.dirname(os.path.normpath(filename))
         processCSG(doc, filename)
 
+# Number of CSG syntax errors in the last processCSG call (used by testCases)
+syntaxErrorCount = 0
+
 def processCSG(docSrc, filename, fnmax_param = None):
     global doc
     global fnmax
+    global syntaxErrorCount
+    syntaxErrorCount = 0
     if fnmax_param is None:
         fnmax = FreeCAD.ParamGet(\
         "User parameter:BaseApp/Preferences/Mod/OpenSCAD").\
@@ -685,6 +690,8 @@ def p_color_action(p):
 def p_error(p):
     # Always report - a silent syntax error leaves parts of the model
     # unparsed and the remaining objects detached from their transforms
+    global syntaxErrorCount
+    syntaxErrorCount += 1
     if p is None:
         FreeCAD.Console.PrintError("CSG syntax error : unexpected end of file\n")
     else:
@@ -1074,20 +1081,19 @@ def processTextCmd(t):
     import os
     from OpenSCADUtils import callopenscadstring
     tmpfilename = callopenscadstring(t,'dxf')
-    face = None
+    # Read OpenSCAD's DXF with the addon's ezdxf reader, as for import() of
+    # DXF files. FreeCAD's own DXF importer is not used: it needs separately
+    # downloaded libraries and stops to ask for them.
     try:
-        # Use the addon's own ezdxf reader (as for import() of DXF files).
-        # Draft's legacy importDXF needs the separately downloaded
-        # dxfLibrary and in the GUI stops to ask before downloading it.
         from OpenSCADdxf import importEZDXFshape
-        face = importEZDXFshape(filename=tmpfilename)
     except ImportError:
-        # ezdxf not installed for this FreeCAD's Python version
-        FreeCAD.Console.PrintWarning("ezdxf not available, "
-            "using Draft DXF importer for text\n")
+        raise ImportError("The Alternate OpenSCAD importer needs the Python "
+            "package ezdxf for text - install it with the Addon Manager "
+            "(Python dependencies of this addon)")
+    face = importEZDXFshape(filename=tmpfilename)
     if face is None:
-        from OpenSCAD2Dgeom import importDXFface
-        face = importDXFface(tmpfilename,None,None)
+        raise ValueError("ezdxf could not read the DXF OpenSCAD produced "
+                         "for " + t)
     obj=doc.addObject('Part::Feature','text')
     obj.Shape=face
     try:

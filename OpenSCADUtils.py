@@ -519,8 +519,11 @@ def meshoponobjs(opname,inobjs):
             return (None,[])
 
 def process2D_ObjectsViaOpenSCADShape(ObjList,Operation,doc):
-    import FreeCAD,importDXF
+    # 2D objects go to OpenSCAD and back as DXF files, written and read
+    # with ezdxf - FreeCAD's own DXF importer/exporter is not used
+    import FreeCAD
     import os,tempfile
+    from OpenSCADdxf import exportEZDXF, importEZDXFshape
     # https://www.freecadweb.org/tracker/view.php?id=3419
     params = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/OpenSCAD")
     fn  = params.GetInt('fnForImport',32)
@@ -530,7 +533,7 @@ def process2D_ObjectsViaOpenSCADShape(ObjList,Operation,doc):
     filenames = []
     for item in ObjList :
         outputfilename=os.path.join(dir1,'%s.dxf' % next(tempfilenamegen))
-        importDXF.export([item],outputfilename,True,True)
+        exportEZDXF([item.Shape],outputfilename)
         filenames.append(outputfilename)
     # https://www.freecadweb.org/tracker/view.php?id=3419
     dxfimports = ' '.join("import(file = \"%s\" %s);" % \
@@ -538,15 +541,16 @@ def process2D_ObjectsViaOpenSCADShape(ObjList,Operation,doc):
         (os.path.split(filename)[1], fnStr) for filename in filenames)
     #
     tmpfilename = callopenscadstring('%s(){%s}' % (Operation,dxfimports),'dxf')
-    from OpenSCAD2Dgeom import importDXFface
-    # TBD: assure the given doc is active
-    face = importDXFface(tmpfilename,None,None)
-    #clean up
-    filenames.append(tmpfilename) #delete the output file as well
-    try:
-        os.unlink(tmpfilename)
-    except OSError:
-        pass
+    face = importEZDXFshape(filename=tmpfilename)
+    #clean up the input and the output files
+    filenames.append(tmpfilename)
+    for filename in filenames:
+        try:
+            os.unlink(filename)
+        except OSError:
+            pass
+    if face is None:
+        raise OpenSCADError('ezdxf could not read the DXF OpenSCAD produced for %s' % Operation)
     return face
 
 def process2D_ObjectsViaOpenSCAD(ObjList,Operation,doc=None):

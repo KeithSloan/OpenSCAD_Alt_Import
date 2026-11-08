@@ -415,9 +415,17 @@ def loadDXF(filepath):
     except IOError:
         print(f'Not a DXF file or a generic I/O error.')
         return None
-    except ezdxf.DXFStructureError:
-        print(f'Invalid or corrupted DXF file : {filepath}.')
-        return None
+    except ezdxf.DXFStructureError as e:
+        # OpenSCAD 2025 writes R12 (AC1006) files containing LWPOLYLINE
+        # entities without the 'AcDbPolyline' subclass marker. The recover
+        # module rejects those, the normal reader accepts them.
+        try:
+            doc = ezdxf.readfile(filepath)
+            print(f'Read {filepath} without recover ({e})')
+            return doc
+        except Exception as e2:
+            print(f'Invalid or corrupted DXF file : {filepath} : {e2}')
+            return None
 
     # DXF file can still have unrecoverable errors, but this is maybe
     # just a problem when saving the recovered DXF file.
@@ -843,3 +851,25 @@ def importEZDXFshape(filename=None, doc=None, inlayer=None, exlayer=None, flatte
     else:
         print("Invalid file")
         return None
+
+def exportEZDXF(shapes, filename, deflection=0.01):
+    '''Write the wires of 2D shapes to a DXF file with ezdxf, one
+    LWPOLYLINE per wire (curves are discretized), for OpenSCAD import().
+    Used instead of FreeCAD's DXF exporter, which needs the separately
+    downloaded DXF libraries.'''
+    doc = ezdxf.new('R2000')
+    msp = doc.modelspace()
+    count = 0
+    for shape in shapes:
+        for wire in shape.Wires:
+            points = wire.discretize(Deflection=deflection)
+            closed = wire.isClosed()
+            if closed and len(points) > 1 and \
+                    points[0].isEqual(points[-1], 1e-9):
+                points = points[:-1]
+            if len(points) < 2:
+                continue
+            msp.add_lwpolyline([(p.x, p.y) for p in points], close=closed)
+            count += 1
+    doc.saveas(filename)
+    return count

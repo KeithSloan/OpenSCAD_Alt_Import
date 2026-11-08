@@ -51,14 +51,6 @@ def testDir():
 
 def runTest(path, refVolume, tol):
     import importAltCSG
-    syntaxErrors = []
-    originalError = importAltCSG.p_error
-
-    def countingError(p):
-        syntaxErrors.append(p)
-        originalError(p)
-
-    importAltCSG.p_error = countingError
     problems = []
     start = time.time()
     doc = None
@@ -68,12 +60,11 @@ def runTest(path, refVolume, tol):
         problems.append(f'exception {type(e).__name__}: {e}')
         traceback.print_exc()
         doc = FreeCAD.ActiveDocument
-    finally:
-        importAltCSG.p_error = originalError
     elapsed = time.time() - start
 
+    syntaxErrors = getattr(importAltCSG, 'syntaxErrorCount', 0)
     if syntaxErrors:
-        problems.append(f'{len(syntaxErrors)} CSG syntax errors')
+        problems.append(f'{syntaxErrors} CSG syntax errors')
     summary = ''
     if doc is not None:
         doc.recompute()
