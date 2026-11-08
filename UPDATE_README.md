@@ -64,12 +64,16 @@ In `testCases`:
 | `runTests.py` | Regression runner |
 | `README.md` | Test case sources and licences |
 
-Not included (licence), tested when copied into `testCases`:
+Also used as test cases - copies are not included in this repository:
 
-| File | Exercises |
-|------|-----------|
-| `Keyring Container v2.1.scad` / `Keyring_Container_v2.1.scad` | BOSL2: empty `union();`, textured polyhedra, threads, hull. Needs BOSL2 in the OpenSCAD library path |
-| `pegboard.scad` | hull of cylinders, rotate_extrude, colour ([michaelmob/openscad-models](https://github.com/michaelmob/openscad-models/blob/master/pegboard.scad) and a variant) |
+| File | Source | Exercises |
+|------|--------|-----------|
+| `Keyring Container v2.1.scad` | Darren Faulke (Autistech), CC BY-NC-SA 4.0, attached to [FreeCAD #17103](https://github.com/FreeCAD/FreeCAD/issues/17103) | BOSL2: empty `union();`, textured polyhedra, threads, hull. Needs BOSL2 in the OpenSCAD library path |
+| `pegboard.scad` | PEGSTR pegboard wizard (Marius Gheorghescu): the [michaelmob/openscad-models](https://github.com/michaelmob/openscad-models/blob/master/pegboard.scad) version and a variant with logo | hull of cylinders, rotate_extrude, colour |
+
+`runTests.py` also tests these if copied into `testCases` (keyring as
+`Keyring_Container_v2.1.scad`; its pegboard reference volume is for the
+michaelmob version).
 
 `runTests.py` checks each model imports with no syntax errors or exceptions,
 as one top level object with a valid shape, whose volume is within 1% of the
